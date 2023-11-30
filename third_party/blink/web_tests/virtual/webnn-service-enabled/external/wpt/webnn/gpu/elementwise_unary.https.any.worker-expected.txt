@@ -1,5 +1,5 @@
 This is a testharness.js-based test.
-Found 45 FAIL, 0 TIMEOUT, 0 NOTRUN.
+Found 63 FAIL, 0 TIMEOUT, 0 NOTRUN.
 [FAIL] abs float32 1D tensor / async
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
 [FAIL] abs float32 2D tensor / async
@@ -50,6 +50,18 @@ Found 45 FAIL, 0 TIMEOUT, 0 NOTRUN.
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
 [FAIL] floor float32 5D tensor / async
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] identity float32 0D scalar / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] identity float32 1D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] identity float32 2D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] identity float32 3D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] identity float32 4D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] identity float32 5D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
 [FAIL] log float32 positive 1D tensor / async
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
 [FAIL] log float32 positive 2D tensor / async
@@ -70,6 +82,18 @@ Found 45 FAIL, 0 TIMEOUT, 0 NOTRUN.
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
 [FAIL] neg float32 5D tensor / async
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] reciprocal float32 0D scalar / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] reciprocal float32 1D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] reciprocal float32 2D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] reciprocal float32 3D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] reciprocal float32 4D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] reciprocal float32 5D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
 [FAIL] sin float32 1D tensor / async
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
 [FAIL] sin float32 2D tensor / async
@@ -79,6 +103,18 @@ Found 45 FAIL, 0 TIMEOUT, 0 NOTRUN.
 [FAIL] sin float32 4D tensor / async
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
 [FAIL] sin float32 5D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] sqrt float32 0D scalar / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] sqrt float32 1D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] sqrt float32 2D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] sqrt float32 3D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] sqrt float32 4D tensor / async
+  promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
+[FAIL] sqrt float32 5D tensor / async
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"
 [FAIL] tan float32 1D tensor / async
   promise_test: Unhandled rejection with value: object "TypeError: builder.build is not a function"

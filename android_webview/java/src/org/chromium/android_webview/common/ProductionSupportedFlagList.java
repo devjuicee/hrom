@@ -177,9 +177,6 @@ public final class ProductionSupportedFlagList {
                 "Uses GooglePlayService's 'connectionless' APIs for Safe Browsing "
                         + "security checks."),
         Flag.baseFeature(
-                AwFeatures.WEBVIEW_APPS_PACKAGE_NAMES_SERVER_SIDE_ALLOWLIST,
-                "Enables usage of server-side allowlist filtering of" + " app package names."),
-        Flag.baseFeature(
                 AwFeatures.WEBVIEW_BROTLI_SUPPORT,
                 "Enables brotli compression support in WebView."),
         Flag.baseFeature(NetFeatures.PRIORITY_HEADER, "Enables the HTTP priority header."),
@@ -211,6 +208,9 @@ public final class ProductionSupportedFlagList {
                 BlinkFeatures.GMS_CORE_EMOJI,
                 "Enables retrieval of the emoji font through GMS Core "
                         + "improving emoji glyph coverage."),
+        Flag.baseFeature(
+                AndroidAutofillFeatures.ANDROID_AUTOFILL_BOTTOM_SHEET_WORKAROUND_NAME,
+                "Enable the workaround for autofill bottom sheet platform bug."),
         Flag.baseFeature(
                 AndroidAutofillFeatures.ANDROID_AUTOFILL_FORM_SUBMISSION_CHECK_BY_ID_NAME,
                 "When enabled, form submissions are reported to AutofillManager iff the form "
@@ -377,6 +377,10 @@ public final class ProductionSupportedFlagList {
                         + "to those that have been allow-listed through the appropriate "
                         + "developer API."),
         Flag.baseFeature(
+                AwFeatures.WEBVIEW_X_REQUESTED_WITH_HEADER_MANIFEST_ALLOW_LIST,
+                "Enables support for providing an allow-list for the X-Requested-Header "
+                        + "through AndroidManifest.xml meta-data."),
+        Flag.baseFeature(
                 BlinkFeatures.VIEWPORT_HEIGHT_CLIENT_HINT_HEADER,
                 "Enables the use of sec-ch-viewport-height client hint."),
         Flag.baseFeature(
@@ -447,12 +451,6 @@ public final class ProductionSupportedFlagList {
                 BlinkSchedulerFeatures.PRIORITIZE_COMPOSITING_AFTER_DELAY_TRIALS,
                 "Controls the delay after which main thread compositing tasks "
                         + "are prioritized over other non-input tasks."),
-        Flag.baseFeature(
-                BaseFeatures.NO_WAKE_UPS_FOR_CANCELED_TASKS,
-                "Controls whether wake ups are possible for canceled tasks."),
-        Flag.baseFeature(
-                BaseFeatures.REMOVE_CANCELED_TASKS_IN_TASK_QUEUE,
-                "Controls whether or not canceled delayed tasks are removed from task queues."),
         Flag.baseFeature(
                 BlinkFeatures.VIEW_TRANSITION_ON_NAVIGATION,
                 "Enables the experimental View Transitions API for navigations."
@@ -527,16 +525,9 @@ public final class ProductionSupportedFlagList {
                 "Disable the per-domain blocking for 3D APIs after GPU reset. "
                         + "This switch is intended only for tests."),
         Flag.baseFeature(
-                MetricsFeatures.SUBPROCESS_METRICS_ASYNC,
-                "Controls whether to merge subprocess metrics asynchronously."),
-        Flag.baseFeature(
                 MetricsFeatures.METRICS_SERVICE_ALLOW_EARLY_LOG_CLOSE,
                 "Controls whether a log is allowed to be closed when Chrome"
                         + " is backgrounded/foregrounded early."),
-        Flag.baseFeature(
-                MetricsFeatures.MERGE_SUBPROCESS_METRICS_ON_BG_AND_FG,
-                "Controls whether child process histograms are merged on background "
-                        + "and foreground."),
         Flag.baseFeature(
                 MetricsFeatures.FLUSH_PERSISTENT_SYSTEM_PROFILE_ON_WRITE,
                 "Controls whether to schedule a flush of persistent histogram memory "
@@ -638,10 +629,6 @@ public final class ProductionSupportedFlagList {
                 NetFeatures.SPDY_HEADERS_TO_HTTP_RESPONSE_USE_BUILDER,
                 "Enables new optimized implementation of SpdyHeadersToHttpResponse. No behavior"
                         + " change."),
-        Flag.baseFeature(
-                BaseFeatures.CRASH_BROWSER_ON_CHILD_MISMATCH_IF_BROWSER_CHANGED,
-                "Causes the browser process to crash if child processes are failing to launch"
-                        + " due to a browser version change."),
         Flag.baseFeature(
                 BlinkFeatures.NEW_BASE_URL_INHERITANCE_BEHAVIOR,
                 "Enables the new base-url inheritance behavior for about:blank and "
@@ -773,6 +760,7 @@ public final class ProductionSupportedFlagList {
         Flag.baseFeature("V8SingleThreadedGCInBackground"),
         Flag.baseFeature("V8MemoryReducer"),
         Flag.baseFeature("V8MinorMS"),
+        Flag.baseFeature("WebAssemblyMoreAggressiveCodeCaching"),
         Flag.baseFeature(
                 AwFeatures.WEBVIEW_INJECT_PLATFORM_JS_APIS,
                 "Inject platform-specific JavaScript APIs."),
@@ -794,6 +782,16 @@ public final class ProductionSupportedFlagList {
                 NetworkServiceFeatures.REDUCE_TRANSFER_SIZE_UPDATED_IPC,
                 "When enabled, the network service will send TransferSizeUpdatedIPC IPC only when"
                         + " DevTools is attached or the request is for an ad request."),
+        Flag.baseFeature(
+                BaseFeatures.USE_NEW_JOB_IMPLEMENTATION,
+                "Uses a thread pool job implementation which leverages atomics to minimize lock"
+                        + " contention."),
+        Flag.baseFeature(
+                ContentFeatures.BACK_FORWARD_CACHE, "Controls if back/forward cache is enabled."),
+        Flag.baseFeature(
+                VizFeatures.INVALIDATE_LOCAL_SURFACE_ID_PRE_COMMIT,
+                "When enabled, invalidates the LocalSurfaceId of the DelegatedFrameHostAndroid when"
+                        + " the old page is about to be unloaded."),
         // Add new commandline switches and features above. The final entry should have a
         // trailing comma for cleaner diffs.
     };

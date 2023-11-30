@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// 2023-10-22: Newly added flags and features should document an owner and
+// expiry condition. The expiry condition is freeform and could be a date,
+// experiment, bug, the deletion of a file, etc.
+
 #include "media/base/media_switches.h"
 
 #include "base/command_line.h"
@@ -33,10 +37,6 @@ const char kAudioBufferSize[] = "audio-buffer-size";
 // bitmask of supported audio codecs.
 const char kAudioCodecsFromEDID[] = "audio-codecs-from-edid";
 #endif  // BUILDFLAG(ENABLE_PASSTHROUGH_AUDIO_CODECS)
-
-// Set a timeout (in milliseconds) for the audio service to quit if there are no
-// client connections to it. If the value is negative the service never quits.
-const char kAudioServiceQuitTimeoutMs[] = "audio-service-quit-timeout-ms";
 
 // Command line flag name to set the autoplay policy.
 const char kAutoplayPolicy[] = "autoplay-policy";
@@ -882,11 +882,15 @@ BASE_FEATURE(kVideoBlitColorAccuracy,
 
 #if BUILDFLAG(IS_APPLE)
 // Use VideoToolbox for AV1 hardware decoding.
+// Owner: dalecurtis@chromium.org, sandersd@chromium.org
+// Expiry: When enabled by default for a full release cycle
 BASE_FEATURE(kVideoToolboxAv1Decoding,
              "VideoToolboxAv1Decoding",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 // Use the new VideoToolboxVideoDecoder for hardware decoding.
+// Owner: sandersd@chromium.org
+// Expiry: When VTVideoDecodeAccelerator is deleted
 BASE_FEATURE(kVideoToolboxVideoDecoder,
              "VideoToolboxVideoDecoder",
              base::FEATURE_DISABLED_BY_DEFAULT);
@@ -896,14 +900,6 @@ BASE_FEATURE(kVideoToolboxVideoDecoder,
 // possible.
 BASE_FEATURE(kWebRTCColorAccuracy,
              "WebRTCColorAccuracy",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-
-// Takes a reference on a video frame, keeping it alive during the duration of a
-// video.requestVideoFrameCallback call. Doesn't change anything to the API for
-// now, as this is only used to measure the potential impact of keeping frames
-// alive for longer. See crbug.com/1259784.
-BASE_FEATURE(kKeepRvfcFrameAlive,
-             "keep-rvfc-frame-alive",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 // Enables support for External Clear Key (ECK) key system for testing on

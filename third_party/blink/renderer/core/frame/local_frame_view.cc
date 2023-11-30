@@ -105,6 +105,7 @@
 #include "third_party/blink/renderer/core/intersection_observer/intersection_observation.h"
 #include "third_party/blink/renderer/core/intersection_observer/intersection_observer_controller.h"
 #include "third_party/blink/renderer/core/layout/adjust_for_absolute_zoom.h"
+#include "third_party/blink/renderer/core/layout/block_node.h"
 #include "third_party/blink/renderer/core/layout/geometry/transform_state.h"
 #include "third_party/blink/renderer/core/layout/geometry/writing_mode_converter.h"
 #include "third_party/blink/renderer/core/layout/layout_counter.h"
@@ -112,9 +113,8 @@
 #include "third_party/blink/renderer/core/layout/layout_embedded_object.h"
 #include "third_party/blink/renderer/core/layout/layout_shift_tracker.h"
 #include "third_party/blink/renderer/core/layout/layout_view.h"
-#include "third_party/blink/renderer/core/layout/ng/legacy_layout_tree_walking.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/legacy_layout_tree_walking.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_root.h"
 #include "third_party/blink/renderer/core/layout/text_autosizer.h"
 #include "third_party/blink/renderer/core/layout/traced_layout_object.h"
@@ -3241,7 +3241,7 @@ void LocalFrameView::ForceLayoutForPagination(float maximum_shrink_factor) {
 
   LayoutForPrinting();
 
-  const auto& first_page = To<NGPhysicalBoxFragment>(
+  const auto& first_page = To<PhysicalBoxFragment>(
       *layout_view->GetPhysicalFragment(0)->Children()[0]);
   const AtomicString& first_page_name = first_page.PageName();
   if (first_page_name) {
@@ -3267,7 +3267,7 @@ void LocalFrameView::ForceLayoutForPagination(float maximum_shrink_factor) {
   float overall_scale_factor = 1.0;
   for (const PhysicalFragmentLink& link :
        layout_view->GetPhysicalFragment(0)->Children()) {
-    const auto& page = To<NGPhysicalBoxFragment>(*link);
+    const auto& page = To<PhysicalBoxFragment>(*link);
     // Check the inline axis overflow on each individual page, to find the
     // largest relative overflow.
     float page_scale_factor;

@@ -19,9 +19,9 @@
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
 #include "components/autofill/core/browser/autofill_client.h"
-#include "components/autofill/core/browser/autofill_download_manager.h"
 #include "components/autofill/core/browser/autofill_test_utils.h"
 #include "components/autofill/core/browser/country_type.h"
+#include "components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.h"
 #include "components/autofill/core/browser/logging/log_manager.h"
 #include "components/autofill/core/browser/logging/log_router.h"
 #include "components/autofill/core/browser/logging/text_log_receiver.h"
@@ -40,6 +40,7 @@
 #include "components/autofill/core/browser/payments/local_card_migration_manager.h"
 #include "components/autofill/core/browser/payments/test/mock_mandatory_reauth_manager.h"
 #include "components/autofill/core/browser/payments/test/test_credit_card_risk_based_authenticator.h"
+#include "components/autofill/core/browser/payments/test_payments_autofill_client.h"
 #include "components/autofill/core/browser/payments/test_payments_network_interface.h"
 #include "components/autofill/core/browser/strike_databases/payments/test_strike_database.h"
 #include "components/autofill/core/browser/test_address_normalizer.h"
@@ -105,8 +106,8 @@ class TestAutofillClientTemplate : public T {
 
   bool IsOffTheRecord() override { return is_off_the_record_; }
 
-  AutofillDownloadManager* GetDownloadManager() override {
-    return download_manager_.get();
+  AutofillCrowdsourcingManager* GetCrowdsourcingManager() override {
+    return crowdsourcing_manager_.get();
   }
 
   scoped_refptr<network::SharedURLLoaderFactory> GetURLLoaderFactory()
@@ -190,6 +191,15 @@ class TestAutofillClientTemplate : public T {
     }
 
     return form_data_importer_.get();
+  }
+
+  payments::PaymentsAutofillClient* GetPaymentsAutofillClient() override {
+    if (!payments_autofill_client_) {
+      payments_autofill_client_ =
+          std::make_unique<payments::TestPaymentsAutofillClient>();
+    }
+
+    return payments_autofill_client_.get();
   }
 
   payments::PaymentsNetworkInterface* GetPaymentsNetworkInterface() override {
@@ -703,9 +713,9 @@ class TestAutofillClientTemplate : public T {
     is_off_the_record_ = is_off_the_record;
   }
 
-  void set_download_manager(
-      std::unique_ptr<AutofillDownloadManager> download_manager) {
-    download_manager_ = std::move(download_manager);
+  void set_crowdsourcing_manager(
+      std::unique_ptr<AutofillCrowdsourcingManager> crowdsourcing_manager) {
+    crowdsourcing_manager_ = std::move(crowdsourcing_manager);
   }
 
   void set_shared_url_loader_factory(
@@ -755,6 +765,8 @@ class TestAutofillClientTemplate : public T {
   // The below objects must be destroyed before `TestPersonalDataManager`
   // because they keep a reference to it.
   std::unique_ptr<AutofillOfferManager> autofill_offer_manager_;
+  std::unique_ptr<payments::TestPaymentsAutofillClient>
+      payments_autofill_client_;
   std::unique_ptr<payments::PaymentsNetworkInterface>
       payments_network_interface_;
   std::unique_ptr<testing::NiceMock<MockIbanManager>> mock_iban_manager_;
@@ -817,7 +829,7 @@ class TestAutofillClientTemplate : public T {
       base::MakeRefCounted<network::WeakWrapperSharedURLLoaderFactory>(
           &test_url_loader_factory_);
 
-  std::unique_ptr<AutofillDownloadManager> download_manager_;
+  std::unique_ptr<AutofillCrowdsourcingManager> crowdsourcing_manager_;
 
   // Populated if credit card local save or upload was offered.
   absl::optional<AutofillClient::SaveCreditCardOptions>

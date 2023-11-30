@@ -369,7 +369,7 @@ void PaintLayerPainter::PaintFragmentWithPhase(
     PaintPhase phase,
     const FragmentData& fragment_data,
     wtf_size_t fragment_data_idx,
-    const NGPhysicalBoxFragment* physical_fragment,
+    const PhysicalBoxFragment* physical_fragment,
     GraphicsContext& context,
     PaintFlags paint_flags) {
   DCHECK(paint_layer_.IsSelfPaintingLayer() ||
@@ -400,8 +400,8 @@ void PaintLayerPainter::PaintFragmentWithPhase(
     NGBoxFragmentPainter(*physical_fragment).Paint(paint_info);
   } else if (const auto* layout_inline =
                  DynamicTo<LayoutInline>(&paint_layer_.GetLayoutObject())) {
-    NGInlineBoxFragmentPainter::PaintAllFragments(
-        *layout_inline, fragment_data, fragment_data_idx, paint_info);
+    InlineBoxFragmentPainter::PaintAllFragments(*layout_inline, fragment_data,
+                                                fragment_data_idx, paint_info);
   } else {
     // We are about to enter legacy paint code. Set the right FragmentData
     // object, to use the right paint offset.
@@ -426,7 +426,7 @@ void PaintLayerPainter::PaintWithPhase(PaintPhase phase,
 
   for (const FragmentData& fragment :
        FragmentDataIterator(paint_layer_.GetLayoutObject())) {
-    const NGPhysicalBoxFragment* physical_fragment = nullptr;
+    const PhysicalBoxFragment* physical_fragment = nullptr;
     if (layout_box_with_fragments) {
       physical_fragment =
           layout_box_with_fragments->GetPhysicalFragment(fragment_idx);

@@ -8,14 +8,14 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/renderer/core/editing/markers/document_marker_controller.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_cursor.h"
-#include "third_party/blink/renderer/core/layout/ng/layout_ng_block_flow.h"
+#include "third_party/blink/renderer/core/layout/layout_ng_block_flow.h"
 #include "third_party/blink/renderer/core/paint/ng/ng_inline_paint_context.h"
 #include "third_party/blink/renderer/core/paint/ng/ng_text_decoration_painter.h"
 #include "third_party/blink/renderer/core/paint/ng/ng_text_painter.h"
 #include "third_party/blink/renderer/core/paint/paint_controller_paint_test.h"
 #include "third_party/blink/renderer/core/paint/text_paint_style.h"
 #include "third_party/blink/renderer/core/testing/page_test_base.h"
-#include "third_party/blink/renderer/platform/fonts/ng_text_fragment_paint_info.h"
+#include "third_party/blink/renderer/platform/fonts/text_fragment_paint_info.h"
 #include "third_party/blink/renderer/platform/testing/runtime_enabled_features_test_helpers.h"
 
 namespace blink {
@@ -40,7 +40,7 @@ TEST_P(NGHighlightPainterTest, FastSpellingGrammarPaintCase) {
   auto expect = [&](NGHighlightPainter::Case expected, unsigned line) {
     LayoutObject& body = *GetDocument().body()->GetLayoutObject();
     const auto& block_flow = To<LayoutNGBlockFlow>(body);
-    NGInlinePaintContext inline_context{};
+    InlinePaintContext inline_context{};
     InlineCursor cursor{block_flow};
     cursor.MoveToFirstLine();
     inline_context.SetLineBox(cursor);
@@ -71,13 +71,13 @@ TEST_P(NGHighlightPainterTest, FastSpellingGrammarPaintCase) {
     }
     LineRelativeRect rotated_rect =
         LineRelativeRect::CreateFromLineBox(physical_rect, true);
-    NGTextPainter text_painter(
+    TextPainter text_painter(
         graphics_context, text_item.ScaledFont(), rect,
         LineRelativeOffset::CreateFromBoxOrigin(physical_offset),
         &inline_context, true);
-    NGTextDecorationPainter decoration_painter(text_painter, text_item,
-                                               paint_info, style, text_style,
-                                               rotated_rect, selection);
+    TextDecorationPainter decoration_painter(text_painter, text_item,
+                                             paint_info, style, text_style,
+                                             rotated_rect, selection);
     NGHighlightPainter highlight_painter(
         cursor.Current()->TextPaintInfo(cursor.Items()), text_painter,
         decoration_painter, paint_info, cursor, text_item, {}, physical_offset,

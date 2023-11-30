@@ -5,7 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_NG_NG_FRAGMENT_PAINTER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_NG_NG_FRAGMENT_PAINTER_H_
 
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 
 namespace blink {
 
@@ -18,7 +18,7 @@ class NGFragmentPainter {
   STACK_ALLOCATED();
 
  public:
-  NGFragmentPainter(const NGPhysicalBoxFragment& box,
+  NGFragmentPainter(const PhysicalBoxFragment& box,
                     const DisplayItemClient& display_item_client)
       : box_fragment_(box), display_item_client_(display_item_client) {}
 
@@ -32,14 +32,12 @@ class NGFragmentPainter {
   void AddURLRectIfNeeded(const PaintInfo&, const PhysicalOffset& paint_offset);
 
  private:
-  const NGPhysicalBoxFragment& PhysicalFragment() const {
-    return box_fragment_;
-  }
+  const PhysicalBoxFragment& PhysicalFragment() const { return box_fragment_; }
   const DisplayItemClient& GetDisplayItemClient() const {
     return display_item_client_;
   }
 
-  const NGPhysicalBoxFragment& box_fragment_;
+  const PhysicalBoxFragment& box_fragment_;
   const DisplayItemClient& display_item_client_;
 };
 

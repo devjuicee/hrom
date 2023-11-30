@@ -47,6 +47,9 @@ const char kClientSideDetectionTagParamName[] = "reporter_omaha_tag";
 // the client_side_detection_type field
 BASE_DECLARE_FEATURE(kClientSideDetectionTypeForceRequest);
 
+// Creates and sends CSBRRs when warnings are first shown to users.
+BASE_DECLARE_FEATURE(kCreateWarningShownClientSafeBrowsingReports);
+
 // Controls whether we prompt encrypted archive deep scans to provide a
 // password.
 BASE_DECLARE_FEATURE(kDeepScanningEncryptedArchives);
@@ -59,11 +62,6 @@ extern const base::FeatureParam<bool> kDelayedWarningsEnableMouseClicks;
 
 // Whether to use download bubble instead of download shelf.
 BASE_DECLARE_FEATURE(kDownloadBubble);
-
-// The V2 of the download bubble, consisting of features that were not available
-// on the download shelf. This is only eligible to be enabled when
-// kDownloadBubble is already enabled.
-BASE_DECLARE_FEATURE(kDownloadBubbleV2);
 
 // The kill switch for download tailored warnings. The main control is on the
 // server-side.

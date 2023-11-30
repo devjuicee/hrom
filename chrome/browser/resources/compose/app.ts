@@ -24,7 +24,7 @@ import {loadTimeData} from '//resources/js/load_time_data.js';
 import {Debouncer, microTask, PolymerElement} from '//resources/polymer/v3_0/polymer/polymer_bundled.min.js';
 
 import {getTemplate} from './app.html.js';
-import {CloseReason, ComposeDialogCallbackRouter, ComposeResponse, ComposeStatus, ConfigurableParams, Length, Tone, UserFeedback} from './compose.mojom-webui.js';
+import {CloseReason, ComposeDialogCallbackRouter, ComposeResponse, ComposeStatus, ConfigurableParams, ConsentState, Length, StyleModifiers, Tone, UserFeedback} from './compose.mojom-webui.js';
 import {ComposeApiProxy, ComposeApiProxyImpl} from './compose_api_proxy.js';
 import {ComposeTextareaElement} from './textarea.js';
 
@@ -34,10 +34,19 @@ export interface ComposeAppState {
   editedInput?: string;
   input: string;
   isEditingSubmittedInput?: boolean;
+  selectedLength?: Length;
+  selectedTone?: Tone;
 }
 
 export interface ComposeAppElement {
   $: {
+    consentDialog: HTMLElement,
+    consentFooter: HTMLElement,
+    consentNoThanksButton: CrButtonElement,
+    consentYesButton: CrButtonElement,
+    disclaimerFooter: HTMLElement,
+    disclaimerLetsGoButton: CrButtonElement,
+    appDialog: HTMLElement,
     body: HTMLElement,
     cancelEditButton: CrButtonElement,
     closeButton: HTMLElement,
@@ -74,6 +83,10 @@ export class ComposeAppElement extends ComposeAppElementBase {
         type: String,
         observer: 'onEditedInputChanged_',
       },
+      feedbackState_: {
+        type: String,
+        value: CrFeedbackOption.UNSPECIFIED,
+      },
       input_: {
         type: String,
         observer: 'onInputChanged_',
@@ -107,6 +120,14 @@ export class ComposeAppElement extends ComposeAppElementBase {
       selectedTone_: {
         type: Number,
         value: Tone.kUnset,
+      },
+      showMainAppDialog_: {
+        type: Boolean,
+        value: false,
+      },
+      showDisclaimerFooter_: {
+        type: Boolean,
+        value: false,
       },
       submitted_: {
         type: Boolean,
@@ -169,7 +190,10 @@ export class ComposeAppElement extends ComposeAppElementBase {
   private apiProxy_: ComposeApiProxy = ComposeApiProxyImpl.getInstance();
   private eventTracker_: EventTracker = new EventTracker();
   private router_: ComposeDialogCallbackRouter = this.apiProxy_.getRouter();
+  private showMainAppDialog_: boolean;
+  private showDisclaimerFooter_: boolean;
   private editedInput_: string;
+  private feedbackState_: CrFeedbackOption;
   private input_: string;
   private inputParams_: ConfigurableParams;
   private isEditingSubmittedInput_: boolean;
@@ -217,13 +241,22 @@ export class ComposeAppElement extends ComposeAppElementBase {
   private getInitialState_() {
     this.apiProxy_.requestInitialState().then(initialState => {
       this.inputParams_ = initialState.configurableParams;
+      // The dialog can initially be in one of three view states. The consent
+      // view is shown if consent is not currently granted. If consent was
+      // granted but not through Compose use, the disclaimer view is shown.
+      // Otherwise, full consent causes the dialog to show at the main app
+      // state.
+      this.showMainAppDialog_ =
+          initialState.consentState === ConsentState.kConsented;
+      this.showDisclaimerFooter_ =
+          initialState.consentState === ConsentState.kExternalConsented;
+
       if (initialState.initialInput) {
         this.input_ = initialState.initialInput;
       }
       const composeState = initialState.composeState;
+      this.feedbackState_ = userFeedbackToFeedbackOption(composeState.feedback);
       this.loading_ = composeState.hasPendingRequest;
-      this.selectedLength_ = composeState.style.length;
-      this.selectedTone_ = composeState.style.tone;
       this.submitted_ =
           composeState.hasPendingRequest || Boolean(composeState.response);
       if (!composeState.hasPendingRequest) {
@@ -235,6 +268,8 @@ export class ComposeAppElement extends ComposeAppElementBase {
       if (composeState.webuiState) {
         const appState: ComposeAppState = JSON.parse(composeState.webuiState);
         this.input_ = appState.input;
+        this.selectedLength_ = appState.selectedLength ?? Length.kUnset;
+        this.selectedTone_ = appState.selectedTone ?? Tone.kUnset;
         if (appState.isEditingSubmittedInput) {
           this.isEditingSubmittedInput_ = appState.isEditingSubmittedInput;
           this.editedInput_ = appState.editedInput!;
@@ -248,12 +283,30 @@ export class ComposeAppElement extends ComposeAppElementBase {
     });
   }
 
+  private onConsentNoThanksButtonClick_() {
+    this.apiProxy_.closeUi(CloseReason.kPageContentConsentDeclined);
+  }
+
+  private onConsentYesButtonClick_() {
+    this.apiProxy_.approveConsent();
+    this.showMainAppDialog_ = true;
+  }
+
+  private onDisclaimerLetsGoButtonClick_() {
+    this.apiProxy_.acknowledgeConsentDisclaimer();
+    this.showDisclaimerFooter_ = false;
+    this.showMainAppDialog_ = true;
+  }
+
   private onCancelEditClick_() {
     this.isEditingSubmittedInput_ = false;
   }
 
-  private onClose_() {
-    this.apiProxy_.closeUi(CloseReason.kCloseButton);
+  private onClose_(e: Event) {
+    const closeReason = (e.target as HTMLElement).id === 'closeButtonConsent' ?
+        CloseReason.kConsentCloseButton :
+        CloseReason.kCloseButton;
+    this.apiProxy_.closeUi(closeReason);
   }
 
   private onEditedInputChanged_() {
@@ -275,7 +328,7 @@ export class ComposeAppElement extends ComposeAppElementBase {
   }
 
   private onRefresh_() {
-    this.compose_(/*rewrite=*/ true);
+    this.rewrite_(/*style=*/ {});
   }
 
   private onSubmit_() {
@@ -314,17 +367,27 @@ export class ComposeAppElement extends ComposeAppElementBase {
 
   private onLengthChanged_() {
     this.selectedLength_ = Number(this.$.lengthMenu.value) as Length;
-    this.compose_(/*rewrite=*/ true);
+    this.rewrite_(/*style=*/ {length: this.selectedLength_});
   }
 
   private onToneChanged_() {
     this.selectedTone_ = Number(this.$.toneMenu.value) as Tone;
-    this.compose_(/*rewrite=*/ true);
+    this.rewrite_(/*style=*/ {tone: this.selectedTone_});
   }
 
-  private onFileBugClick_(e: Event) {
+  private onFooterClick_(e: Event) {
     e.preventDefault();
-    this.apiProxy_.openBugReportingLink();
+    // The "File a bug" and "survey" links are embedded into the string.
+    // Embededd links do not work in WebUI so handle each click in the parent
+    // event listener.
+    switch ((e.target as HTMLElement).id) {
+      case 'bugLink':
+        this.apiProxy_.openBugReportingLink();
+        break;
+      case 'surveyLink':
+        this.apiProxy_.openFeedbackSurveyLink();
+        break;
+    }
   }
 
   private onConsentTopTextClick_(e: Event) {
@@ -339,24 +402,29 @@ export class ComposeAppElement extends ComposeAppElementBase {
     }
   }
 
-  private compose_(rewrite: boolean = false) {
+  private compose_() {
     assert(this.$.textarea.validate());
     assert(this.submitted_);
     this.loading_ = true;
     this.response_ = undefined;
     this.saveComposeAppState_();  // Ensure state is saved before compose call.
-    this.apiProxy_.compose(
-        {
-          length: this.selectedLength_,
-          tone: this.selectedTone_,
-        },
-        this.input_, rewrite);
+    this.apiProxy_.compose(this.input_);
+  }
+
+  private rewrite_(style: StyleModifiers) {
+    assert(this.$.textarea.validate());
+    assert(this.submitted_);
+    this.loading_ = true;
+    this.response_ = undefined;
+    this.saveComposeAppState_();  // Ensure state is saved before compose call.
+    this.apiProxy_.rewrite(style);
   }
 
   private composeResponseReceived_(response: ComposeResponse) {
     this.response_ = response;
     this.loading_ = false;
     this.undoEnabled_ = response.undoAvailable;
+    this.feedbackState_ = CrFeedbackOption.UNSPECIFIED;
     this.requestUpdateScroll();
   }
 
@@ -400,6 +468,12 @@ export class ComposeAppElement extends ComposeAppElementBase {
     }
 
     const state: ComposeAppState = {input: this.input_};
+    if (this.selectedLength_ !== Length.kUnset) {
+      state.selectedLength = this.selectedLength_;
+    }
+    if (this.selectedTone_ !== Tone.kUnset) {
+      state.selectedTone = this.selectedTone_;
+    }
     if (this.isEditingSubmittedInput_) {
       state.isEditingSubmittedInput = this.isEditingSubmittedInput_;
       state.editedInput = this.editedInput_;
@@ -419,12 +493,13 @@ export class ComposeAppElement extends ComposeAppElementBase {
       // Restore state to the state returned by Undo.
       this.response_ = state.response;
       this.undoEnabled_ = Boolean(state.response?.undoAvailable);
-      this.selectedLength_ = state.style.length;
-      this.selectedTone_ = state.style.tone;
+      this.feedbackState_ = userFeedbackToFeedbackOption(state.feedback);
 
       if (state.webuiState) {
         const appState: ComposeAppState = JSON.parse(state.webuiState);
         this.input_ = appState.input;
+        this.selectedLength_ = appState.selectedLength ?? Length.kUnset;
+        this.selectedTone_ = appState.selectedTone ?? Tone.kUnset;
       }
     } catch (error) {
       // Error (e.g., disconnected mojo pipe) from a rejected Promise.
@@ -438,18 +513,31 @@ export class ComposeAppElement extends ComposeAppElementBase {
 
   private onFeedbackSelectedOptionChanged_(
       e: CustomEvent<{value: CrFeedbackOption}>) {
+    this.feedbackState_ = e.detail.value;
     switch (e.detail.value) {
       case CrFeedbackOption.UNSPECIFIED:
-        this.apiProxy_.setUserFeedback(UserFeedback.kUserFeedBackUnspecified);
+        this.apiProxy_.setUserFeedback(UserFeedback.kUserFeedbackUnspecified);
         return;
       case CrFeedbackOption.THUMBS_UP:
-        this.apiProxy_.setUserFeedback(UserFeedback.kUserFeedBackPositive);
+        this.apiProxy_.setUserFeedback(UserFeedback.kUserFeedbackPositive);
         return;
       case CrFeedbackOption.THUMBS_DOWN:
-        this.apiProxy_.setUserFeedback(UserFeedback.kUserFeedBackNegative);
+        this.apiProxy_.setUserFeedback(UserFeedback.kUserFeedbackNegative);
         this.apiProxy_.openBugReportingLink();
         return;
     }
+  }
+}
+
+function userFeedbackToFeedbackOption(userFeedback: UserFeedback):
+    CrFeedbackOption {
+  switch (userFeedback) {
+    case UserFeedback.kUserFeedbackUnspecified:
+      return CrFeedbackOption.UNSPECIFIED;
+    case UserFeedback.kUserFeedbackPositive:
+      return CrFeedbackOption.THUMBS_UP;
+    case UserFeedback.kUserFeedbackNegative:
+      return CrFeedbackOption.THUMBS_DOWN;
   }
 }
 

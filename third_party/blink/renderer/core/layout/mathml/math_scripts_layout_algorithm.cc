@@ -98,7 +98,7 @@ void MathScriptsLayoutAlgorithm::GatherChildren(
     HeapVector<SubSupPair>* sub_sup_pairs,
     BlockNode* prescripts,
     unsigned* first_prescript_index,
-    NGBoxFragmentBuilder* container_builder) const {
+    BoxFragmentBuilder* container_builder) const {
   auto script_type = Node().ScriptType();
   bool number_of_scripts_is_even = true;
   sub_sup_pairs->resize(1);
@@ -275,7 +275,7 @@ MathScriptsLayoutAlgorithm::LayoutAndGetMetrics(BlockNode child) const {
       child.Layout(constraint_space, nullptr /*break_token*/);
   LogicalBoxFragment fragment(
       GetConstraintSpace().GetWritingDirection(),
-      To<NGPhysicalBoxFragment>(child_and_metrics.result->PhysicalFragment()));
+      To<PhysicalBoxFragment>(child_and_metrics.result->GetPhysicalFragment()));
   child_and_metrics.inline_size = fragment.InlineSize();
   child_and_metrics.margins =
       ComputeMarginsFor(constraint_space, child.Style(), GetConstraintSpace());
@@ -288,7 +288,7 @@ MathScriptsLayoutAlgorithm::LayoutAndGetMetrics(BlockNode child) const {
   return child_and_metrics;
 }
 
-const NGLayoutResult* MathScriptsLayoutAlgorithm::Layout() {
+const LayoutResult* MathScriptsLayoutAlgorithm::Layout() {
   DCHECK(!GetBreakToken());
 
   BlockNode base = nullptr;

@@ -30,7 +30,6 @@
 #include "ash/wm/desks/desk_name_view.h"
 #include "ash/wm/desks/desks_controller.h"
 #include "ash/wm/desks/desks_util.h"
-#include "ash/wm/desks/expanded_desks_bar_button.h"
 #include "ash/wm/desks/legacy_desk_bar_view.h"
 #include "ash/wm/desks/templates/saved_desk_animations.h"
 #include "ash/wm/desks/templates/saved_desk_grid_view.h"
@@ -39,7 +38,6 @@
 #include "ash/wm/desks/templates/saved_desk_presenter.h"
 #include "ash/wm/desks/templates/saved_desk_save_desk_button.h"
 #include "ash/wm/desks/templates/saved_desk_util.h"
-#include "ash/wm/desks/zero_state_button.h"
 #include "ash/wm/gestures/wm_gesture_handler.h"
 #include "ash/wm/mru_window_tracker.h"
 #include "ash/wm/overview/overview_constants.h"
@@ -61,7 +59,6 @@
 #include "ash/wm/splitview/split_view_divider.h"
 #include "ash/wm/splitview/split_view_overview_session.h"
 #include "ash/wm/splitview/split_view_utils.h"
-#include "ash/wm/tablet_mode/tablet_mode_controller.h"
 #include "ash/wm/window_properties.h"
 #include "ash/wm/window_state_delegate.h"
 #include "ash/wm/window_util.h"
@@ -82,6 +79,7 @@
 #include "ui/compositor/layer_animator.h"
 #include "ui/compositor/presentation_time_recorder.h"
 #include "ui/compositor/throughput_tracker.h"
+#include "ui/display/screen.h"
 #include "ui/gfx/geometry/size_f.h"
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/transform_util.h"
@@ -525,8 +523,7 @@ void OverviewGrid::Shutdown(OverviewEnterExitType exit_type) {
     animator->RemoveObserver(this);
   }
 
-  Shell* shell = Shell::Get();
-  shell->wallpaper_controller()->RemoveObserver(this);
+  Shell::Get()->wallpaper_controller()->RemoveObserver(this);
   grid_event_handler_.reset();
 
   if (IsShowingSavedDeskLibrary())
@@ -553,7 +550,7 @@ void OverviewGrid::Shutdown(OverviewEnterExitType exit_type) {
         OverviewEnterExitType::kFadeOutExit;
     const bool single_animation_in_clamshell =
         (animate_count == 1 && !has_non_cover_animating) &&
-        !shell->tablet_mode_controller()->InTabletMode();
+        !display::Screen::GetScreen()->InTabletMode();
     // The following instance self-destructs when shutdown animation ends.
     new ShutdownAnimationMetricsTrackerObserver(
         root_window_->layer()->GetCompositor(), in_split_view,
@@ -599,7 +596,7 @@ void OverviewGrid::PrepareForOverview() {
   }
 
   SplitViewController::Get(root_window_)->AddObserver(this);
-  if (Shell::Get()->tablet_mode_controller()->InTabletMode()) {
+  if (display::Screen::GetScreen()->InTabletMode()) {
     if (auto* animator = RootWindowController::ForWindow(root_window_)
                              ->GetScreenRotationAnimator()) {
       animator->AddObserver(this);
@@ -748,7 +745,7 @@ void OverviewGrid::PositionWindows(
       !window_list_.empty()) {
     bool single_animation_in_clamshell =
         animate_count == 1 && !has_non_cover_animating &&
-        !Shell::Get()->tablet_mode_controller()->InTabletMode();
+        !display::Screen::GetScreen()->InTabletMode();
     bool minimized_in_tablet = overview_session_->enter_exit_overview_type() ==
                                OverviewEnterExitType::kFadeInEnter;
     metrics_tracker_ = std::make_unique<OverviewEnterMetricsTracker>(
@@ -907,9 +904,9 @@ void OverviewGrid::RemoveItem(OverviewItemBase* overview_item,
     const gfx::Rect grid_bounds = GetGridBoundsInScreen(
         root_window_,
         split_view_drag_indicators_
-            ? absl::make_optional(
+            ? std::make_optional(
                   split_view_drag_indicators_->current_window_dragging_state())
-            : absl::nullopt,
+            : std::nullopt,
         /*divider_changed=*/false,
         /*account_for_hotseat=*/true);
     SetBoundsAndUpdatePositions(grid_bounds, ignored_items, /*animate=*/true);
@@ -968,10 +965,6 @@ void OverviewGrid::RemoveDropTarget() {
       window_list_, base::MatchesUniquePtr<OverviewItemBase>(drop_target_ptr));
   CHECK_EQ(1u, erased_count);
 
-  const size_t num_items = overview_session_->num_items();
-  CHECK_GT(num_items, 0u);
-  overview_session_->set_num_items(num_items - 1u);
-
   // Skip repositioning here. The caller is expected to call `PositionWindows()`
   // after more drag-ending cleanup in `OverviewWindowDragController`.
 }
@@ -1004,7 +997,7 @@ void OverviewGrid::RearrangeDuringDrag(
 
   // Update the grid's bounds.
   const gfx::Rect wanted_grid_bounds = GetGridBoundsInScreen(
-      root_window_, absl::make_optional(window_dragging_state),
+      root_window_, std::make_optional(window_dragging_state),
       /*divider_changed=*/false, /*account_for_hotseat=*/true);
   if (bounds_ != wanted_grid_bounds) {
     base::flat_set<OverviewItemBase*> ignored_items;
@@ -1280,7 +1273,7 @@ void OverviewGrid::CalculateWindowListAnimationStates(
                   : items[i]->GetWindow()->GetBoundsInRootWindow();
     if (!src_bounds_temp.IsEmpty()) {
       if (transition == OverviewTransition::kEnter &&
-          Shell::Get()->tablet_mode_controller()->InTabletMode()) {
+          display::Screen::GetScreen()->InTabletMode()) {
         BackdropController* backdrop_controller =
             GetActiveWorkspaceController(root_window_)
                 ->layout_manager()
@@ -1661,7 +1654,7 @@ bool OverviewGrid::UpdateScrollOffset(float delta) {
 
   // Update the bounds of the items which are currently visible on screen.
   for (const auto& item : window_list_) {
-    absl::optional<gfx::RectF> scrolling_bounds_optional =
+    std::optional<gfx::RectF> scrolling_bounds_optional =
         item->scrolling_bounds();
     // Scrolling bounds may not be set if the item was added after scrolling
     // started (i.e. another desk was combined into the active desk).
@@ -1689,7 +1682,7 @@ void OverviewGrid::EndScroll() {
   OverviewController::Get()->UnpauseOcclusionTracker(
       kOcclusionUnpauseDurationForScroll);
   for (const auto& item : window_list_)
-    item->set_scrolling_bounds(absl::nullopt);
+    item->set_scrolling_bounds(std::nullopt);
   presentation_time_recorder_.reset();
 
   if (!overview_session_->is_shutting_down())
@@ -1765,10 +1758,10 @@ int OverviewGrid::CalculateWidthAndMaybeSetUnclippedBounds(
   // Get the bounds of the item if there is a snapped window or a window
   // about to be snapped. If the height is less than that of the header, there
   // is nothing from the original window to be shown and nothing to be clipped.
-  absl::optional<gfx::RectF> split_view_bounds =
+  std::optional<gfx::RectF> split_view_bounds =
       GetSplitviewBoundsMaintainingAspectRatio();
   if (!split_view_bounds || split_view_bounds->height() < kHeaderHeightDp) {
-    item->set_unclipped_size(absl::nullopt);
+    item->set_unclipped_size(std::nullopt);
     return width;
   }
 
@@ -1807,7 +1800,7 @@ int OverviewGrid::CalculateWidthAndMaybeSetUnclippedBounds(
   }
 
   DCHECK(!unclipped_size.IsEmpty());
-  item->set_unclipped_size(absl::make_optional(unclipped_size));
+  item->set_unclipped_size(std::make_optional(unclipped_size));
   return width;
 }
 
@@ -2069,7 +2062,7 @@ void OverviewGrid::UpdateSaveDeskButtons() {
   // scroll is in progress.
   const bool target_visible =
       !no_items && !overview_session_->GetCurrentDraggedOverviewItem() &&
-      !Shell::Get()->tablet_mode_controller()->InTabletMode() &&
+      !display::Screen::GetScreen()->InTabletMode() &&
       !IsShowingSavedDeskLibrary() && desks_widget_ &&
       (!features::IsContinuousOverviewScrollAnimationEnabled() ||
        !OverviewController::Get()->is_continuous_scroll_in_progress());
@@ -2156,16 +2149,16 @@ void OverviewGrid::UpdateSaveDeskButtons() {
       saved_desk_presenter->GetMaxEntryCount(DeskTemplateType::kTemplate),
       num_incognito_windows_ + snapped_incognito_window,
       num_unsupported_windows_ + snapped_unsupported_window,
-      size() + snapped_incognito_window + snapped_unsupported_window +
-          snapped_supported_window);
+      window_list_.size() + snapped_incognito_window +
+          snapped_unsupported_window + snapped_supported_window);
   container->UpdateButtonEnableStateAndTooltip(
       SavedDeskSaveDeskButton::Type::kSaveForLater,
       saved_desk_presenter->GetEntryCount(DeskTemplateType::kSaveAndRecall),
       saved_desk_presenter->GetMaxEntryCount(DeskTemplateType::kSaveAndRecall),
       num_incognito_windows_ + snapped_incognito_window,
       num_unsupported_windows_ + snapped_unsupported_window,
-      size() + snapped_incognito_window + snapped_unsupported_window +
-          snapped_supported_window);
+      window_list_.size() + snapped_incognito_window +
+          snapped_unsupported_window + snapped_supported_window);
 
   // Set the widget position above the overview item window and default width
   // and height.
@@ -2226,6 +2219,14 @@ bool OverviewGrid::IsSaveDeskForLaterButtonVisible() const {
   const auto* container = GetSaveDeskButtonContainer();
   return container && container->save_desk_for_later_button() &&
          container->save_desk_for_later_button()->GetVisible();
+}
+
+size_t OverviewGrid::GetNumWindows() const {
+  size_t size = 0u;
+  for (const std::unique_ptr<OverviewItemBase>& item : window_list_) {
+    size += item->GetWindows().size();
+  }
+  return size;
 }
 
 SavedDeskSaveDeskButton* OverviewGrid::GetSaveDeskAsTemplateButton() {
@@ -2308,7 +2309,7 @@ void OverviewGrid::OnSplitViewDividerPositionChanged() {
 
   SetBoundsAndUpdatePositions(
       GetGridBoundsInScreen(root_window_,
-                            /*window_dragging_state=*/absl::nullopt,
+                            /*window_dragging_state=*/std::nullopt,
                             /*divider_changed=*/true,
                             /*account_for_hotseat=*/true),
       /*ignored_items=*/{}, /*animate=*/false);
@@ -2674,7 +2675,8 @@ size_t OverviewGrid::FindInsertionIndex(const aura::Window* window) const {
   // between. Ignore those other windows, and only increment `grid_item_index`
   // when we reach the next window in this grid.
   size_t grid_item_index = 0, mru_window_index = 0;
-  while (grid_item_index < size() && mru_window_index < mru_windows.size()) {
+  while (grid_item_index < window_list_.size() &&
+         mru_window_index < mru_windows.size()) {
     OverviewItemBase* grid_item = window_list_[grid_item_index].get();
     aura::Window* mru_window = mru_windows[mru_window_index];
     if (grid_item == drop_target_ || mru_window == window) {
@@ -2690,7 +2692,7 @@ size_t OverviewGrid::FindInsertionIndex(const aura::Window* window) const {
 
   // If there is no drop target window and `window` is not in the MRU window
   // list, insert at the end.
-  return size();
+  return window_list_.size();
 }
 
 void OverviewGrid::AddDraggedWindowIntoOverviewOnDragEnd(
@@ -2817,9 +2819,6 @@ void OverviewGrid::AddDropTargetImpl(OverviewItemBase* dragged_item,
   auto drop_target = std::make_unique<OverviewDropTarget>(this);
   drop_target_ = drop_target.get();
   window_list_.insert(window_list_.begin() + position, std::move(drop_target));
-
-  const size_t num_items = overview_session_->num_items();
-  overview_session_->set_num_items(num_items + 1u);
 
   base::flat_set<OverviewItemBase*> ignored_items;
   if (dragged_item) {

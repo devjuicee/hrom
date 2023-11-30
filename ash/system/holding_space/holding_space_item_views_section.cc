@@ -119,7 +119,7 @@ class HoldingSpaceScrollView : public views::ScrollView,
       this};
 };
 
-BEGIN_METADATA(HoldingSpaceScrollView)
+BEGIN_METADATA(HoldingSpaceScrollView, views::ScrollView)
 END_METADATA
 
 }  // namespace
@@ -161,7 +161,7 @@ void HoldingSpaceItemViewsSection::Init() {
     container_ = AddChildView(CreateContainer());
   } else {
     auto* scroll = AddChildView(std::make_unique<HoldingSpaceScrollView>());
-    scroll->SetBackgroundColor(absl::nullopt);
+    scroll->SetBackgroundColor(std::nullopt);
     scroll->ClipHeightTo(0, INT_MAX);
     scroll->SetDrawOverflowIndicator(false);
     scroll->SetVerticalScrollBarMode(ScrollBarMode::kHiddenButEnabled);
@@ -511,7 +511,7 @@ void HoldingSpaceItemViewsSection::OnAnimateOutCompleted(
   if (!model)
     return;
 
-  const absl::optional<size_t>& max_visible_item_count =
+  const std::optional<size_t>& max_visible_item_count =
       section_->max_visible_item_count;
 
   for (const auto& item : model->items()) {
@@ -540,7 +540,7 @@ void HoldingSpaceItemViewsSection::OnAnimateOutCompleted(
     MaybeAnimateIn();
 }
 
-BEGIN_METADATA(HoldingSpaceItemViewsSection)
+BEGIN_METADATA(HoldingSpaceItemViewsSection, views::View)
 END_METADATA
 
 }  // namespace ash

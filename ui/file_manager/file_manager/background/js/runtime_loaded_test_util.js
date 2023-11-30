@@ -13,7 +13,7 @@ import {assert} from 'chrome://resources/ash/common/assert.js';
 
 import {entriesToURLs} from '../../common/js/entry_utils.js';
 import {recordEnum} from '../../common/js/metrics.js';
-import {VolumeManagerCommon} from '../../common/js/volume_manager_types.js';
+import {VolumeType} from '../../common/js/volume_manager_types.js';
 import {FileManagerBaseInterface} from '../../externs/background/file_manager_base.js';
 
 import {test} from './test_util_base.js';
@@ -1109,7 +1109,7 @@ test.util.async.getNotificationIDs = callback => {
 /**
  * Gets file entries just under the volume.
  *
- * @param {VolumeManagerCommon.VolumeType} volumeType Volume type.
+ * @param {VolumeType} volumeType Volume type.
  * @param {Array<string>} names File name list.
  * @param {function(*):void} callback Callback function with results returned by
  *     the script.
@@ -1136,7 +1136,7 @@ test.util.async.getFilesUnderVolume = async (volumeType, names, callback) => {
 
   const filesPromise = names.map(name => {
     // TODO(crbug.com/880130): Remove this conditional.
-    if (volumeType === VolumeManagerCommon.VolumeType.DOWNLOADS) {
+    if (volumeType === VolumeType.DOWNLOADS) {
       name = 'Downloads/' + name;
     }
     // @ts-ignore: error TS7005: Variable 'displayRoot' implicitly has an 'any'
@@ -1157,7 +1157,7 @@ test.util.async.getFilesUnderVolume = async (volumeType, names, callback) => {
 /**
  * Unmounts the specified volume.
  *
- * @param {VolumeManagerCommon.VolumeType} volumeType Volume type.
+ * @param {VolumeType} volumeType Volume type.
  * @param {function(boolean):void} callback Function receives true on success.
  */
 test.util.async.unmount = async (volumeType, callback) => {
@@ -1236,10 +1236,6 @@ test.util.executeTestMessage = (request, sendResponse) => {
 /**
  * Returns the MetadataStats collected in MetadataModel, it will be serialized
  * as a plain object when sending to test extension.
- *
- * @suppress {missingProperties} metadataStats is only defined for foreground
- *   Window so it isn't visible in the background. Here it will return as JSON
- *   object to test extension.
  */
 // @ts-ignore: error TS7006: Parameter 'contentWindow' implicitly has an 'any'
 // type.
@@ -1253,8 +1249,6 @@ test.util.sync.getMetadataStats = contentWindow => {
  *
  * @param {Array<String>} properties Content metadata properties to get.
  * @param {function(*):void} callback Callback with metadata results returned.
- * @suppress {missingProperties} getContentMetadata isn't visible in the
- * background window.
  */
 // @ts-ignore: error TS7006: Parameter 'contentWindow' implicitly has an 'any'
 // type.
@@ -1347,8 +1341,6 @@ test.util.sync.recordEnumMetric = (name, value, validValues) => {
 
 /**
  * Tells background page progress center to never notify a completed operation.
- * @suppress {checkTypes} Remove suppress when migrating Files app. This is only
- *     used for Files app.
  */
 test.util.sync.progressCenterNeverNotifyCompleted = () => {
   // @ts-ignore: error TS2339: Property 'background' does not exist on type
@@ -1360,10 +1352,7 @@ test.util.sync.progressCenterNeverNotifyCompleted = () => {
 /**
  * Waits for the background page to initialize.
  * @param {function():void} callback Callback function called when background
- *     page
- *      has finished initializing.
- * @suppress {missingProperties}: ready() isn't available for Audio and Video
- * Player.
+ *     page has finished initializing.
  */
 test.util.async.waitForBackgroundReady = callback => {
   // @ts-ignore: error TS2339: Property 'background' does not exist on type
@@ -1378,10 +1367,7 @@ test.util.async.waitForBackgroundReady = callback => {
  * @param {Window} contentWindow Window to be tested.
  * @param {string} bannerTagName Tag name of the banner to isolate.
  * @param {function(boolean):void} callback Callback function to be called with
- *     a
- *    boolean indicating success or failure.
- * @suppress {missingProperties} banners is only defined for foreground
- *    Window so it isn't visible in the background.
+ *     a boolean indicating success or failure.
  */
 test.util.async.isolateBannerForTesting =
     async (contentWindow, bannerTagName, callback) => {
@@ -1404,10 +1390,7 @@ test.util.async.isolateBannerForTesting =
  *
  * @param {Window} contentWindow Window the banner controller exists.
  * @param {function(boolean):void} callback Callback function to be called with
- *     a
- *    boolean indicating success or failure.
- * @suppress {missingProperties} banners is only defined for foreground
- *    Window so it isn't visible in the background.
+ *     a boolean indicating success or failure.
  */
 test.util.async.disableBannersForTesting = async (contentWindow, callback) => {
   try {
@@ -1427,10 +1410,7 @@ test.util.async.disableBannersForTesting = async (contentWindow, callback) => {
  *
  * @param {Window} contentWindow Window the banner controller exists.
  * @param {function(boolean):void} callback Callback function to be called with
- *     a
- *    boolean indicating success or failure.
- * @suppress {missingProperties} nudgeContainer is only defined for foreground
- *    Window so it isn't visible in the background.
+ *     a boolean indicating success or failure.
  */
 test.util.async.disableNudgeExpiry = async (contentWindow, callback) => {
   // @ts-ignore: error TS2339: Property 'ui_' does not exist on type

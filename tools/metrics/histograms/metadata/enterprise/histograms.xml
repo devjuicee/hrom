@@ -2348,12 +2348,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Enterprise.ONC.PolicyValidation" enum="BooleanSuccess"
-    expires_after="M85">
-  <owner>mnissler@chromium.org</owner>
-  <summary>Result of the OpenNetworkConfiguration policy validation.</summary>
-</histogram>
-
 <histogram name="Enterprise.OnPrint.{ContentAnalysisType}.PrintType"
     enum="PrintScanningContext" expires_after="2024-07-12">
   <owner>domfc@chromium.org</owner>
@@ -3005,7 +2999,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Enterprise.UserRemoteCommand.Received"
-    enum="RemoteCommandReceivedStatus" expires_after="2024-02-04">
+    enum="RemoteCommandReceivedStatus" expires_after="2024-05-26">
   <owner>asumaneev@google.com</owner>
   <owner>chromeos-commercial-remote-management@google.com</owner>
   <summary>

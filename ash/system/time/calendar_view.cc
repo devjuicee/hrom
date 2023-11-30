@@ -546,7 +546,7 @@ CalendarView::CalendarView(bool for_glanceables_container)
   // Add scroll view.
   scroll_view_ = AddChildView(std::make_unique<views::ScrollView>());
   scroll_view_->SetAllowKeyboardScrolling(false);
-  scroll_view_->SetBackgroundColor(absl::nullopt);
+  scroll_view_->SetBackgroundColor(std::nullopt);
   ClipScrollViewHeight(ScrollViewState::FULL_HEIGHT);
   scroll_view_->SetDrawOverflowIndicator(false);
   scroll_view_->SetVerticalScrollBarMode(
@@ -639,7 +639,7 @@ views::View* CalendarView::CreateCalendarHeaderRow() {
   auto* today_button = new IconButton(
       base::BindRepeating(&CalendarView::ResetToTodayWithAnimation,
                           base::Unretained(this)),
-      IconButton::Type::kMedium, &kGlanceablesCalendarTodayIcon,
+      IconButton::Type::kMediumFloating, &kGlanceablesCalendarTodayIcon,
       IDS_ASH_CALENDAR_INFO_BUTTON_ACCESSIBLE_DESCRIPTION);
   today_button->SetBackgroundColor(cros_tokens::kCrosSysBaseElevated);
   today_button->SetProperty(views::kMarginsKey, kHeaderIconButtonMargin);
@@ -1293,7 +1293,7 @@ void CalendarView::OpenEventList() {
       views::ScrollView::ScrollBarMode::kDisabled);
 
   // Updates `scroll_view_`'s accessible name with the selected date.
-  absl::optional<base::Time> selected_date =
+  std::optional<base::Time> selected_date =
       calendar_view_controller_->selected_date();
   scroll_view_->GetViewAccessibility().OverrideName(l10n_util::GetStringFUTF16(
       IDS_ASH_CALENDAR_CONTENT_ACCESSIBLE_DESCRIPTION,
@@ -1741,27 +1741,6 @@ void CalendarView::OnEvent(ui::Event* event) {
   }
 
   if (!IsDateCellViewFocused()) {
-    if (is_tab_key_pressed) {
-      // If the current focused view is the last focusable view in the focus
-      // list, then make an attempt to navigate to the previous widget (most
-      // likely to the message center). Stop the propagation of the event if
-      // the attempt was successful.
-      const auto* next_view = focus_manager->GetNextFocusableView(
-          focus_manager->GetFocusedView(), GetWidget(),
-          /*reverse=*/key_event->IsShiftDown(),
-          /*dont_loop=*/true);
-      auto* unified_system_tray_bubble =
-          RootWindowController::ForWindow(GetWidget()->GetNativeWindow())
-              ->GetStatusAreaWidget()
-              ->unified_system_tray()
-              ->bubble();
-
-      if (!next_view && unified_system_tray_bubble &&
-          unified_system_tray_bubble->unified_system_tray_controller()
-              ->FocusOut(/*reverse=*/true)) {
-        event->StopPropagation();
-      }
-    }
     GlanceableTrayChildBubble::OnEvent(event);
     return;
   }

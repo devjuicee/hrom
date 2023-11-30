@@ -4,26 +4,26 @@
 
 #include "third_party/blink/renderer/core/layout/ng/ng_simplified_layout_algorithm.h"
 
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/geometry/writing_mode_converter.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_layout_algorithm_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_out_of_flow_layout_part.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_relative_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_space_utils.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/space_utils.h"
 #include "third_party/blink/renderer/core/paint/paint_layer.h"
 
 namespace blink {
 
 SimplifiedLayoutAlgorithm::SimplifiedLayoutAlgorithm(
     const LayoutAlgorithmParams& params,
-    const NGLayoutResult& result,
+    const LayoutResult& result,
     bool keep_old_size)
     : LayoutAlgorithm(params),
       previous_result_(result),
@@ -31,8 +31,8 @@ SimplifiedLayoutAlgorithm::SimplifiedLayoutAlgorithm(
   DCHECK(!Node().IsReplaced());
 
   const bool is_block_flow = Node().IsBlockFlow();
-  const NGPhysicalBoxFragment& physical_fragment =
-      To<NGPhysicalBoxFragment>(result.PhysicalFragment());
+  const auto& physical_fragment =
+      To<PhysicalBoxFragment>(result.GetPhysicalFragment());
 
   container_builder_.SetIsNewFormattingContext(
       physical_fragment.IsFormattingContextRoot());
@@ -206,7 +206,7 @@ SimplifiedLayoutAlgorithm::SimplifiedLayoutAlgorithm(
 
 void SimplifiedLayoutAlgorithm::CloneOldChildren() {
   const auto& previous_fragment =
-      To<NGPhysicalBoxFragment>(previous_result_.PhysicalFragment());
+      To<PhysicalBoxFragment>(previous_result_.GetPhysicalFragment());
   for (const auto& child_link : previous_fragment.Children()) {
     const auto& child_fragment = *child_link.get();
     AddChildFragment(child_link, child_fragment);
@@ -214,28 +214,28 @@ void SimplifiedLayoutAlgorithm::CloneOldChildren() {
 }
 
 void SimplifiedLayoutAlgorithm::AppendNewChildFragment(
-    const NGPhysicalFragment& fragment,
+    const PhysicalFragment& fragment,
     LogicalOffset offset) {
   container_builder_.AddChild(fragment, offset);
 }
 
-const NGLayoutResult*
+const LayoutResult*
 SimplifiedLayoutAlgorithm::CreateResultAfterManualChildLayout() {
-  const NGLayoutResult* result = container_builder_.ToBoxFragment();
-  if (result->PhysicalFragment().IsOutOfFlowPositioned()) {
+  const LayoutResult* result = container_builder_.ToBoxFragment();
+  if (result->GetPhysicalFragment().IsOutOfFlowPositioned()) {
     result->CopyMutableOutOfFlowData(previous_result_);
   }
   return result;
 }
 
-const NGLayoutResult* SimplifiedLayoutAlgorithm::Layout() {
+const LayoutResult* SimplifiedLayoutAlgorithm::Layout() {
   // Since simplified layout's |Layout()| function deals with laying out
   // children, we can early out if we are display-locked.
   if (Node().ChildLayoutBlockedByDisplayLock())
     return container_builder_.ToBoxFragment();
 
   const auto& previous_fragment =
-      To<NGPhysicalBoxFragment>(previous_result_.PhysicalFragment());
+      To<PhysicalBoxFragment>(previous_result_.GetPhysicalFragment());
 
   for (const auto& child_link : previous_fragment.Children()) {
     const auto& child_fragment = *child_link.get();
@@ -251,7 +251,7 @@ const NGLayoutResult* SimplifiedLayoutAlgorithm::Layout() {
     }
 
     // Add the (potentially updated) layout result.
-    const NGLayoutResult* result =
+    const LayoutResult* result =
         BlockNode(To<LayoutBox>(child_fragment.GetMutableLayoutObject()))
             .SimplifiedLayout(child_fragment);
 
@@ -263,11 +263,11 @@ const NGLayoutResult* SimplifiedLayoutAlgorithm::Layout() {
 
     const MarginStrut end_margin_strut = result->EndMarginStrut();
     // No margins should pierce outside formatting-context roots.
-    DCHECK(!result->PhysicalFragment().IsFormattingContextRoot() ||
+    DCHECK(!result->GetPhysicalFragment().IsFormattingContextRoot() ||
            end_margin_strut.IsEmpty());
 
-    AddChildFragment(child_link, result->PhysicalFragment(), &end_margin_strut,
-                     result->IsSelfCollapsing());
+    AddChildFragment(child_link, result->GetPhysicalFragment(),
+                     &end_margin_strut, result->IsSelfCollapsing());
   }
 
   // Iterate through all our OOF-positioned children and add them as candidates.
@@ -287,7 +287,7 @@ const NGLayoutResult* SimplifiedLayoutAlgorithm::Layout() {
   }
 
   // We add both items and line-box fragments for existing mechanisms to work.
-  // We may revisit this in future. See also |NGBoxFragmentBuilder::AddResult|.
+  // We may revisit this in future. See also |BoxFragmentBuilder::AddResult|.
   if (const FragmentItems* previous_items = previous_fragment.Items()) {
     auto* items_builder = container_builder_.ItemsBuilder();
     DCHECK(items_builder);
@@ -323,11 +323,11 @@ const NGLayoutResult* SimplifiedLayoutAlgorithm::Layout() {
   return container_builder_.ToBoxFragment();
 }
 
-NOINLINE const NGLayoutResult*
+NOINLINE const LayoutResult*
 SimplifiedLayoutAlgorithm::LayoutWithItemsBuilder() {
   FragmentItemsBuilder items_builder(writing_direction_);
   container_builder_.SetItemsBuilder(&items_builder);
-  const NGLayoutResult* result = Layout();
+  const LayoutResult* result = Layout();
   // Ensure stack-allocated |FragmentItemsBuilder| is not used anymore.
   // TODO(kojii): Revisit when the storage of |FragmentItemsBuilder| is
   // finalized.
@@ -337,7 +337,7 @@ SimplifiedLayoutAlgorithm::LayoutWithItemsBuilder() {
 
 void SimplifiedLayoutAlgorithm::AddChildFragment(
     const PhysicalFragmentLink& old_fragment,
-    const NGPhysicalFragment& new_fragment,
+    const PhysicalFragment& new_fragment,
     const MarginStrut* margin_strut,
     bool is_self_collapsing) {
   DCHECK_EQ(old_fragment->Size(), new_fragment.Size());

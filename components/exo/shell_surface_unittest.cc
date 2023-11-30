@@ -10,6 +10,8 @@
 #include "ash/capture_mode/capture_mode_test_util.h"
 #include "ash/constants/app_types.h"
 #include "ash/frame/non_client_frame_view_ash.h"
+#include "ash/frame_throttler/frame_throttling_controller.h"
+#include "ash/frame_throttler/mock_frame_throttling_observer.h"
 #include "ash/public/cpp/test/shell_test_api.h"
 #include "ash/public/cpp/window_properties.h"
 #include "ash/shell.h"
@@ -2879,7 +2881,7 @@ TEST_F(ShellSurfaceTest, ShadowBoundsWithScaleFactor) {
   EXPECT_EQ(gfx::Rect(0, 0, 256, 256), shadow->content_bounds());
 }
 
-TEST_F(ShellSurfaceTest, ShadowRoundedCornersForRoundedWindows) {
+TEST_F(ShellSurfaceTest, ShadowRoundedCorners) {
   constexpr gfx::Point kOrigin(20, 20);
   constexpr int kWindowCornerRadius = 12;
 
@@ -2907,7 +2909,7 @@ TEST_F(ShellSurfaceTest, ShadowRoundedCornersForRoundedWindows) {
   EXPECT_EQ(shadow->rounded_corner_radius_for_testing(), 0);
 
   // Have a window with radius of 12dp.
-  shell_surface->SetWindowCornerRadii(
+  shell_surface->SetWindowCornersRadii(
       gfx::RoundedCornersF(kWindowCornerRadius));
   root_surface->Commit();
 
@@ -2916,7 +2918,7 @@ TEST_F(ShellSurfaceTest, ShadowRoundedCornersForRoundedWindows) {
   EXPECT_EQ(shadow->rounded_corner_radius_for_testing(), kWindowCornerRadius);
 
   // Have a window with radius of 0dp.
-  shell_surface->SetWindowCornerRadii(gfx::RoundedCornersF());
+  shell_surface->SetWindowCornersRadii(gfx::RoundedCornersF());
   root_surface->Commit();
 
   shadow = wm::ShadowController::GetShadowForWindow(window);
@@ -3403,6 +3405,55 @@ TEST_F(ShellSurfaceTest, ThrottleFrameRate) {
   window->SetProperty(ash::kFrameRateThrottleKey, false);
 
   shell_surface->root_surface()->RemoveSurfaceObserver(&observer);
+}
+
+TEST_F(ShellSurfaceTest, ThrottleFrameRateViaController) {
+  ash::FrameThrottlingController* frame_throttling_controller =
+      ash::Shell::Get()->frame_throttling_controller();
+  for (auto app_type : {ash::AppType::LACROS, ash::AppType::BROWSER,
+                        ash::AppType::CROSTINI_APP}) {
+    auto shell_surface = test::ShellSurfaceBuilder({20, 20})
+                             .SetAppType(app_type)
+                             .BuildShellSurface();
+
+    aura::Window* window = shell_surface->GetWidget()->GetNativeWindow();
+    frame_throttling_controller->StartThrottling({window});
+
+    // Crostini should not be throttled currently.
+    const auto should_throttle_set =
+        app_type != ash::AppType::CROSTINI_APP
+            ? testing::UnorderedElementsAreArray(
+                  {shell_surface->GetSurfaceId().frame_sink_id()})
+            : testing::UnorderedElementsAreArray<viz::FrameSinkId>({});
+    EXPECT_THAT(frame_throttling_controller->GetFrameSinkIdsToThrottle(),
+                should_throttle_set);
+
+    // ash::kFrameRateThrottleKey is only set for lacros.
+    const bool should_set_property = app_type == ash::AppType::LACROS;
+    EXPECT_EQ(should_set_property,
+              window->GetProperty(ash::kFrameRateThrottleKey));
+  }
+}
+
+TEST_F(ShellSurfaceTest, ThrottleFrameRateViaControllerArc) {
+  ash::MockFrameThrottlingObserver observer;
+  ash::FrameThrottlingController* frame_throttling_controller =
+      ash::Shell::Get()->frame_throttling_controller();
+  frame_throttling_controller->AddArcObserver(&observer);
+
+  auto shell_surface = test::ShellSurfaceBuilder({20, 20})
+                           .SetAppType(ash::AppType::ARC_APP)
+                           .BuildShellSurface();
+
+  aura::Window* window = shell_surface->GetWidget()->GetNativeWindow();
+
+  EXPECT_CALL(observer,
+              OnThrottlingStarted(
+                  testing::UnorderedElementsAreArray({window}),
+                  frame_throttling_controller->GetCurrentThrottledFrameRate()));
+  frame_throttling_controller->StartThrottling({window});
+
+  frame_throttling_controller->RemoveArcObserver(&observer);
 }
 
 namespace {

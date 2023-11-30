@@ -151,11 +151,6 @@ BASE_DECLARE_FEATURE(kEnableBookmarksAccountStorage);
 BASE_DECLARE_FEATURE(kEnableBookmarkFoldersForAccountStorage);
 #endif  // !BUILDFLAG(IS_IOS)
 
-// Feature flag that controls a technical rollout of a new codepath that doesn't
-// itself cause user-facing changes but sets the foundation for later rollouts
-// namely, `kReadingListEnableSyncTransportModeUponSignIn` below).
-BASE_DECLARE_FEATURE(kReadingListEnableDualReadingListModel);
-
 // Feature flag used for enabling sync (transport mode) for signed-in users that
 // haven't turned on full sync.
 BASE_DECLARE_FEATURE(kReadingListEnableSyncTransportModeUponSignIn);
@@ -200,6 +195,10 @@ BASE_DECLARE_FEATURE(kSyncSessionOnVisibilityChanged);
 // If enabled, the payment methods sync setting toggle is decoupled from
 // autofill. See crbug.com/1435431 for details.
 BASE_DECLARE_FEATURE(kSyncDecoupleAddressPaymentSettings);
+
+// If enabled, sync-the-transport will auto-start (avoid deferring startup) if
+// sync metadata isn't available (i.e. initial sync never completed).
+BASE_DECLARE_FEATURE(kSyncAlwaysForceImmediateStartIfTransportDataMissing);
 
 }  // namespace syncer
 

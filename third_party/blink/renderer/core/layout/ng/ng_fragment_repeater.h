@@ -10,8 +10,8 @@
 namespace blink {
 
 class LayoutBox;
-class NGLayoutResult;
-class NGPhysicalBoxFragment;
+class LayoutResult;
+class PhysicalBoxFragment;
 
 // Fragment tree mutator / cloner / repeater.
 //
@@ -22,25 +22,25 @@ class NGPhysicalBoxFragment;
 // On the layout side, we only lay out the element once, but pre-paint and paint
 // require one unique fragment for each time it repeats, since we need one
 // FragmentData object for each, each with its own global-ish paint offset.
-class NGFragmentRepeater {
+class FragmentRepeater {
   STACK_ALLOCATED();
 
  public:
-  NGFragmentRepeater(bool is_first_clone, bool is_last_fragment)
+  FragmentRepeater(bool is_first_clone, bool is_last_fragment)
       : is_first_clone_(is_first_clone), is_last_fragment_(is_last_fragment) {}
 
   // Deep-clone the subtree of an already shallowly cloned fragment. This will
   // also create new break tokens inside, in order to set unique sequence
   // numbers. The result is only usable by pre-paint / painting, not by actual
   // layout.
-  void CloneChildFragments(const NGPhysicalBoxFragment& cloned_fragment);
+  void CloneChildFragments(const PhysicalBoxFragment& cloned_fragment);
 
  private:
-  const NGLayoutResult* Repeat(const NGLayoutResult& other);
+  const LayoutResult* Repeat(const LayoutResult& other);
 
-  const NGLayoutResult* GetClonableLayoutResult(
+  const LayoutResult* GetClonableLayoutResult(
       const LayoutBox& layout_box,
-      const NGPhysicalBoxFragment& fragment) const;
+      const PhysicalBoxFragment& fragment) const;
 
   // True when at the first cloned fragment.
   bool is_first_clone_;

@@ -47,7 +47,7 @@ class CalendarViewPixelTest
   bool AreGlanceablesV2Enabled() { return GetParam(); }
 
   // AshTestBase:
-  absl::optional<pixel_test::InitParams> CreatePixelTestInitParams()
+  std::optional<pixel_test::InitParams> CreatePixelTestInitParams()
       const override {
     return pixel_test::InitParams();
   }
@@ -108,7 +108,7 @@ TEST_P(CalendarViewPixelTest, Basics) {
 
   EXPECT_TRUE(GetPixelDiffer()->CompareUiComponentsOnPrimaryScreen(
       "calendar_view",
-      /*revision_number=*/8, GetCalendarView()));
+      /*revision_number=*/9, GetCalendarView()));
 }
 
 TEST_P(CalendarViewPixelTest, EventList) {

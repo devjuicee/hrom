@@ -366,6 +366,36 @@ targets.legacy_basic_suite(
         "blink_unit_tests": targets.legacy_test_config(
             test = "blink_unittests",
         ),
+        "blink_unit_tests_v2": targets.legacy_test_config(
+            test = "blink_unittests_v2",
+        ),
+    },
+)
+
+targets.legacy_basic_suite(
+    name = "blink_web_tests_ppapi_isolated_scripts",
+    tests = {
+        "ppapi_blink_web_tests": targets.legacy_test_config(
+            test = "blink_web_tests",
+            results_handler = "layout tests",
+            mixins = [
+                "has_native_resultdb_integration",
+                "blink_tests_write_run_histories",
+            ],
+            args = [
+                # layout test failures are retried 3 times when '--test-list' is not
+                # passed, but 0 times when '--test-list' is passed. We want to always
+                # retry 3 times, so we explicitly specify it.
+                "--num-retries=3",
+                "--test-list=../../third_party/blink/web_tests/TestLists/ppapi",
+            ],
+            merge = targets.merge(
+                script = "//third_party/blink/tools/merge_web_test_results.py",
+                args = [
+                    "--verbose",
+                ],
+            ),
+        ),
     },
 )
 
@@ -929,6 +959,9 @@ targets.legacy_basic_suite(
         "webkit_unit_tests": targets.legacy_test_config(
             test = "blink_unittests",
         ),
+        "webkit_unit_tests_v2": targets.legacy_test_config(
+            test = "blink_unittests_v2",
+        ),
     },
 )
 
@@ -1099,6 +1132,12 @@ targets.legacy_basic_suite(
                 shards = 6,
             ),
         ),
+        "webkit_unit_tests_v2": targets.legacy_test_config(
+            test = "blink_unittests_v2",
+            android_swarming = targets.swarming(
+                shards = 6,
+            ),
+        ),
         "wtf_unittests": None,
         "zlib_unittests": None,
     },
@@ -1150,6 +1189,20 @@ targets.legacy_basic_suite(
         # third_party/tflite/features.gni.
         "pthreadpool_unittests": targets.legacy_test_config(
             ci_only = True,
+        ),
+    },
+)
+
+# Multiscreen tests for desktop platform (Windows).
+targets.legacy_basic_suite(
+    name = "chromium_gtests_for_windows_multiscreen",
+    tests = {
+        "multiscreen_interactive_ui_tests": targets.legacy_test_config(
+            test = "interactive_ui_tests",
+            args = [
+                "--windows-virtual-display-driver",
+                "--gtest_filter=*MultiScreen*:*VirtualDisplayWinUtil*",
+            ],
         ),
     },
 )
@@ -1748,6 +1801,9 @@ targets.legacy_basic_suite(
         "chrome_wpt_tests": targets.legacy_test_config(
             test = "chrome_wpt_tests",
             results_handler = "layout tests",
+            mixins = [
+                "has_native_resultdb_integration",
+            ],
             args = [
                 "--test-type",
                 "testharness",
@@ -2493,6 +2549,7 @@ targets.legacy_basic_suite(
         "blink_heap_unittests": None,
         "blink_platform_unittests": None,
         "blink_unittests": None,
+        "blink_unittests_v2": None,
         "boringssl_crypto_tests": None,
         "boringssl_ssl_tests": None,
         "capture_unittests": None,
@@ -2764,8 +2821,7 @@ targets.legacy_basic_suite(
                 "has_native_resultdb_integration",
             ],
             args = [
-                "--expected-vendor-id",
-                "${gpu_vendor_id}",
+                "$$MAGIC_SUBSTITUTION_GPUExpectedVendorId",
                 "$$MAGIC_SUBSTITUTION_GPUExpectedDeviceId",
                 # On dual-GPU devices we want the high-performance GPU to be active
                 "--extra-browser-args=--force_high_performance_gpu",
@@ -3443,8 +3499,7 @@ targets.legacy_basic_suite(
                 "has_native_resultdb_integration",
             ],
             args = [
-                "--expected-vendor-id",
-                "${gpu_vendor_id}",
+                "$$MAGIC_SUBSTITUTION_GPUExpectedVendorId",
                 "$$MAGIC_SUBSTITUTION_GPUExpectedDeviceId",
                 # On dual-GPU devices we want the high-performance GPU to be active
                 "--extra-browser-args=--force_high_performance_gpu",
@@ -4532,6 +4587,7 @@ targets.legacy_basic_suite(
         "blink_heap_unittests": None,
         "blink_platform_unittests": None,
         "blink_unittests": None,
+        "blink_unittests_v2": None,
         "boringssl_crypto_tests": None,
         "boringssl_ssl_tests": None,
         "capture_unittests": None,
@@ -4545,7 +4601,13 @@ targets.legacy_basic_suite(
             ],
         ),
         "components_browsertests": None,
-        "components_unittests": None,
+        "components_unittests": targets.legacy_test_config(
+            test = "components_unittests",
+            args = [
+                "--test-launcher-bot-mode",
+                "--test-launcher-filter-file=testing/buildbot/filters/ios.use_blink.components_unittests.filter",
+            ],
+        ),
         "compositor_unittests": targets.legacy_test_config(
             test = "compositor_unittests",
             args = [
@@ -5231,6 +5293,7 @@ targets.legacy_basic_suite(
         "blink_heap_unittests": None,
         "blink_platform_unittests": None,
         "blink_unittests": None,
+        "blink_unittests_v2": None,
         "cc_unittests": None,
         "components_unittests": None,
         "content_unittests": None,

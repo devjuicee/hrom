@@ -122,7 +122,7 @@ class MdIPHBubbleButton : public views::MdTextButton {
                     PressedCallback callback,
                     const std::u16string& text,
                     bool is_default_button)
-      : MdTextButton(callback, text),
+      : MdTextButton(std::move(callback), text),
         delegate_(delegate),
         is_default_button_(is_default_button) {
     // Prominent style gives a button hover highlight.
@@ -210,7 +210,7 @@ class ClosePromoButton : public views::ImageButton {
                    const std::u16string accessible_name,
                    PressedCallback callback)
       : delegate_(delegate) {
-    SetCallback(callback);
+    SetCallback(std::move(callback));
     views::ConfigureVectorImageButton(this);
     views::HighlightPathGenerator::Install(
         this,
@@ -627,12 +627,6 @@ HelpBubbleView::HelpBubbleView(const HelpBubbleDelegate* delegate,
   for (views::Label* label : labels_) {
     label->SetHorizontalAlignment(gfx::ALIGN_LEFT);
     label->SetMultiLine(true);
-    // There is a problem with FlexLayout under the current layout, CloseButton
-    // cannot stretch its width to achieve kEnd alignment behavior. Let's
-    // temporarily disable the bounded layout of views::Label. Waiting for
-    // FlexLayout to be fixed.
-    // TODO(crbug.com/1495581): Remove this.
-    label->SetUseLegacyPreferredSize(true);
     label->SetElideBehavior(gfx::NO_ELIDE);
   }
 

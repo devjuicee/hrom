@@ -4,16 +4,16 @@
 
 #include "third_party/blink/renderer/core/layout/ng/layout_box_utils.h"
 
+#include "third_party/blink/renderer/core/layout/block_node.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/geometry/box_strut.h"
 #include "third_party/blink/renderer/core/layout/geometry/static_position.h"
 #include "third_party/blink/renderer/core/layout/layout_block.h"
 #include "third_party/blink/renderer/core/layout/layout_box.h"
 #include "third_party/blink/renderer/core/layout/layout_view.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment_builder.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/paint/paint_layer.h"
 
 namespace blink {
@@ -64,10 +64,10 @@ LayoutUnit LayoutBoxUtils::TotalBlockSize(const LayoutBox& box) {
 
 // static
 LayoutPoint LayoutBoxUtils::ComputeLocation(
-    const NGPhysicalBoxFragment& child_fragment,
+    const PhysicalBoxFragment& child_fragment,
     PhysicalOffset offset,
-    const NGPhysicalBoxFragment& container_fragment,
-    const NGBlockBreakToken* previous_container_break_token) {
+    const PhysicalBoxFragment& container_fragment,
+    const BlockBreakToken* previous_container_break_token) {
   if (UNLIKELY(container_fragment.Style().IsFlippedBlocksWritingMode())) {
     // Move the physical offset to the right side of the child fragment,
     // relative to the right edge of the container fragment. This is the

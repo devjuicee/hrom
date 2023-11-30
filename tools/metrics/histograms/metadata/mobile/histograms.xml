@@ -347,7 +347,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram base="true" name="Mobile.Messages.Passwords.Modal.Event"
-    enum="MobileMessagesPasswordsModalEvent" expires_after="2024-01-28">
+    enum="MobileMessagesPasswordsModalEvent" expires_after="2024-05-26">
 <!-- Name completed by histogram_suffixes name="Mobile.Messages.Password.Type" -->
 
   <owner>sczs@chromium.org</owner>
@@ -770,14 +770,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="MobileDownload.StoragePermission"
-    enum="MobileDownloadStoragePermission" expires_after="M82">
-  <owner>qinmin@chromium.org</owner>
-  <summary>
-    Android: Records various counts when requesting the storage permission.
-  </summary>
-</histogram>
-
 <histogram
     name="MobileFre.CctTos.EnterprisePolicyCheckSpeed2{MobileFreInflationSpeedComparison}"
     units="ms" expires_after="2022-05-01">
@@ -857,12 +849,6 @@ chromium-metrics-reviews@google.com.
                  meaningful paint. Version V2 fixed an issue that previous
                  data was not recording the time duration from FRE launched"/>
     <variant name="FreCompleted" summary="the entire FRE is completed"/>
-    <variant name="NativeAndPoliciesLoaded"
-        summary="the native code and policies are loaded.">
-      <obsolete>
-        Removed in 2022/05. Replaced by NativePolicyAndChildStatusLoaded.
-      </obsolete>
-    </variant>
     <variant name="NativeInitialized" summary="the native code is initialized"/>
     <variant name="NativePolicyAndChildStatusLoaded"
         summary="the native code, policies and child account status are

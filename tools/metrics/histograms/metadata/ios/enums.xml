@@ -257,12 +257,6 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="Other WKErrorDomain Error"/>
 </enum>
 
-<enum name="IOSHandoffOrigin">
-  <int value="0" label="Unknown Origin"/>
-  <int value="1" label="Chrome on iOS"/>
-  <int value="2" label="Chrome on Mac"/>
-</enum>
-
 <enum name="IOSHomeActionType">
   <int value="0" label="Most Visited Tiles"/>
   <int value="1" label="Shortcuts"/>
@@ -516,6 +510,7 @@ chromium-metrics-reviews@google.com.
   <int value="7" label="Choice Promo"/>
   <int value="8" label="Post Restore Default Browser (Alert)"/>
   <int value="9" label="Default Browser Remind Me Later"/>
+  <int value="10" label="Omnibox Position"/>
 </enum>
 
 <enum name="IOSPromosManagerPromoImpressionLimitEvaluationType">

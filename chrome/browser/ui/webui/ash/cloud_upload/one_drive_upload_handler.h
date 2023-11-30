@@ -34,8 +34,8 @@ class OneDriveUploadHandler
     : public ::file_manager::io_task::IOTaskController::Observer,
       public base::RefCounted<OneDriveUploadHandler> {
  public:
-  using UploadCallback =
-      base::OnceCallback<void(absl::optional<storage::FileSystemURL>, int64_t)>;
+  using UploadCallback = base::OnceCallback<
+      void(OfficeTaskResult, absl::optional<storage::FileSystemURL>, int64_t)>;
 
   // Starts the upload workflow for the file specified at construct time.
   static void Upload(Profile* profile,
@@ -69,10 +69,15 @@ class OneDriveUploadHandler
 
   FileSystemURL GetDestinationFolderUrl();
 
-  // Ends upload and runs Upload callback.
-  void OnEndUpload(
-      base::expected<storage::FileSystemURL, std::string> url_or_error,
-      OfficeFilesUploadResult result_metric);
+  // Ends upload in a successful state, shows a complete notification and runs
+  // the upload callback.
+  void OnSuccessfulUpload(OfficeFilesUploadResult result_metric,
+                          storage::FileSystemURL url);
+
+  // Ends upload in a failed state, shows an error notification and runs the
+  // upload callback.
+  void OnFailedUpload(OfficeFilesUploadResult result_metric,
+                      std::string error_message = GetGenericErrorMessage());
 
   // IOTaskController::Observer:
   void OnIOTaskStatus(
@@ -109,6 +114,7 @@ class OneDriveUploadHandler
   scoped_refptr<CloudUploadNotificationManager> notification_manager_;
   const storage::FileSystemURL source_url_;
   ::file_manager::io_task::IOTaskId observed_task_id_;
+  file_manager::io_task::OperationType operation_type_;
   UploadCallback callback_;
   // Total size (in bytes) required to upload.
   int64_t upload_size_ = 0;

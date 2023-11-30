@@ -100,9 +100,7 @@ enum class ValuePatternsMetric {
 
 // Manages saving and restoring the user's personal information entered into web
 // forms. One per frame; owned by the AutofillDriver.
-class BrowserAutofillManager
-    : public AutofillManager,
-      public SingleFieldFormFiller::SuggestionsHandler {
+class BrowserAutofillManager : public AutofillManager {
  public:
   BrowserAutofillManager(AutofillDriver* driver,
                          AutofillClient* client,
@@ -113,15 +111,9 @@ class BrowserAutofillManager
 
   ~BrowserAutofillManager() override;
 
-  void ShowAutofillSettings(PopupType popup_type);
-
   // Whether the |field| should show an entry to scan a credit card.
   virtual bool ShouldShowScanCreditCard(const FormData& form,
                                         const FormFieldData& field);
-
-  // Returns the type of the popup being shown.
-  virtual PopupType GetPopupType(const FormData& form,
-                                 const FormFieldData& field);
 
   // Handlers for the "Show Cards From Account" row. This row should be shown to
   // users who have cards in their account and can use Sync Transport. Clicking
@@ -156,9 +148,10 @@ class BrowserAutofillManager
                             FormData form,
                             const FormFieldData& trigger_field);
   // Virtual for testing
-  virtual void DidShowSuggestions(bool has_autofill_suggestions,
-                                  const FormData& form,
-                                  const FormFieldData& field);
+  virtual void DidShowSuggestions(
+      base::span<const PopupItemId> shown_suggestions_types,
+      const FormData& form,
+      const FormFieldData& field);
 
   // Fills or previews the profile form.
   // Assumes the form and field are valid.
@@ -170,6 +163,21 @@ class BrowserAutofillManager
       const AutofillProfile& profile,
       const AutofillTriggerDetails& trigger_details);
 
+  // Retrieves the parsed form structure from cache and checks if the
+  // `credit_card` needs to be fetched in order to complete the current filling
+  // flow. This is the case if the `form` contains a credit card number field,
+  // which is going to be filled. Or it is the case when the `credit_card` is
+  // virtual and the `field` is of type
+  // `CREDIT_CARD_STANDALONE_VERIFICATION_CODE`. This happens for the web sites,
+  // which cache all credit card details except for the cvc, which is different
+  // every time the virtual credit card is being used.
+  // TODO(crbug.com/1331312): Remove this function once all callers use already
+  // parsed form. This function is needed only to make the query to the form
+  // cache, which must remain private to the `BrowserAutofillManager`.
+  bool ShouldFetchCreditCard(const FormData& form,
+                             const FormFieldData& field,
+                             const CreditCard& credit_card);
+
   // Fills or previews the credit card form.
   // Assumes the form and field are valid.
   // Asks for authentication via CVC before filling with server card data.
@@ -178,7 +186,7 @@ class BrowserAutofillManager
       mojom::ActionPersistence action_persistence,
       const FormData& form,
       const FormFieldData& field,
-      const CreditCard* credit_card,
+      const CreditCard& credit_card,
       const AutofillTriggerDetails& trigger_details);
 
   // Remove the credit card or Autofill profile that matches |backend_id|
@@ -232,9 +240,11 @@ class BrowserAutofillManager
       Suggestion::BackendId backend_id,
       AutofillSuggestionTriggerSource trigger_source);
 
+  CreditCardAccessManager& GetCreditCardAccessManager();
+  const CreditCardAccessManager& GetCreditCardAccessManager() const;
+
   // AutofillManager:
   base::WeakPtr<AutofillManager> GetWeakPtr() override;
-  CreditCardAccessManager* GetCreditCardAccessManager() override;
   bool ShouldClearPreviewedForm() override;
   void OnFocusNoLongerOnFormImpl(bool had_interacted_form) override;
   void OnFocusOnFormFieldImpl(const FormData& form,
@@ -253,11 +263,6 @@ class BrowserAutofillManager
   void Reset() override;
   void OnContextMenuShownInField(const FormGlobalId& form_global_id,
                                  const FieldGlobalId& field_global_id) override;
-  // SingleFieldFormFiller::SuggestionsHandler:
-  void OnSuggestionsReturned(
-      FieldGlobalId field_id,
-      AutofillSuggestionTriggerSource trigger_source,
-      const std::vector<Suggestion>& suggestions) override;
 
   // Retrieves the four digit combinations from the DOM of the current web page
   // and stores them in `four_digit_combinations_in_dom_`. This is used to check
@@ -502,11 +507,6 @@ class BrowserAutofillManager
   // return an empty scoped_ptr if the data should not be processed for upload
   // or personal data.
   std::unique_ptr<FormStructure> ValidateSubmittedForm(const FormData& form);
-
-  // Returns true if any field in the form corresponds to an address
-  // |FieldTypeGroup|.
-  // TODO(crbug.com/1411352): Consider moving to form_types.h.
-  [[nodiscard]] bool FormHasAddressField(const FormData& form);
 
   // Returns suggestions for the `form`, if suggestions were triggered using
   // the `trigger_source` on the `field`. The field's type is `field_type`.

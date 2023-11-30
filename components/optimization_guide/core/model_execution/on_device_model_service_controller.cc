@@ -9,14 +9,16 @@
 #include "base/task/thread_pool.h"
 #include "components/optimization_guide/core/model_execution/on_device_model_access_controller.h"
 #include "components/optimization_guide/core/model_execution/on_device_model_execution_config_interpreter.h"
-#include "components/optimization_guide/core/model_execution/on_device_session.h"
+#include "components/optimization_guide/core/model_execution/session_impl.h"
 #include "components/optimization_guide/core/model_util.h"
 #include "components/optimization_guide/core/optimization_guide_features.h"
 #include "components/optimization_guide/core/optimization_guide_switches.h"
 #include "components/optimization_guide/core/optimization_guide_util.h"
+#include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "services/on_device_model/public/cpp/model_assets.h"
 #include "services/on_device_model/public/mojom/on_device_model.mojom.h"
+#include "services/on_device_model/public/mojom/on_device_model_service.mojom.h"
 
 namespace optimization_guide {
 
@@ -43,6 +45,18 @@ class ScopedEligibilityReasonLogger {
   OnDeviceModelEligibilityReason reason_ =
       OnDeviceModelEligibilityReason::kUnknown;
 };
+
+OnDeviceModelLoadResult ConvertToOnDeviceModelLoadResult(
+    on_device_model::mojom::LoadModelResult result) {
+  switch (result) {
+    case on_device_model::mojom::LoadModelResult::kSuccess:
+      return OnDeviceModelLoadResult::kSuccess;
+    case on_device_model::mojom::LoadModelResult::kGpuBlocked:
+      return OnDeviceModelLoadResult::kGpuBlocked;
+    case on_device_model::mojom::LoadModelResult::kFailedToLoadLibrary:
+      return OnDeviceModelLoadResult::kFailedToLoadLibrary;
+  }
+}
 
 }  // namespace
 
@@ -75,8 +89,10 @@ void OnDeviceModelServiceController::Init() {
 }
 
 std::unique_ptr<OptimizationGuideModelExecutor::Session>
-OnDeviceModelServiceController::StartSession(
-    proto::ModelExecutionFeature feature) {
+OnDeviceModelServiceController::CreateSession(
+    proto::ModelExecutionFeature feature,
+    ExecuteRemoteFn execute_remote_fn,
+    OptimizationGuideLogger* optimization_guide_logger) {
   ScopedEligibilityReasonLogger logger(feature);
   if (!base::FeatureList::IsEnabled(
           features::kOptimizationGuideOnDeviceModel)) {
@@ -100,10 +116,23 @@ OnDeviceModelServiceController::StartSession(
   }
   CHECK_EQ(reason, OnDeviceModelEligibilityReason::kSuccess);
 
-  return std::make_unique<OnDeviceSession>(
+  return std::make_unique<SessionImpl>(
       base::BindRepeating(&OnDeviceModelServiceController::StartMojoSession,
                           weak_ptr_factory_.GetWeakPtr()),
-      feature, config_interpreter_.get(), weak_ptr_factory_.GetWeakPtr());
+      feature, config_interpreter_.get(), weak_ptr_factory_.GetWeakPtr(),
+      std::move(execute_remote_fn), optimization_guide_logger);
+}
+
+void OnDeviceModelServiceController::GetEstimatedPerformanceClass(
+    GetEstimatedPerformanceClassCallback callback) {
+  LaunchService();
+  service_remote_->GetEstimatedPerformanceClass(base::BindOnce(
+      [](GetEstimatedPerformanceClassCallback callback,
+         on_device_model::mojom::PerformanceClass performance_class) {
+        std::move(callback).Run(performance_class);
+      },
+      mojo::WrapCallbackWithDefaultInvokeIfNotRun(std::move(callback),
+                                                  std::nullopt)));
 }
 
 void OnDeviceModelServiceController::StartMojoSession(
@@ -112,7 +141,8 @@ void OnDeviceModelServiceController::StartMojoSession(
     LaunchService();
     base::ThreadPool::PostTaskAndReplyWithResult(
         FROM_HERE, {base::MayBlock()},
-        base::BindOnce(&on_device_model::LoadModelAssets, model_path_),
+        base::BindOnce(&on_device_model::LoadModelAssets, model_path_,
+                       model_path_),
         base::BindOnce(&OnDeviceModelServiceController::OnModelAssetsLoaded,
                        weak_ptr_factory_.GetWeakPtr(),
                        model_remote_.BindNewPipeAndPassReceiver()));
@@ -134,22 +164,28 @@ void OnDeviceModelServiceController::OnModelAssetsLoaded(
     return;
   }
   // TODO(b/302402959): Choose max_tokens based on device.
+  int max_tokens = features::GetOnDeviceModelMaxTokensForContext() +
+                   features::GetOnDeviceModelMaxTokensForExecute() +
+                   features::GetOnDeviceModelMaxTokensForOutput();
   service_remote_->LoadModel(
       on_device_model::mojom::LoadModelParams::New(std::move(assets),
-                                                   /*max_tokens=*/4096),
+                                                   max_tokens),
       std::move(model),
       base::BindOnce(&OnDeviceModelServiceController::OnLoadModelResult,
                      weak_ptr_factory_.GetWeakPtr()));
 }
 
 void OnDeviceModelServiceController::OnResponseCompleted(
-    base::PassKey<OnDeviceSession>,
-    OnDeviceSession& session) {
+    base::PassKey<SessionImpl>,
+    SessionImpl& session) {
   access_controller_->OnResponseCompleted();
 }
 
 void OnDeviceModelServiceController::OnLoadModelResult(
     on_device_model::mojom::LoadModelResult result) {
+  base::UmaHistogramEnumeration(
+      "OptimizationGuide.ModelExecution.OnDeviceModelLoadResult",
+      ConvertToOnDeviceModelLoadResult(result));
   switch (result) {
     case on_device_model::mojom::LoadModelResult::kGpuBlocked:
       access_controller_->OnGpuBlocked();
@@ -165,6 +201,11 @@ void OnDeviceModelServiceController::OnLoadModelResult(
 void OnDeviceModelServiceController::OnDisconnected() {
   model_remote_.reset();
   access_controller_->OnDisconnectedFromRemote();
+}
+
+bool OnDeviceModelServiceController::ShouldStartNewSession() const {
+  return access_controller_->ShouldStartNewSession() ==
+         OnDeviceModelEligibilityReason::kSuccess;
 }
 
 }  // namespace optimization_guide

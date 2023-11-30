@@ -7,15 +7,15 @@
 #include <algorithm>
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/renderer/core/html/html_element.h"
+#include "third_party/blink/renderer/core/layout/block_node.h"
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/geometry/box_strut.h"
 #include "third_party/blink/renderer/core/layout/geometry/logical_size.h"
 #include "third_party/blink/renderer/core/layout/layout_box.h"
 #include "third_party/blink/renderer/core/layout/layout_view.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_space_utils.h"
+#include "third_party/blink/renderer/core/layout/space_utils.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_root.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/platform/geometry/layout_unit.h"
@@ -1299,7 +1299,7 @@ LayoutUnit LineOffsetForTextAlign(ETextAlign text_align,
 // Returns |kIndefiniteSize| in all other cases.
 LayoutUnit CalculateDefaultBlockSize(const ConstraintSpace& space,
                                      const BlockNode& node,
-                                     const NGBlockBreakToken* break_token,
+                                     const BlockBreakToken* break_token,
                                      const BoxStrut& border_scrollbar_padding) {
   // In quirks mode, html and body elements will completely fill the ICB, block
   // percentages should resolve against this size.
@@ -1315,7 +1315,7 @@ LayoutUnit CalculateDefaultBlockSize(const ConstraintSpace& space,
 FragmentGeometry CalculateInitialFragmentGeometry(
     const ConstraintSpace& space,
     const BlockNode& node,
-    const NGBlockBreakToken* break_token,
+    const BlockBreakToken* break_token,
     bool is_intrinsic) {
   auto MinMaxSizesFunc = [&](MinMaxSizesType type) -> MinMaxSizesResult {
     return node.ComputeMinMaxSizes(space.GetWritingMode(), type, space);
@@ -1435,7 +1435,7 @@ LogicalSize CalculateReplacedChildPercentageSize(
 LayoutUnit ClampIntrinsicBlockSize(
     const ConstraintSpace& space,
     const BlockNode& node,
-    const NGBlockBreakToken* break_token,
+    const BlockBreakToken* break_token,
     const BoxStrut& border_scrollbar_padding,
     LayoutUnit current_intrinsic_block_size,
     absl::optional<LayoutUnit> body_margin_block_sum) {

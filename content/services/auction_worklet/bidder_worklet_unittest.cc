@@ -5157,7 +5157,11 @@ TEST_F(BidderWorkletTest, ReportWin) {
 // Debug win/loss reporting APIs should do nothing when feature
 // kBiddingAndScoringDebugReportingAPI is not enabled. It will not fail
 // generateBid().
-TEST_F(BidderWorkletTest, ForDebuggingOnlyReports) {
+TEST_F(BidderWorkletTest, ForDebuggingOnlyReportsWithDebugFeatureDisabled) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndDisableFeature(
+      blink::features::kBiddingAndScoringDebugReportingAPI);
+
   RunGenerateBidWithJavascriptExpectingResult(
       CreateBasicGenerateBidScriptWithDebuggingReport(
           R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url"))"),
@@ -5667,6 +5671,23 @@ TEST_F(BidderWorkletTest, ReportWinBrowserSignalRecency) {
       R"(if (browserSignals.recency === 19)
         sendReportTo("https://jumboshrimp.test"))",
       GURL("https://jumboshrimp.test"));
+}
+
+TEST_F(BidderWorkletTest, ReportWinNoBrowserSignalRecencyForAdditionalBid) {
+  is_for_additional_bid_ = true;
+  browser_signal_recency_report_win_ = 19u;
+  const char kScript[] = R"(
+    function reportAdditionalBidWin(
+          auctionSignals, perBuyerSignals, sellerSignals,
+          browserSignals, directFromSellerSignals) {
+      if ('recency' in browserSignals)
+        throw 'Should not have recency in reportAdditionalBidWin';
+      sendReportTo("https://report-additional-bid-win.test/");
+    }
+  )";
+
+  RunReportWinWithJavascriptExpectingResult(
+      kScript, GURL("https://report-additional-bid-win.test/"));
 }
 
 TEST_F(BidderWorkletTest, ReportWinSignalKAnonStatusNotExposedByDefault) {

@@ -33,8 +33,11 @@ namespace {
 // NOTE: You should probably not change the data in this file without changing
 // |kCurrentDataVersion| in prepopulated_engines.json. See comments in
 // GetDataVersion() below!
-// Also run tools/search_engine_choice/generate_search_engine_icons.py to update
-// favicons.
+
+// Also see if the config at
+// tools/search_engine_choice/generate_search_engine_icons_config.json needs to
+// be updated, and then run
+// tools/search_engine_choice/generate_search_engine_icons.py to refresh icons.
 
 // Search engine tier per country.
 // SearchEngineTier will be equal to kTopEngines for the top 5 engines,
@@ -1748,6 +1751,8 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
       prefs::kDefaultSearchProviderChoiceScreenShuffleMilestone, 0);
   registry->RegisterBooleanPref(
       prefs::kDefaultSearchProviderKeywordsUseExtendedList, false);
+  registry->RegisterBooleanPref(prefs::kDefaultSearchProviderChoicePending,
+                                false);
 }
 
 int GetDataVersion(PrefService* prefs) {

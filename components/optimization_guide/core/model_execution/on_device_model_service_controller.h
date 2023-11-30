@@ -13,11 +13,15 @@
 #include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
 #include "base/types/pass_key.h"
+#include "components/optimization_guide/core/model_execution/session_impl.h"
 #include "components/optimization_guide/core/optimization_guide_model_executor.h"
 #include "components/optimization_guide/proto/model_execution.pb.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/on_device_model/public/mojom/on_device_model.mojom.h"
+#include "services/on_device_model/public/mojom/on_device_model_service.mojom.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
+
+class OptimizationGuideLogger;
 
 namespace base {
 class FilePath;
@@ -26,7 +30,6 @@ class FilePath;
 namespace optimization_guide {
 class OnDeviceModelAccessController;
 class OnDeviceModelExecutionConfigInterpreter;
-class OnDeviceSession;
 
 // Controls the lifetime of the on-device model service, loading and unloading
 // of the models, and executing them via the service.
@@ -56,15 +59,26 @@ class OnDeviceModelServiceController
   // Starts a session for `feature`. This will start the service and load the
   // model if it is not already loaded. The session will handle updating
   // context, executing input, and sending the response.
-  std::unique_ptr<OptimizationGuideModelExecutor::Session> StartSession(
-      proto::ModelExecutionFeature feature);
+  std::unique_ptr<OptimizationGuideModelExecutor::Session> CreateSession(
+      proto::ModelExecutionFeature feature,
+      ExecuteRemoteFn execute_remote_fn,
+      OptimizationGuideLogger* logger);
 
   // Launches the on-device model-service.
   virtual void LaunchService() = 0;
 
+  // Starts the service and calls |callback| with the estimated performance
+  // class. Will call with std::nullopt if the service crashes.
+  using GetEstimatedPerformanceClassCallback = base::OnceCallback<void(
+      std::optional<on_device_model::mojom::PerformanceClass>
+          performance_class)>;
+  void GetEstimatedPerformanceClass(
+      GetEstimatedPerformanceClassCallback callback);
+
   // A session completed successfully.
-  void OnResponseCompleted(base::PassKey<OnDeviceSession>,
-                           OnDeviceSession& session);
+  void OnResponseCompleted(base::PassKey<SessionImpl>, SessionImpl& session);
+
+  bool ShouldStartNewSession() const;
 
  private:
   friend class base::RefCounted<OnDeviceModelServiceController>;

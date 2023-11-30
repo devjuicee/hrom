@@ -820,9 +820,8 @@ void AuraToplevel::SetOrientationLock(uint32_t lock_type) {
   shell_surface_->SetOrientationLock(OrientationLock(lock_type));
 }
 
-void AuraToplevel::SetWindowRoundedCornerRadius(
-    const gfx::RoundedCornersF& radii) {
-  shell_surface_->SetWindowCornerRadii(radii);
+void AuraToplevel::SetWindowCornersRadii(const gfx::RoundedCornersF& radii) {
+  shell_surface_->SetWindowCornersRadii(radii);
 }
 
 void AuraToplevel::SetClientSubmitsSurfacesInPixelCoordinates(bool enable) {
@@ -982,6 +981,10 @@ void AuraToplevel::SetCanMaximize(bool can_maximize) {
 
 void AuraToplevel::SetCanFullscreen(bool can_fullscreen) {
   shell_surface_->SetCanFullscreen(can_fullscreen);
+}
+
+void AuraToplevel::SetShadowCornersRadii(const gfx::RoundedCornersF& radii) {
+  shell_surface_->SetShadowCornersRadii(radii);
 }
 
 void AuraToplevel::IntentToSnap(uint32_t snap_direction) {
@@ -1447,7 +1450,18 @@ void aura_toplevel_set_window_corner_radii(wl_client* client,
                                            uint32_t upper_right_radius,
                                            uint32_t lower_right_radius,
                                            uint32_t lower_left_radius) {
-  GetUserDataAs<AuraToplevel>(resource)->SetWindowRoundedCornerRadius(
+  GetUserDataAs<AuraToplevel>(resource)->SetWindowCornersRadii(
+      gfx::RoundedCornersF(upper_left_radius, upper_right_radius,
+                           lower_right_radius, lower_left_radius));
+}
+
+void aura_toplevel_set_shadow_corners_radii(wl_client* client,
+                                            wl_resource* resource,
+                                            uint32_t upper_left_radius,
+                                            uint32_t upper_right_radius,
+                                            uint32_t lower_right_radius,
+                                            uint32_t lower_left_radius) {
+  GetUserDataAs<AuraToplevel>(resource)->SetShadowCornersRadii(
       gfx::RoundedCornersF(upper_left_radius, upper_right_radius,
                            lower_right_radius, lower_left_radius));
 }
@@ -1701,7 +1715,8 @@ const struct zaura_toplevel_interface aura_toplevel_implementation = {
     aura_toplevel_set_can_fullscreen,
     aura_toplevel_unset_can_fullscreen,
     aura_toplevel_set_float_to_location,
-    aura_toplevel_set_window_corner_radii};
+    aura_toplevel_set_window_corner_radii,
+    aura_toplevel_set_shadow_corners_radii};
 
 void aura_popup_surface_submission_in_pixel_coordinates(wl_client* client,
                                                         wl_resource* resource) {

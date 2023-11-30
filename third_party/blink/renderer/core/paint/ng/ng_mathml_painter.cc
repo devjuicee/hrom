@@ -9,7 +9,7 @@
 #include "third_party/blink/renderer/core/paint/ng/ng_box_fragment_painter.h"
 #include "third_party/blink/renderer/core/paint/paint_auto_dark_mode.h"
 #include "third_party/blink/renderer/core/paint/paint_info.h"
-#include "third_party/blink/renderer/platform/fonts/ng_text_fragment_paint_info.h"
+#include "third_party/blink/renderer/platform/fonts/text_fragment_paint_info.h"
 #include "third_party/blink/renderer/platform/geometry/layout_unit.h"
 #include "third_party/blink/renderer/platform/graphics/graphics_context_state_saver.h"
 #include "third_party/blink/renderer/platform/graphics/paint/drawing_recorder.h"
@@ -38,7 +38,7 @@ void NGMathMLPainter::PaintStretchyOrLargeOperator(
   const ComputedStyle& style = box_fragment_.Style();
   const MathMLPaintInfo& parameters = box_fragment_.GetMathMLPaintInfo();
   UChar operator_character = parameters.operator_character;
-  NGTextFragmentPaintInfo text_fragment_paint_info = {
+  TextFragmentPaintInfo text_fragment_paint_info = {
       StringView(&operator_character, 1), 0, 1,
       parameters.operator_shape_result_view.get()};
   GraphicsContextStateSaver state_saver(info.context);
@@ -107,7 +107,7 @@ void NGMathMLPainter::PaintRadicalSymbol(
   LayoutUnit base_child_ascent;
   if (box_fragment_.Children().size() > 0) {
     const auto& base_child =
-        To<NGPhysicalBoxFragment>(*box_fragment_.Children()[0]);
+        To<PhysicalBoxFragment>(*box_fragment_.Children()[0]);
     base_child_width = base_child.Size().width;
     base_child_ascent =
         base_child.FirstBaseline().value_or(base_child.Size().height);

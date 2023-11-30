@@ -4,7 +4,7 @@
 
 #include "third_party/blink/renderer/core/paint/ng/ng_fragment_painter.h"
 
-#include "third_party/blink/renderer/core/layout/ng/ng_outline_utils.h"
+#include "third_party/blink/renderer/core/layout/outline_utils.h"
 #include "third_party/blink/renderer/core/paint/outline_painter.h"
 #include "third_party/blink/renderer/core/paint/paint_info.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
@@ -16,12 +16,12 @@ namespace blink {
 void NGFragmentPainter::PaintOutline(const PaintInfo& paint_info,
                                      const PhysicalOffset& paint_offset,
                                      const ComputedStyle& style_to_use) {
-  const NGPhysicalBoxFragment& fragment = PhysicalFragment();
+  const PhysicalBoxFragment& fragment = PhysicalFragment();
   DCHECK(HasPaintedOutline(style_to_use, fragment.GetNode()));
   VectorOutlineRectCollector collector;
   LayoutObject::OutlineInfo info;
   fragment.AddSelfOutlineRects(
-      paint_offset, style_to_use.OutlineRectsShouldIncludeBlockVisualOverflow(),
+      paint_offset, style_to_use.OutlineRectsShouldIncludeBlockInkOverflow(),
       collector, &info);
 
   VectorOf<PhysicalRect> outline_rects = collector.TakeRects();
@@ -37,7 +37,7 @@ void NGFragmentPainter::AddURLRectIfNeeded(const PaintInfo& paint_info,
                                            const PhysicalOffset& paint_offset) {
   DCHECK(paint_info.ShouldAddUrlMetadata());
 
-  const NGPhysicalBoxFragment& fragment = PhysicalFragment();
+  const PhysicalBoxFragment& fragment = PhysicalFragment();
   if (fragment.Style().Visibility() != EVisibility::kVisible) {
     return;
   }
@@ -51,7 +51,7 @@ void NGFragmentPainter::AddURLRectIfNeeded(const PaintInfo& paint_info,
     return;
 
   auto outline_rects = fragment.GetLayoutObject()->OutlineRects(
-      nullptr, paint_offset, NGOutlineType::kIncludeBlockVisualOverflow);
+      nullptr, paint_offset, OutlineType::kIncludeBlockInkOverflow);
   gfx::Rect rect = ToPixelSnappedRect(UnionRect(outline_rects));
   if (rect.IsEmpty())
     return;

@@ -98,17 +98,17 @@ class GURL;
 // Preloads voice search in the current BVC.
 - (void)preloadVoiceSearch;
 
-// Show the choice screen.
-- (void)showChoice;
-
-// Dismiss the choice screen.
-- (void)dismissChoice;
-
 // Dismiss the payments suggestions.
 - (void)dismissPaymentSuggestions;
 
 // Dismiss the plus address bottom sheet.
 - (void)dismissPlusAddressBottomSheet;
+
+// Shows the omnibox position choice screen.
+- (void)showOmniboxPositionChoice;
+
+// Dismisses the omnibox position choice screen.
+- (void)dismissOmniboxPositionChoice;
 
 @end
 

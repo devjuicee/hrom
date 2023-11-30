@@ -343,10 +343,9 @@ void LocalFrameClientImpl::Detached(FrameDetachType type) {
   // place at this point since we are no longer associated with the Page.
   web_frame_->SetClient(nullptr);
 
-  if (type == FrameDetachType::kSwap) {
-    client->WillSwap();
-  }
-  client->WillDetach();
+  client->WillDetach((type == FrameDetachType::kSwap)
+                         ? DetachReason::kNavigation
+                         : DetachReason::kFrameDeletion);
 
   // We only notify the browser process when the frame is being detached for
   // removal, not after a swap.
@@ -743,9 +742,10 @@ void LocalFrameClientImpl::DidChangePerformanceTiming() {
 void LocalFrameClientImpl::DidObserveUserInteraction(
     base::TimeTicks max_event_start,
     base::TimeTicks max_event_end,
-    UserInteractionType interaction_type) {
+    UserInteractionType interaction_type,
+    uint64_t interaction_offset) {
   web_frame_->Client()->DidObserveUserInteraction(
-      max_event_start, max_event_end, interaction_type);
+      max_event_start, max_event_end, interaction_type, interaction_offset);
 }
 
 void LocalFrameClientImpl::DidChangeCpuTiming(base::TimeDelta time) {

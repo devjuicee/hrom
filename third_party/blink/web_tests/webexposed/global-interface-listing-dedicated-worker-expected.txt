@@ -696,7 +696,6 @@ Starting worker: resources/global-interface-listing-worker.js
 [Worker]     method popDebugGroup
 [Worker]     method pushDebugGroup
 [Worker]     method resolveQuerySet
-[Worker]     method writeTimestamp
 [Worker]     setter label
 [Worker] interface GPUCompilationInfo
 [Worker]     attribute @@toStringTag
@@ -1179,6 +1178,7 @@ Starting worker: resources/global-interface-listing-worker.js
 [Worker]     method averagePool2d
 [Worker]     method batchNormalization
 [Worker]     method buildSync
+[Worker]     method cast
 [Worker]     method ceil
 [Worker]     method clamp
 [Worker]     method concat
@@ -1234,9 +1234,11 @@ Starting worker: resources/global-interface-listing-worker.js
 [Worker]     method tan
 [Worker]     method tanh
 [Worker]     method transpose
+[Worker]     method where
 [Worker] interface MLOperand
 [Worker]     attribute @@toStringTag
 [Worker]     method constructor
+[Worker]     method dataType
 [Worker]     method shape
 [Worker] interface MediaCapabilities
 [Worker]     attribute @@toStringTag
@@ -2118,6 +2120,7 @@ Starting worker: resources/global-interface-listing-worker.js
 [Worker] interface URLPattern
 [Worker]     static method compareComponent
 [Worker]     attribute @@toStringTag
+[Worker]     getter hasRegExpGroups
 [Worker]     getter hash
 [Worker]     getter hostname
 [Worker]     getter password

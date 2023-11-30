@@ -8,6 +8,7 @@
 
 #include <cmath>
 #include <memory>
+#include <set>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -17,7 +18,6 @@
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/containers/flat_set.h"
 #include "base/feature_list.h"
 #include "base/files/file_path.h"
@@ -1124,7 +1124,7 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
-  display_cutout_host_impl_ = std::make_unique<DisplayCutoutHostImpl>(this);
+  safe_area_insets_host_ = SafeAreaInsetsHost::Create(this);
 #endif
 
   ui::NativeTheme* native_theme = ui::NativeTheme::GetInstanceForWeb();
@@ -2156,8 +2156,8 @@ bool WebContentsImpl::IsFullAccessibilityModeForTesting() {
 
 void WebContentsImpl::SetDisplayCutoutSafeArea(gfx::Insets insets) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::SetDisplayCutoutSafeArea");
-  if (display_cutout_host_impl_) {
-    display_cutout_host_impl_->SetDisplayCutoutSafeArea(insets);
+  if (safe_area_insets_host_) {
+    safe_area_insets_host_->SetDisplayCutoutSafeArea(insets);
   }
 }
 
@@ -3131,10 +3131,6 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
 
 #if BUILDFLAG(IS_ANDROID)
   prefs.device_scale_adjustment = GetDeviceScaleAdjustment(min_width_in_dp);
-
-  if (base::FeatureList::IsEnabled(features::kForceOffTextAutosizing)) {
-    prefs.text_autosizing_enabled = false;
-  }
 #endif  // BUILDFLAG(IS_ANDROID)
 
   // GuestViews in the same StoragePartition need to find each other's frames.
@@ -3538,7 +3534,7 @@ void WebContentsImpl::OnRenderWidgetHostDestroyed(
 
   // Clear a pending widget that has been closed before being shown.
   size_t num_erased =
-      base::EraseIf(pending_widgets_, [render_widget_host](const auto& pair) {
+      std::erase_if(pending_widgets_, [render_widget_host](const auto& pair) {
         return pair.second == render_widget_host;
       });
   DCHECK_EQ(1u, num_erased);
@@ -3895,8 +3891,8 @@ void WebContentsImpl::ExitFullscreenMode() {
   observers_.NotifyObservers(
       &WebContentsObserver::DidToggleFullscreenModeForTab, IsFullscreen());
 
-  if (display_cutout_host_impl_) {
-    display_cutout_host_impl_->DidExitFullscreen();
+  if (safe_area_insets_host_) {
+    safe_area_insets_host_->DidExitFullscreen();
   }
 
   FullscreenContentsSet(GetBrowserContext())->erase(this);
@@ -3933,7 +3929,7 @@ void WebContentsImpl::FullscreenStateChanged(
   // If |rfh| is no longer in fullscreen, remove it and any descendants.
   // See https://fullscreen.spec.whatwg.org.
   size_t size_before_deletion = fullscreen_frames_.size();
-  base::EraseIf(fullscreen_frames_, [&](RenderFrameHostImpl* current) {
+  std::erase_if(fullscreen_frames_, [&](RenderFrameHostImpl* current) {
     while (current) {
       if (current == rfh) {
         return true;
@@ -4011,8 +4007,8 @@ void WebContentsImpl::FullscreenFrameSetUpdated() {
 
   observers_.NotifyObservers(&WebContentsObserver::DidAcquireFullscreen,
                              new_fullscreen_frame);
-  if (display_cutout_host_impl_) {
-    display_cutout_host_impl_->DidAcquireFullscreen(new_fullscreen_frame);
+  if (safe_area_insets_host_) {
+    safe_area_insets_host_->DidAcquireFullscreen(new_fullscreen_frame);
   }
 }
 
@@ -6251,8 +6247,8 @@ void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
     observers_.NotifyObservers(&WebContentsObserver::DidFinishNavigation,
                                navigation_handle);
   }
-  if (display_cutout_host_impl_) {
-    display_cutout_host_impl_->DidFinishNavigation(navigation_handle);
+  if (safe_area_insets_host_) {
+    safe_area_insets_host_->DidFinishNavigation(navigation_handle);
   }
 
   if (navigation_handle->HasCommitted()) {
@@ -7451,8 +7447,8 @@ void WebContentsImpl::RenderFrameCreated(
   }
   render_frame_host->UpdateAccessibilityMode();
 
-  if (display_cutout_host_impl_) {
-    display_cutout_host_impl_->RenderFrameCreated(render_frame_host);
+  if (safe_area_insets_host_) {
+    safe_area_insets_host_->RenderFrameCreated(render_frame_host);
   }
 }
 
@@ -7469,8 +7465,8 @@ void WebContentsImpl::RenderFrameDeleted(
   pepper_playback_observer_->RenderFrameDeleted(render_frame_host);
 #endif
 
-  if (display_cutout_host_impl_) {
-    display_cutout_host_impl_->RenderFrameDeleted(render_frame_host);
+  if (safe_area_insets_host_) {
+    safe_area_insets_host_->RenderFrameDeleted(render_frame_host);
   }
 
   // Remove any fullscreen state that the frame has stored.
@@ -8356,9 +8352,9 @@ void WebContentsImpl::WebAuthnAssertionRequestSucceeded(
 void WebContentsImpl::BindDisplayCutoutHost(
     RenderFrameHostImpl* render_frame_host,
     mojo::PendingAssociatedReceiver<blink::mojom::DisplayCutoutHost> receiver) {
-  if (display_cutout_host_impl_) {
-    display_cutout_host_impl_->BindReceiver(std::move(receiver),
-                                            render_frame_host);
+  if (safe_area_insets_host_) {
+    safe_area_insets_host_->BindReceiver(std::move(receiver),
+                                         render_frame_host);
   }
 }
 
@@ -9777,33 +9773,6 @@ void WebContentsImpl::OnFrameIsCapturingMediaStreamChanged(
   observers_.NotifyObservers(
       &WebContentsObserver::OnFrameIsCapturingMediaStreamChanged, host,
       is_capturing_media_stream);
-}
-
-media::MediaMetricsProvider::RecordAggregateWatchTimeCallback
-WebContentsImpl::GetRecordAggregateWatchTimeCallback(
-    const GURL& page_main_frame_last_committed_url) {
-  OPTIONAL_TRACE_EVENT0("content",
-                        "WebContentsImpl::RecordAggregateWatchTimeCallback");
-  if (!delegate_ || !delegate_->GetDelegateWeakPtr()) {
-    return base::DoNothing();
-  }
-
-  return base::BindRepeating(
-      [](base::WeakPtr<WebContentsDelegate> delegate,
-         GURL page_main_frame_last_committed_url,
-         base::TimeDelta total_watch_time, base::TimeDelta time_stamp,
-         bool has_video, bool has_audio) {
-        content::MediaPlayerWatchTime watch_time(
-            page_main_frame_last_committed_url,
-            page_main_frame_last_committed_url.DeprecatedGetOriginAsURL(),
-            total_watch_time, time_stamp, has_video, has_audio);
-
-        // Save the watch time if the delegate is still alive.
-        if (delegate) {
-          delegate->MediaWatchTimeChanged(watch_time);
-        }
-      },
-      delegate_->GetDelegateWeakPtr(), page_main_frame_last_committed_url);
 }
 
 // Cf. `GetProspectiveOuterDocument` which applies to the same situation, but is

@@ -8,10 +8,11 @@
 #import "ios/chrome/browser/favicon/favicon_loader.h"
 #import "ios/chrome/browser/shared/ui/list_model/list_model.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
-#import "ios/chrome/browser/shared/ui/table_view/cells/table_view_url_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_styler.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
-#import "ios/chrome/browser/ui/settings/cells/search_engine_item.h"
+#import "ios/chrome/browser/ui/search_engine_choice/search_engine_choice_constants.h"
+#import "ios/chrome/browser/ui/search_engine_choice/search_engine_choice_table/cells/snippet_search_engine_cell.h"
+#import "ios/chrome/browser/ui/search_engine_choice/search_engine_choice_table/cells/snippet_search_engine_item.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/favicon/favicon_constants.h"
 #import "ios/chrome/common/ui/favicon/favicon_view.h"
@@ -62,25 +63,45 @@ UIImageView* CreateCheckedCircle() {
   _faviconLoader = nullptr;
 }
 
+- (void)scrollToBottom {
+  TableViewModel* model = self.tableViewModel;
+  NSInteger lastSectionIndex = [model numberOfSections] - 1;
+  NSInteger lastRowIndex = [model numberOfItemsInSection:lastSectionIndex] - 1;
+  NSIndexPath* lastRowIndexPath =
+      [NSIndexPath indexPathForRow:lastRowIndex inSection:lastSectionIndex];
+  [self.tableView scrollToRowAtIndexPath:lastRowIndexPath
+                        atScrollPosition:UITableViewScrollPositionBottom
+                                animated:YES];
+  // Make sure the delegate receives the bottom reach event, so if the scroll
+  // as an offset of one pixel, the delegate will be called.
+  [self bottomReached];
+}
+
 #pragma mark - UIViewController
 
 - (void)viewDidLoad {
   [super viewDidLoad];
 
+  UITableView* tableView = self.tableView;
+  tableView.accessibilityIdentifier = kSearchEngineTableViewIdentifier;
   // With no header on first appearance, UITableView adds a 35 points space at
   // the beginning of the table view. This space remains after this table view
   // reloads with headers. Setting a small tableHeaderView avoids this.
-  self.tableView.tableHeaderView =
+  tableView.tableHeaderView =
       [[UIView alloc] initWithFrame:CGRectMake(0, 0, 0, CGFLOAT_MIN)];
-
-  self.tableView.separatorInset =
+  tableView.separatorInset =
       UIEdgeInsetsMake(0, kTableViewSeparatorLeadingInset, 0, 0);
-  self.tableView.backgroundColor = [UIColor colorNamed:kBackgroundColor];
+  tableView.backgroundColor = [UIColor colorNamed:kPrimaryBackgroundColor];
   self.styler.cellBackgroundColor =
       [UIColor colorNamed:kTertiaryBackgroundColor];
-  self.tableView.separatorColor = [UIColor colorNamed:kGrey300Color];
+  tableView.separatorColor = [UIColor colorNamed:kGrey300Color];
 
   [self loadModel];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+  [super viewDidAppear:animated];
+  [self updateDidReachBottomFlag];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -99,7 +120,7 @@ UIImageView* CreateCheckedCircle() {
   if (_searchEngines.count > 0) {
     [model addSectionWithIdentifier:kSectionIdentifierEnumZero];
 
-    for (SearchEngineItem* item : _searchEngines) {
+    for (SnippetSearchEngineItem* item : _searchEngines) {
       [model addItem:item toSectionWithIdentifier:kSectionIdentifierEnumZero];
     }
   }
@@ -115,29 +136,44 @@ UIImageView* CreateCheckedCircle() {
   // Iterate through the engines and remove the checkmark from any that have it.
   for (TableViewItem* item in
        [model itemsInSectionWithIdentifier:kSectionIdentifierEnumZero]) {
-    SearchEngineItem* textItem =
-        base::apple::ObjCCastStrict<SearchEngineItem>(item);
+    SnippetSearchEngineItem* textItem =
+        base::apple::ObjCCastStrict<SnippetSearchEngineItem>(item);
     if (textItem.accessoryType == UITableViewCellAccessoryCheckmark) {
       textItem.accessoryType = UITableViewCellAccessoryNone;
       UITableViewCell* cell =
           [tableView cellForRowAtIndexPath:[model indexPathForItem:item]];
+      SnippetSearchEngineCell* urlCell =
+          base::apple::ObjCCastStrict<SnippetSearchEngineCell>(cell);
       UIImageView* circleView = CreateEmptyCircle();
-      [cell setAccessoryView:circleView];
+      [urlCell setAccessoryView:circleView];
+      urlCell.snippetLabel.numberOfLines = 1;
     }
   }
 
   // Show the checkmark on the new default engine.
-  SearchEngineItem* newDefaultEngine =
-      base::apple::ObjCCastStrict<SearchEngineItem>(
+  SnippetSearchEngineItem* newDefaultEngine =
+      base::apple::ObjCCastStrict<SnippetSearchEngineItem>(
           [model itemAtIndexPath:indexPath]);
   newDefaultEngine.accessoryType = UITableViewCellAccessoryCheckmark;
   UITableViewCell* cell = [tableView cellForRowAtIndexPath:indexPath];
+  SnippetSearchEngineCell* urlCell =
+      base::apple::ObjCCastStrict<SnippetSearchEngineCell>(cell);
 
   cell.accessoryType = UITableViewCellAccessoryCheckmark;
   UIImageView* checkedCircleView = CreateCheckedCircle();
-  [cell setAccessoryView:checkedCircleView];
+  [urlCell setAccessoryView:checkedCircleView];
+  urlCell.snippetLabel.numberOfLines = 0;
 
+  CHECK(self.delegate);
   [self.delegate selectSearchEngineAtRow:_selectedRow];
+  [self.tableView beginUpdates];
+  [self.tableView endUpdates];
+}
+
+#pragma mark - UIScrollViewDelegate
+
+- (void)scrollViewDidScroll:(UIScrollView*)scrollView {
+  [self updateDidReachBottomFlag];
 }
 
 #pragma mark - UITableViewDataSource
@@ -152,10 +188,10 @@ UIImageView* CreateCheckedCircle() {
   }
 
   TableViewItem* item = [self.tableViewModel itemAtIndexPath:indexPath];
-  SearchEngineItem* engineItem =
-      base::apple::ObjCCastStrict<SearchEngineItem>(item);
-  TableViewURLCell* urlCell =
-      base::apple::ObjCCastStrict<TableViewURLCell>(cell);
+  SnippetSearchEngineItem* engineItem =
+      base::apple::ObjCCastStrict<SnippetSearchEngineItem>(item);
+  SnippetSearchEngineCell* urlCell =
+      base::apple::ObjCCastStrict<SnippetSearchEngineCell>(cell);
 
   NSString* itemIdentifier = engineItem.uniqueIdentifier;
   _faviconLoader->FaviconForPageUrl(
@@ -166,8 +202,6 @@ UIImageView* CreateCheckedCircle() {
           [urlCell.faviconView configureWithAttributes:attributes];
         }
       });
-  [urlCell
-      setFaviconContainerBackgroundColor:[UIColor colorNamed:kBackgroundColor]];
 
   UIImageView* circleView;
   if (_selectedRow >= 0 && indexPath.row == _selectedRow) {
@@ -184,6 +218,30 @@ UIImageView* CreateCheckedCircle() {
 - (void)reloadData {
   [self loadModel];
   [self.tableView reloadData];
+}
+
+#pragma mark - Private
+
+// Checks if the the bottom has been reached.
+- (void)updateDidReachBottomFlag {
+  if (self.didReachBottom) {
+    // Don't update the value if the bottom was reached at least once.
+    return;
+  }
+  CGFloat scrollPosition =
+      self.tableView.contentOffset.y + self.tableView.frame.size.height;
+  CGFloat scrollLimit =
+      self.tableView.contentSize.height + self.tableView.contentInset.bottom;
+  if (scrollPosition >= scrollLimit) {
+    [self bottomReached];
+  }
+}
+
+// Updates `-SearchEngineChoiceTableViewController.didReachBottom`, and calls
+// the delegate.
+- (void)bottomReached {
+  self.didReachBottom = YES;
+  [self.delegate didReachBottom];
 }
 
 @end

@@ -1115,6 +1115,11 @@ bool IsAuthSessionCryptohomeEnabled() {
       kCryptohomeUseAuthSession);
 }
 
+bool ShouldRestoreKeyOnLockScreen() {
+  return base::CommandLine::ForCurrentProcess()->HasSwitch(
+      kRestoreKeyOnLockScreen);
+}
+
 bool IsCellularFirstDevice() {
   return base::CommandLine::ForCurrentProcess()->HasSwitch(kCellularFirst);
 }
@@ -1220,7 +1225,7 @@ bool IsOsInstallAllowed() {
   return base::CommandLine::ForCurrentProcess()->HasSwitch(kAllowOsInstall);
 }
 
-absl::optional<base::TimeDelta> ContextualNudgesInterval() {
+std::optional<base::TimeDelta> ContextualNudgesInterval() {
   int numeric_cooldown_time;
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           kAshContextualNudgesInterval) &&
@@ -1231,9 +1236,9 @@ absl::optional<base::TimeDelta> ContextualNudgesInterval() {
     base::TimeDelta cooldown_time = base::Seconds(numeric_cooldown_time);
     cooldown_time = std::clamp(cooldown_time, kAshContextualNudgesMinInterval,
                                kAshContextualNudgesMaxInterval);
-    return absl::optional<base::TimeDelta>(cooldown_time);
+    return std::optional<base::TimeDelta>(cooldown_time);
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 bool ContextualNudgesResetShownCount() {

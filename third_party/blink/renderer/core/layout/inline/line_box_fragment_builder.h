@@ -10,10 +10,10 @@
 #include "third_party/blink/renderer/core/layout/inline/inline_break_token.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_node.h"
 #include "third_party/blink/renderer/core/layout/inline/physical_line_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment_builder.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_positioned_float.h"
+#include "third_party/blink/renderer/core/layout/physical_fragment.h"
 #include "third_party/blink/renderer/platform/fonts/font_height.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 
@@ -23,7 +23,7 @@ class ComputedStyle;
 class InlineBreakToken;
 class LogicalLineItems;
 
-class CORE_EXPORT LineBoxFragmentBuilder final : public NGFragmentBuilder {
+class CORE_EXPORT LineBoxFragmentBuilder final : public FragmentBuilder {
   STACK_ALLOCATED();
 
  public:
@@ -31,7 +31,7 @@ class CORE_EXPORT LineBoxFragmentBuilder final : public NGFragmentBuilder {
                          const ComputedStyle* style,
                          const ConstraintSpace& space,
                          WritingDirectionMode writing_direction)
-      : NGFragmentBuilder(
+      : FragmentBuilder(
             node,
             style,
             space,
@@ -94,7 +94,7 @@ class CORE_EXPORT LineBoxFragmentBuilder final : public NGFragmentBuilder {
   }
 
   // Creates the fragment. Can only be called once.
-  const NGLayoutResult* ToLineBoxFragment();
+  const LayoutResult* ToLineBoxFragment();
 
  private:
   absl::optional<LayoutUnit> line_box_bfc_block_offset_;
@@ -105,7 +105,7 @@ class CORE_EXPORT LineBoxFragmentBuilder final : public NGFragmentBuilder {
   PhysicalLineBoxFragment::LineBoxType line_box_type_;
   TextDirection base_direction_;
 
-  friend class NGLayoutResult;
+  friend class LayoutResult;
   friend class PhysicalLineBoxFragment;
 };
 

@@ -16,9 +16,7 @@ class BlockNode;
 
 // This algorithm handles msub, msup and msubsup elements.
 class CORE_EXPORT MathScriptsLayoutAlgorithm
-    : public LayoutAlgorithm<BlockNode,
-                             NGBoxFragmentBuilder,
-                             NGBlockBreakToken> {
+    : public LayoutAlgorithm<BlockNode, BoxFragmentBuilder, BlockBreakToken> {
  public:
   explicit MathScriptsLayoutAlgorithm(const LayoutAlgorithmParams& params);
 
@@ -26,7 +24,7 @@ class CORE_EXPORT MathScriptsLayoutAlgorithm
     DISALLOW_NEW();
 
    public:
-    Member<const NGLayoutResult> result;
+    Member<const LayoutResult> result;
     LayoutUnit ascent;
     LayoutUnit descent;
     LayoutUnit inline_size;
@@ -58,7 +56,7 @@ class CORE_EXPORT MathScriptsLayoutAlgorithm
                       HeapVector<SubSupPair>*,
                       BlockNode* prescripts,
                       unsigned* first_prescript_index,
-                      NGBoxFragmentBuilder* = nullptr) const;
+                      BoxFragmentBuilder* = nullptr) const;
 
   MinMaxSizesResult ComputeMinMaxSizes(const MinMaxSizesFloatInput&) final;
 
@@ -81,7 +79,7 @@ class CORE_EXPORT MathScriptsLayoutAlgorithm
       const ChildrenAndMetrics& sub_metrics,
       const ChildrenAndMetrics& sup_metrics) const;
 
-  const NGLayoutResult* Layout() final;
+  const LayoutResult* Layout() final;
 };
 
 }  // namespace blink

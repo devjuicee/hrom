@@ -4,13 +4,13 @@
 
 #include "third_party/blink/renderer/core/layout/table/table_section_layout_algorithm.h"
 
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_child_iterator.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_out_of_flow_layout_part.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 
 namespace blink {
 
@@ -30,7 +30,7 @@ TableSectionLayoutAlgorithm::TableSectionLayoutAlgorithm(
 // |  +--------------------+  |
 // |       vspacing           |
 // +--------------------------+
-const NGLayoutResult* TableSectionLayoutAlgorithm::Layout() {
+const LayoutResult* TableSectionLayoutAlgorithm::Layout() {
   const auto& constraint_space = GetConstraintSpace();
   const TableConstraintSpaceData& table_data = *constraint_space.TableData();
   const auto& section =
@@ -48,12 +48,12 @@ const NGLayoutResult* TableSectionLayoutAlgorithm::Layout() {
   Vector<LayoutUnit> row_offsets = {LayoutUnit()};
   wtf_size_t actual_start_row_index = 0u;
 
-  NGBlockChildIterator child_iterator(Node().FirstChild(), GetBreakToken(),
-                                      /* calculate_child_idx */ true);
+  BlockChildIterator child_iterator(Node().FirstChild(), GetBreakToken(),
+                                    /* calculate_child_idx */ true);
   for (auto entry = child_iterator.NextChild();
        BlockNode row = To<BlockNode>(entry.node);
        entry = child_iterator.NextChild()) {
-    const auto* row_break_token = To<NGBlockBreakToken>(entry.token);
+    const auto* row_break_token = To<BlockBreakToken>(entry.token);
     wtf_size_t row_index = start_row_index + *entry.index;
     DCHECK_LT(row_index, start_row_index + section.row_count);
     bool is_row_collapsed = table_data.rows[row_index].is_collapsed;
@@ -87,25 +87,26 @@ const NGLayoutResult* TableSectionLayoutAlgorithm::Layout() {
     }
 
     ConstraintSpace row_space = row_space_builder.ToConstraintSpace();
-    const NGLayoutResult* row_result = row.Layout(row_space, row_break_token);
+    const LayoutResult* row_result = row.Layout(row_space, row_break_token);
 
     if (constraint_space.HasBlockFragmentation()) {
       LayoutUnit fragmentainer_block_offset =
           constraint_space.FragmentainerOffset() + offset.block_offset;
-      NGBreakStatus break_status = BreakBeforeChildIfNeeded(
+      BreakStatus break_status = BreakBeforeChildIfNeeded(
           constraint_space, row, *row_result, fragmentainer_block_offset,
           !is_first_non_collapsed_row, &container_builder_);
-      if (break_status == NGBreakStatus::kNeedsEarlierBreak) {
+      if (break_status == BreakStatus::kNeedsEarlierBreak) {
         return RelayoutAndBreakEarlier<TableSectionLayoutAlgorithm>(
             container_builder_.GetEarlyBreak());
       }
-      if (break_status == NGBreakStatus::kBrokeBefore)
+      if (break_status == BreakStatus::kBrokeBefore) {
         break;
-      DCHECK_EQ(break_status, NGBreakStatus::kContinue);
+      }
+      DCHECK_EQ(break_status, BreakStatus::kContinue);
     }
 
     const auto& physical_fragment =
-        To<NGPhysicalBoxFragment>(row_result->PhysicalFragment());
+        To<PhysicalBoxFragment>(row_result->GetPhysicalFragment());
     const LogicalBoxFragment fragment(table_data.table_writing_direction,
                                       physical_fragment);
 
@@ -162,10 +163,10 @@ const NGLayoutResult* TableSectionLayoutAlgorithm::Layout() {
   }
 
   if (UNLIKELY(InvolvedInBlockFragmentation(container_builder_))) {
-    NGBreakStatus status = FinishFragmentation(
+    BreakStatus status = FinishFragmentation(
         Node(), constraint_space, /* trailing_border_padding */ LayoutUnit(),
         FragmentainerSpaceLeft(constraint_space), &container_builder_);
-    DCHECK_EQ(status, NGBreakStatus::kContinue);
+    DCHECK_EQ(status, BreakStatus::kContinue);
   }
 
   OutOfFlowLayoutPart(Node(), constraint_space, &container_builder_).Run();

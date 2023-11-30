@@ -439,18 +439,6 @@ const char kEnableUIButtonConfigurationName[] =
 const char kEnableUIButtonConfigurationDescription[] =
     "Enable UIButtonConfiguration usage for UIButtons.";
 
-const char kEnableUserPolicyForSigninAndNoSyncConsentLevelName[] =
-    "Enable user policies when signed-in only without sync";
-const char kEnableUserPolicyForSigninAndNoSyncConsentLevelDescription[] =
-    "Enable the fetch and application of user policies when signed-in only with"
-    "a managed account, excluding signed-in+sync.";
-
-const char kEnableUserPolicyForSigninOrSyncConsentLevelName[] =
-    "Enable user policies when signed-in only or signed-in+sync";
-const char kEnableUserPolicyForSigninOrSyncConsentLevelDescription[] =
-    "Enable the fetch and application of user policies when signed-in only or "
-    "signed-in+sync with a managed account.";
-
 const char kEnableWebChannelsName[] = "Enable WebFeed";
 const char kEnableWebChannelsDescription[] =
     "Enable folowing content from web and display Following feed on NTP based "
@@ -553,11 +541,6 @@ const char kIOSKeyboardAccessoryUpgradeName[] =
 const char kIOSKeyboardAccessoryUpgradeDescription[] =
     "When enabled, the upgraded keyboard accessory UI will be presented.";
 
-const char kIOSNewPostRestoreExperienceName[] = "New Post Restore Experience";
-const char kIOSNewPostRestoreExperienceDescription[] =
-    "When enabled, a prompt will be presented after a device restore to "
-    "allow the user to sign in again.";
-
 const char kIOSParcelTrackingName[] = "Parcel Tracking";
 const char kIOSParcelTrackingDescription[] =
     "When enabled, the user will be able to track their packages.";
@@ -574,11 +557,6 @@ const char kIOSPasswordAuthOnEntryV2Description[] =
     "Requires Local Authentication before showing saved credentials in "
     "Password Manager subpages. Supersedes `Password Manager Auth on Entry` if "
     "enabled.";
-
-const char kIOSPasswordUISplitName[] = "Password Manager UI Split";
-const char kIOSPasswordUISplitDescription[] =
-    "Splits Password Settings and "
-    "Password Manager into two separate UIs.";
 
 const char kIOSSaveToDriveName[] = "IOS Save to Drive";
 const char kIOSSaveToDriveDescription[] =
@@ -885,12 +863,6 @@ const char kReplaceSyncPromosWithSignInPromosName[] =
 const char kReplaceSyncPromosWithSignInPromosDescription[] =
     "When enabled, all sync-related promos will be replaced by sign-in ones.";
 
-const char kRestoreSessionFromCacheName[] =
-    "Use native WKWebView sesion restoration (iOS15 only).";
-const char kRestoreSessionFromCacheDescription[] =
-    "Enable instant session restoration for faster web session restoration "
-    "(iOS15 only).";
-
 const char kSafeBrowsingAvailableName[] = "Make Safe Browsing available";
 const char kSafeBrowsingAvailableDescription[] =
     "When enabled, navigation URLs are compared to Safe Browsing blocklists, "
@@ -935,12 +907,6 @@ const char kShowInactiveTabsCountName[] =
 const char kShowInactiveTabsCountDescription[] =
     "When enabled, the count of Inactive Tabs is shown in the Inactive Tabs "
     "button that appears in the Tab Grid.";
-
-extern const char  kShowUserPolicyNotificationAtStartupIfNeededName[] =
-    "Show User Policy notif at startup if needed";
-extern const char  kShowUserPolicyNotificationAtStartupIfNeededDescription[] =
-    "When enabled, evaluate if the User Policy notification should be shown "
-    "during startup.";
 
 const char kSkipUndecryptablePasswordsName[] =
     "Enable silent ignoring of undecryptable passwords";

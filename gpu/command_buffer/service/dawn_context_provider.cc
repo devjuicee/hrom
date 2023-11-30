@@ -255,11 +255,10 @@ bool DawnContextProvider::Initialize(
 
   enabled_toggles.push_back("disable_lazy_clear_for_mapped_at_creation_buffer");
 
-#if BUILDFLAG(IS_APPLE)
-  // We need MultiPlanarFormatExtendedUsages to copy to/from multiplanar
-  // texture. And this feature is currently experimental.
+  // Make Dawn Experimental features available. We need to use
+  // MultiPlanarFormatExtendedUsages and DualSourceBlending, which are still in
+  // experimental state.
   enabled_toggles.push_back("allow_unsafe_apis");
-#endif  // BUILDFLAG(IS_APPLE)
 
   wgpu::DawnTogglesDescriptor toggles_desc;
   toggles_desc.enabledToggles = enabled_toggles.data();
@@ -296,6 +295,7 @@ bool DawnContextProvider::Initialize(
   dawn::native::d3d::RequestAdapterOptionsLUID adapter_options_luid;
   if (GetANGLED3D11DeviceLUID(&adapter_options_luid.adapterLUID)) {
     // Request the GPU that ANGLE is using if possible.
+    adapter_options_luid.nextInChain = adapter_options.nextInChain;
     adapter_options.nextInChain = &adapter_options_luid;
   }
 
@@ -337,9 +337,7 @@ bool DawnContextProvider::Initialize(
       wgpu::FeatureName::DualSourceBlending,
       wgpu::FeatureName::MultiPlanarFormatExtendedUsages,
       wgpu::FeatureName::MultiPlanarFormatP010,
-#if BUILDFLAG(IS_MAC)
       wgpu::FeatureName::MultiPlanarFormatNv12a,
-#endif  // BUILDFLAG(IS_MAC)
       wgpu::FeatureName::MultiPlanarRenderTargets,
       wgpu::FeatureName::Norm16TextureFormats,
       wgpu::FeatureName::TransientAttachments,

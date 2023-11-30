@@ -2951,7 +2951,6 @@ interface GPUCommandEncoder
     method popDebugGroup
     method pushDebugGroup
     method resolveQuerySet
-    method writeTimestamp
     setter label
 interface GPUCompilationInfo
     attribute @@toStringTag
@@ -5624,6 +5623,7 @@ interface MLGraphBuilder
     method averagePool2d
     method batchNormalization
     method build
+    method cast
     method ceil
     method clamp
     method concat
@@ -5679,6 +5679,7 @@ interface MLGraphBuilder
     method tan
     method tanh
     method transpose
+    method where
 interface MLModelLoader
     attribute @@toStringTag
     method constructor
@@ -5686,6 +5687,7 @@ interface MLModelLoader
 interface MLOperand
     attribute @@toStringTag
     method constructor
+    method dataType
     method shape
 interface Magnetometer : Sensor
     attribute @@toStringTag
@@ -9892,6 +9894,7 @@ interface URL
 interface URLPattern
     static method compareComponent
     attribute @@toStringTag
+    getter hasRegExpGroups
     getter hash
     getter hostname
     getter password

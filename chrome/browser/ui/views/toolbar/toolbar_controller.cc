@@ -142,18 +142,22 @@ ToolbarController::GetDefaultResponsiveElements() {
       {{kToolbarForwardButtonElementId, IDS_OVERFLOW_MENU_ITEM_TEXT_FORWARD,
         kToolbarForwardButtonElementId},
        {kToolbarHomeButtonElementId, IDS_OVERFLOW_MENU_ITEM_TEXT_HOME,
-        kToolbarHomeButtonElementId},
+        kToolbarHomeButtonElementId, /*is_section_end=*/true},
        {kToolbarChromeLabsButtonElementId, IDS_OVERFLOW_MENU_ITEM_TEXT_LABS,
-        kToolbarChromeLabsButtonElementId, kToolbarChromeLabsBubbleElementId},
+        kToolbarChromeLabsButtonElementId, /*is_section_end=*/false,
+        kToolbarChromeLabsBubbleElementId},
        {kToolbarMediaButtonElementId,
         IDS_OVERFLOW_MENU_ITEM_TEXT_MEDIA_CONTROLS,
-        kToolbarMediaButtonElementId, kToolbarMediaBubbleElementId},
+        kToolbarMediaButtonElementId, /*is_section_end=*/false,
+        kToolbarMediaBubbleElementId},
        {kToolbarDownloadButtonElementId, IDS_OVERFLOW_MENU_ITEM_TEXT_DOWNLOADS,
-        kToolbarDownloadButtonElementId, kToolbarDownloadBubbleElementId},
+        kToolbarDownloadButtonElementId, /*is_section_end=*/false,
+        kToolbarDownloadBubbleElementId},
        {kToolbarNewTabButtonElementId, IDS_OVERFLOW_MENU_ITEM_TEXT_NEW_TAB,
-        kToolbarNewTabButtonElementId},
+        kToolbarNewTabButtonElementId, /*is_section_end=*/true},
        {kToolbarAvatarButtonElementId, IDS_OVERFLOW_MENU_ITEM_TEXT_PROFILE,
-        kToolbarAvatarButtonElementId, kToolbarAvatarBubbleElementId}});
+        kToolbarAvatarButtonElementId, /*is_section_end=*/false,
+        kToolbarAvatarBubbleElementId}});
 }
 
 std::vector<ui::ElementIdentifier>
@@ -245,7 +249,7 @@ bool ToolbarController::EndPopOut(ui::ElementIdentifier identifier) {
   return true;
 }
 
-bool ToolbarController::ShouldShowOverflowButton() {
+bool ToolbarController::ShouldShowOverflowButton() const {
   // Once at least one button has been dropped by layout manager show overflow
   // button.
   for (const auto& element : responsive_elements_) {
@@ -293,10 +297,10 @@ ToolbarController::GetOverflowedElements() {
   return overflowed_buttons;
 }
 
-bool ToolbarController::IsOverflowed(ui::ElementIdentifier id) {
+bool ToolbarController::IsOverflowed(ui::ElementIdentifier id) const {
   const auto* const toolbar_element =
       FindToolbarElementWithId(toolbar_container_view_, id);
-  const views::FlexLayout* flex_layout = static_cast<views::FlexLayout*>(
+  const views::FlexLayout* const flex_layout = static_cast<views::FlexLayout*>(
       toolbar_container_view_->GetLayoutManager());
   return flex_layout->CanBeVisible(toolbar_element) &&
          !toolbar_element->GetVisible();
@@ -306,9 +310,21 @@ std::unique_ptr<ui::SimpleMenuModel>
 ToolbarController::CreateOverflowMenuModel() {
   CHECK(overflow_button_->GetVisible());
   auto menu_model = std::make_unique<ui::SimpleMenuModel>(this);
+
+  // True if the separator belonging to previous section has not been added yet.
+  bool pre_separator_pending = false;
+
   for (size_t i = 0; i < responsive_elements_.size(); ++i) {
-    if (IsOverflowed(responsive_elements_[i].overflow_identifier)) {
-      menu_model->AddItem(i, GetMenuText(responsive_elements_[i]));
+    const auto& element = responsive_elements_[i];
+    if (IsOverflowed(element.overflow_identifier)) {
+      if (pre_separator_pending && menu_model->GetItemCount() > 0) {
+        menu_model->AddSeparator(ui::NORMAL_SEPARATOR);
+      }
+      menu_model->AddItem(i, GetMenuText(element));
+      pre_separator_pending = false;
+    }
+    if (element.is_section_end) {
+      pre_separator_pending = true;
     }
   }
   return menu_model;

@@ -51,14 +51,6 @@ chromium-metrics-reviews@google.com.
                condition"/>
 </variants>
 
-<variants name="Tabs_SwitchLatency">
-  <variant name="_Actual"
-      summary="The time it takes to show a real live frame from the renderer
-               on the screen after the user selects a tab. This doesn not
-               include fake snapshots or other tricks, but the actual time to
-               get real interactable content displayed."/>
-</variants>
-
 <histogram name="Discarding.DailyDiscards{TabDiscardReason}" units="tabs"
     expires_after="2024-04-28">
   <owner>vovoy@chromium.org</owner>
@@ -402,17 +394,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Tab.TotalTabCount.BeforeLeavingApp" units="tabs"
-    expires_after="M85">
-  <owner>tedchoc@chromium.org</owner>
-  <owner>clank-team@google.com</owner>
-  <summary>
-    [Android] The total count of tabs which were kept while Chrome process is in
-    the foreground. This is recorded only for Android right before Chrome
-    process goes into the background.
-  </summary>
-</histogram>
-
 <histogram name="TabGroups.CollapsedGroupCountPerLoad" units="groups"
     expires_after="2024-04-28">
   <owner>dpenning@chromium.org</owner>
@@ -746,7 +727,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="TabManager.Discarding.ReloadToCloseTime" units="ms"
-    expires_after="2024-03-24">
+    expires_after="2024-05-26">
   <owner>chrisha@chromium.org</owner>
   <owner>catan-team@chromium.org</owner>
   <summary>

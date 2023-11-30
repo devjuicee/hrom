@@ -97,7 +97,6 @@ class CommerceUiTabHelper
   // content::WebContentsObserver implementation
   void DidFinishNavigation(
       content::NavigationHandle* navigation_handle) override;
-  void DidStopLoading() override;
   void WebContentsDestroyed() override;
 
   // SubscriptionsObserver
@@ -148,8 +147,12 @@ class CommerceUiTabHelper
   friend class content::WebContentsUserData<CommerceUiTabHelper>;
   friend class CommerceUiTabHelperTest;
 
+  void UpdateUiForShoppingServiceReady(ShoppingService* service);
+
   void HandleProductInfoResponse(const GURL& url,
                                  const absl::optional<const ProductInfo>& info);
+
+  void MaybeDoProductImageFetch(const absl::optional<ProductInfo>& info);
 
   void HandlePriceInsightsInfoResponse(
       const GURL& url,
@@ -188,8 +191,6 @@ class CommerceUiTabHelper
   void MakeShoppingInsightsSidePanelUnavailable();
 
   SidePanelUI* GetSidePanelUI() const;
-
-  void DelayUpdateForIconView();
 
   void MaybeComputePageActionToExpand();
 
@@ -248,10 +249,6 @@ class CommerceUiTabHelper
   // callback from the (un)subscribe event. If no value, there is no pending
   // state, otherwise true means "tracking" and false means "not tracking".
   absl::optional<bool> pending_tracking_state_;
-
-  // A flag to indicating whether the first load after a navigation has
-  // completed.
-  bool is_first_load_for_nav_finished_{false};
 
   // The url from the previous successful main frame navigation. This will be
   // empty if this is the first navigation for this tab or post-restart.

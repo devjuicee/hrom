@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "ash/bubble/bubble_utils.h"
 #include "ash/resources/vector_icons/vector_icons.h"
@@ -166,10 +167,10 @@ ToggleEffectsButton::ToggleEffectsButton(
     bool toggle_state,
     const std::u16string& label_text,
     const int accessible_name_id,
-    absl::optional<int> container_id,
+    std::optional<int> container_id,
     const VcEffectId effect_id,
     int num_button_per_row)
-    : callback_(callback),
+    : callback_(std::move(callback)),
       toggled_(toggle_state),
       effect_id_(effect_id),
       vector_icon_(vector_icon),
@@ -309,7 +310,7 @@ ToggleEffectsView::ToggleEffectsView(
       // (represented by `tile`) cannot be obtained. This can happen if the
       // `VcEffectsDelegate` hosting the effect has encountered an error or is
       // in some bad state. In this case its controls are not presented.
-      absl::optional<int> current_state = tile->get_state_callback().Run();
+      std::optional<int> current_state = tile->get_state_callback().Run();
       if (!current_state.has_value()) {
         continue;
       }

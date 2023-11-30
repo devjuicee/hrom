@@ -21,7 +21,6 @@
 #include "ash/style/style_util.h"
 #include "ash/system/progress_indicator/progress_indicator.h"
 #include "ash/wm/desks/desks_controller.h"
-#include "ash/wm/tablet_mode/tablet_mode_controller.h"
 #include "ash/wm/window_util.h"
 #include "base/debug/stack_trace.h"
 #include "base/functional/bind.h"
@@ -39,6 +38,7 @@
 #include "ui/color/color_id.h"
 #include "ui/compositor/layer.h"
 #include "ui/compositor/scoped_layer_animation_settings.h"
+#include "ui/display/screen.h"
 #include "ui/gfx/animation/animation_delegate.h"
 #include "ui/gfx/animation/throb_animation.h"
 #include "ui/gfx/canvas.h"
@@ -856,11 +856,11 @@ gfx::Rect ShelfAppButton::CalculateSmallRippleArea() const {
   // Add padding to the ink drop for the left-most and right-most app buttons in
   // the shelf when there is a non-zero padding between the app icon and the
   // end of scrollable shelf.
-  if (TabletModeController::Get()->InTabletMode() && padding > 0) {
+  if (display::Screen::GetScreen()->InTabletMode() && padding > 0) {
     // Note that `current_index` may be nullopt while the button is fading out
     // after it's been removed from the model - for example, see
     // https://crbug.com/1355561.
-    const absl::optional<size_t> current_index =
+    const std::optional<size_t> current_index =
         shelf_view_->view_model()->GetIndexOfView(this);
     int left_padding =
         (shelf_view_->visible_views_indices().front() == current_index)
@@ -1399,7 +1399,7 @@ void ShelfAppButton::UpdateProgressRingBounds() {
   if (!progress_indicator_) {
     progress_indicator_ =
         ProgressIndicator::CreateDefaultInstance(base::BindRepeating(
-            [](ShelfAppButton* view) -> absl::optional<float> {
+            [](ShelfAppButton* view) -> std::optional<float> {
               if (view->forced_progress_indicator_value_) {
                 return *view->forced_progress_indicator_value_;
               }
@@ -1415,7 +1415,6 @@ void ShelfAppButton::UpdateProgressRingBounds() {
                          : ProgressIndicator::kProgressComplete;
             },
             base::Unretained(this)));
-    progress_indicator_->SetHasRoundCap(true);
     progress_indicator_->SetInnerIconVisible(false);
     progress_indicator_->SetInnerRingVisible(false);
     progress_indicator_->SetOuterRingStrokeWidth(2.0);
@@ -1432,7 +1431,8 @@ void ShelfAppButton::UpdateProgressRingBounds() {
     progress_indicator_->SetColorId(cros_tokens::kCrosSysHighlightShape);
     progress_indicator_->SetOuterRingTrackVisible(true);
   } else {
-    progress_indicator_->SetColorId(cros_tokens::kCrosSysPrimary);
+    progress_indicator_->SetColorId(
+        cros_tokens::kCrosSysSystemPrimaryContainer);
     progress_indicator_->SetOuterRingTrackVisible(false);
   }
 

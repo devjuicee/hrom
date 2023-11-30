@@ -21,17 +21,41 @@ class ToolbarController : public ui::SimpleMenuModel::Delegate {
  public:
   // Data structure to store information of responsive elements.
   struct ResponsiveElementInfo {
+    // Overflow menu structure:
+    // -------------------
+    // | Forward         |
+    // |-----------------|
+    // | Home            | -> section end
+    // |=================| -> potential separator
+    // | Reading list    |
+    // |-----------------|
+    // | Bookmarks       | -> section end
+    // |=================| -> potential separator
+    // | Labs            |
+    // |-----------------|
+    // | Cast            |
+    // |-----------------|
+    // | Media controls  |
+    // |-----------------|
+    // | Downloads       | -> section end
+    // |=================| -> potential separator
+    // | Profile         |
+    // |-----------------|
+
     // The toolbar element that potentially overflows.
     ui::ElementIdentifier overflow_identifier;
 
     // Menu text when the element is overflow to the overflow menu.
-    int menu_text_id;
+    int menu_text_id = 0;
 
     // The toolbar button to be activated with menu text pressed. This is not
     // necessarily the same as the element that overflows. E.g. when the
     // overflowed element is kToolbarExtensionsContainerElementId the
     // `activate_identifier` should be kExtensionsMenuButtonElementId.
     ui::ElementIdentifier activate_identifier;
+
+    // True if current element is a section end in overflow menu structure.
+    bool is_section_end = false;
 
     // Pop out button when `observed_identifier` is shown. End pop out when it's
     // hidden.
@@ -119,7 +143,7 @@ class ToolbarController : public ui::SimpleMenuModel::Delegate {
 
   // Returns true if layout manager of `toolbar_container_view_` hides any
   // toolbar elements.
-  bool ShouldShowOverflowButton();
+  bool ShouldShowOverflowButton() const;
 
   views::View* overflow_button() { return overflow_button_; }
 
@@ -140,14 +164,14 @@ class ToolbarController : public ui::SimpleMenuModel::Delegate {
                                                ui::ElementIdentifier id);
 
  private:
-  friend class ToolbarControllerInteractiveTest;
+  friend class ToolbarControllerUiTest;
   friend class ToolbarControllerUnitTest;
 
   // Returns currently hidden elements.
   std::vector<const ResponsiveElementInfo*> GetOverflowedElements();
 
   // Check if element has overflowed.
-  bool IsOverflowed(ui::ElementIdentifier id);
+  bool IsOverflowed(ui::ElementIdentifier id) const;
 
   // ui::SimpleMenuModel::Delegate:
   void ExecuteCommand(int command_id, int event_flags) override;

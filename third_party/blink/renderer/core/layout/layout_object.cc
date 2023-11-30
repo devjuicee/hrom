@@ -69,6 +69,7 @@
 #include "third_party/blink/renderer/core/input/event_handler.h"
 #include "third_party/blink/renderer/core/inspector/inspector_trace_events.h"
 #include "third_party/blink/renderer/core/intersection_observer/element_intersection_observer_data.h"
+#include "third_party/blink/renderer/core/layout/block_node.h"
 #include "third_party/blink/renderer/core/layout/custom/layout_custom.h"
 #include "third_party/blink/renderer/core/layout/flex/layout_flexible_box.h"
 #include "third_party/blink/renderer/core/layout/forms/layout_fieldset.h"
@@ -82,8 +83,10 @@
 #include "third_party/blink/renderer/core/layout/layout_image_resource_style_image.h"
 #include "third_party/blink/renderer/core/layout/layout_inline.h"
 #include "third_party/blink/renderer/core/layout/layout_multi_column_spanner_placeholder.h"
+#include "third_party/blink/renderer/core/layout/layout_ng_block_flow.h"
 #include "third_party/blink/renderer/core/layout/layout_object_inl.h"
 #include "third_party/blink/renderer/core/layout/layout_object_inlines.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/layout_ruby.h"
 #include "third_party/blink/renderer/core/layout/layout_ruby_as_block.h"
 #include "third_party/blink/renderer/core/layout/layout_ruby_column.h"
@@ -97,11 +100,8 @@
 #include "third_party/blink/renderer/core/layout/list/layout_list_item.h"
 #include "third_party/blink/renderer/core/layout/list/layout_outside_list_marker.h"
 #include "third_party/blink/renderer/core/layout/mathml/layout_mathml_block.h"
-#include "third_party/blink/renderer/core/layout/ng/layout_ng_block_flow.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_unpositioned_float.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/table/layout_table.h"
 #include "third_party/blink/renderer/core/layout/table/layout_table_caption.h"
 #include "third_party/blink/renderer/core/layout/table/layout_table_cell.h"
@@ -585,7 +585,7 @@ void LayoutObject::AssertFragmentTree(bool display_locked) const {
     // Check the direct children of the fragment. Grand-children and further
     // descendants will be checked by descendant LayoutObjects.
     if (const auto* box = DynamicTo<LayoutBox>(layout_object)) {
-      for (const NGPhysicalBoxFragment& fragment : box->PhysicalFragments()) {
+      for (const PhysicalBoxFragment& fragment : box->PhysicalFragments()) {
         DCHECK_EQ(box, fragment.OwnerLayoutBox());
         fragment.AssertFragmentTreeChildren(
             /* allow_destroyed_or_moved */ display_locked);
@@ -605,7 +605,7 @@ void LayoutObject::AssertClearedPaintInvalidationFlags() const {
     NOTREACHED();
   }
 
-  // Assert that the number of FragmentData and NGPhysicalBoxFragment objects
+  // Assert that the number of FragmentData and PhysicalBoxFragment objects
   // are identical. This was added as part of investigating crbug.com/1244130
 
   // Only LayoutBox has fragments. Bail if it's not a box, or if fragment
@@ -1265,7 +1265,7 @@ static inline bool ObjectIsRelayoutBoundary(const LayoutObject* object) {
   }
 
   // We need a previous layout result to begin layout at a subtree root.
-  const NGLayoutResult* layout_result = box->GetCachedLayoutResult(nullptr);
+  const LayoutResult* layout_result = box->GetCachedLayoutResult(nullptr);
   if (!layout_result) {
     return false;
   }
@@ -1285,9 +1285,13 @@ static inline bool ObjectIsRelayoutBoundary(const LayoutObject* object) {
 
   // OOF-positioned objects which rely on their static-position for placement
   // cannot be relayout boundaries (their final position would be incorrect).
+  // TODO(crbug.com/1477314): Ignoring inset-area means we may not allow using
+  // the object as a relayout boundary even if inset-area causes the object to
+  // not rely on static position.
   const ComputedStyle* style = box->Style();
   if (box->IsOutOfFlowPositioned() &&
-      (style->HasAutoLeftAndRight() || style->HasAutoTopAndBottom())) {
+      (style->HasAutoLeftAndRightIgnoringInsetArea() ||
+       style->HasAutoTopAndBottomIgnoringInsetArea())) {
     return false;
   }
 
@@ -1307,7 +1311,7 @@ static inline bool ObjectIsRelayoutBoundary(const LayoutObject* object) {
   }
 
   // Make sure our fragment is safe to use.
-  const NGPhysicalFragment& fragment = layout_result->PhysicalFragment();
+  const auto& fragment = layout_result->GetPhysicalFragment();
   if (fragment.IsLayoutObjectDestroyedOrMoved()) {
     return false;
   }
@@ -1533,22 +1537,22 @@ void LayoutObject::MarkContainerChainForLayout(bool schedule_relayout) {
 
 // LayoutNG has different OOF-positioned handling compared to the existing
 // layout system. To correctly determine the static-position of the object,
-// LayoutNG "bubbles" up the static-position inside the NGLayoutResult.
-// See: |NGLayoutResult::OutOfFlowPositionedDescendants()|.
+// LayoutNG "bubbles" up the static-position inside the LayoutResult.
+// See: |LayoutResult::OutOfFlowPositionedDescendants()|.
 //
 // Column spanners also have a bubbling mechanism, and therefore also need to
 // mark ancestors between the element itself and the containing block (the
 // multicol container).
 //
 // Whenever an OOF-positioned object is added/removed we need to invalidate
-// layout for all the layout objects which may have stored a NGLayoutResult
+// layout for all the layout objects which may have stored a LayoutResult
 // with this object contained in that list.
 //
 // In the future it may be possible to optimize this, e.g.
 //  - For the removal case, add a pass which modifies the layout result to
 //    remove the OOF-positioned descendant.
 //  - For the adding case, if the OOF-positioned doesn't require a
-//    static-position, simply insert the object up the NGLayoutResult chain with
+//    static-position, simply insert the object up the LayoutResult chain with
 //    an invalid static-position.
 void LayoutObject::MarkParentForSpannerOrOutOfFlowPositionedChange() {
   NOT_DESTROYED();
@@ -1575,7 +1579,7 @@ void LayoutObject::MarkParentForSpannerOrOutOfFlowPositionedChange() {
     object = object->Parent();
   }
   // Finally mark the parent block for layout. This will mark everything which
-  // has an OOF-positioned object or column spanner in a NGLayoutResult as
+  // has an OOF-positioned object or column spanner in a LayoutResult as
   // needing layout.
   if (object)
     object->SetChildNeedsLayout();
@@ -2056,8 +2060,9 @@ void LayoutObject::InvalidateVisualOverflow() {
 #if DCHECK_IS_ON()
 void LayoutObject::InvalidateVisualOverflowForDCheck() {
   if (auto* box = DynamicTo<LayoutBox>(this)) {
-    for (const NGPhysicalBoxFragment& fragment : box->PhysicalFragments())
+    for (const PhysicalBoxFragment& fragment : box->PhysicalFragments()) {
       fragment.GetMutableForPainting().InvalidateInkOverflow();
+    }
   }
   // For now, we can only check |LayoutBox| laid out by NG.
 }
@@ -2212,7 +2217,7 @@ PhysicalRect LayoutObject::LocalVisualRectIgnoringVisibility() const {
 
 bool LayoutObject::MapToVisualRectInAncestorSpaceInternalFastPath(
     const LayoutBoxModelObject* ancestor,
-    PhysicalRect& rect,
+    gfx::RectF& rect,
     VisualRectFlags visual_rect_flags,
     bool& intersects) const {
   NOT_DESTROYED();
@@ -2236,16 +2241,15 @@ bool LayoutObject::MapToVisualRectInAncestorSpaceInternalFastPath(
   // FirstFragment().PaintOffset() is relative to the transform space defined by
   // FirstFragment().LocalBorderBoxProperties() (if this == property_container)
   // or property_container->FirstFragment().ContentsProperties().
-  rect.Move(FirstFragment().PaintOffset());
+  rect.Offset(gfx::Vector2dF(FirstFragment().PaintOffset()));
   if (property_container != ancestor) {
-    FloatClipRect clip_rect((gfx::RectF(rect)));
+    FloatClipRect clip_rect(rect);
     intersects = GeometryMapper::LocalToAncestorVisualRect(
         container_properties, ancestor->FirstFragment().ContentsProperties(),
         clip_rect, kIgnoreOverlayScrollbarSize, visual_rect_flags);
-    rect = PhysicalRect::EnclosingRect(clip_rect.Rect());
+    rect = clip_rect.Rect();
   }
-  rect.offset -= ancestor->FirstFragment().PaintOffset();
-
+  rect.Offset(-gfx::Vector2dF(ancestor->FirstFragment().PaintOffset()));
   return true;
 }
 
@@ -2254,18 +2258,41 @@ bool LayoutObject::MapToVisualRectInAncestorSpace(
     PhysicalRect& rect,
     VisualRectFlags visual_rect_flags) const {
   NOT_DESTROYED();
+  gfx::RectF float_rect(rect);
+
   bool intersects = true;
   if (MapToVisualRectInAncestorSpaceInternalFastPath(
-          ancestor, rect, visual_rect_flags, intersects))
+          ancestor, float_rect, visual_rect_flags, intersects)) {
+    rect = PhysicalRect::EnclosingRect(float_rect);
     return intersects;
-
+  }
   TransformState transform_state(TransformState::kApplyTransformDirection,
-                                 gfx::QuadF(gfx::RectF(rect)));
+                                 gfx::QuadF(float_rect));
   intersects = MapToVisualRectInAncestorSpaceInternal(ancestor, transform_state,
                                                       visual_rect_flags);
   transform_state.Flatten();
   rect = PhysicalRect::EnclosingRect(
       transform_state.LastPlanarQuad().BoundingBox());
+  return intersects;
+}
+
+bool LayoutObject::MapToVisualRectInAncestorSpace(
+    const LayoutBoxModelObject* ancestor,
+    gfx::RectF& rect,
+    VisualRectFlags visual_rect_flags) const {
+  NOT_DESTROYED();
+  bool intersects = true;
+  if (MapToVisualRectInAncestorSpaceInternalFastPath(
+          ancestor, rect, visual_rect_flags, intersects)) {
+    return intersects;
+  }
+
+  TransformState transform_state(TransformState::kApplyTransformDirection,
+                                 gfx::QuadF(rect));
+  intersects = MapToVisualRectInAncestorSpaceInternal(ancestor, transform_state,
+                                                      visual_rect_flags);
+  transform_state.Flatten();
+  rect = transform_state.LastPlanarQuad().BoundingBox();
   return intersects;
 }
 
@@ -3699,7 +3726,7 @@ bool LayoutObject::IsRooted() const {
   return false;
 }
 
-RespectImageOrientationEnum LayoutObject::ShouldRespectImageOrientation(
+RespectImageOrientationEnum LayoutObject::GetImageOrientation(
     const LayoutObject* layout_object) {
   return layout_object ? layout_object->StyleRef().ImageOrientation()
                        : ComputedStyleInitialValues::InitialImageOrientation();
@@ -4194,6 +4221,11 @@ const ComputedStyle* LayoutObject::FirstLineStyleWithoutFallback() const {
         if (const ComputedStyle* cached =
                 first_line_block->GetCachedPseudoElementStyle(
                     kPseudoIdFirstLine)) {
+          // TODO(crbug.com/1501719): See
+          // LayoutObject::BehavesLikeBlockContainer().
+          if (IsRubyText() && IsA<HTMLRTElement>(GetNode())) {
+            UseCounter::Count(GetDocument(), WebFeature::kPseudoFirstLineOnRt);
+          }
           return cached;
         }
         continue;
@@ -4971,7 +5003,7 @@ bool LayoutObject::CanBeSelectionLeaf() const {
 }
 
 Vector<PhysicalRect> LayoutObject::CollectOutlineRectsAndAdvance(
-    NGOutlineType outline_type,
+    OutlineType outline_type,
     AccompaniedFragmentIterator& iterator) const {
   NOT_DESTROYED();
   Vector<PhysicalRect> outline_rects;
@@ -4984,7 +5016,7 @@ Vector<PhysicalRect> LayoutObject::CollectOutlineRectsAndAdvance(
       const FragmentItem* item = iterator.Cursor()->Current().Item();
       if (!item)
         continue;
-      if (const NGPhysicalBoxFragment* box_fragment = item->BoxFragment()) {
+      if (const PhysicalBoxFragment* box_fragment = item->BoxFragment()) {
         box_fragment->AddSelfOutlineRects(
             paint_offset + item->OffsetInContainerFragment(), outline_type,
             collector, nullptr);
@@ -5001,8 +5033,7 @@ Vector<PhysicalRect> LayoutObject::CollectOutlineRectsAndAdvance(
              iterator.Cursor()->ContainerFragmentIndex() == fragment_index);
     outline_rects = collector.TakeRects();
   } else {
-    if (const NGPhysicalBoxFragment* box_fragment =
-            iterator.GetPhysicalBoxFragment()) {
+    if (const auto* box_fragment = iterator.GetPhysicalBoxFragment()) {
       box_fragment->AddSelfOutlineRects(paint_offset, outline_type, collector,
                                         nullptr);
       outline_rects = collector.TakeRects();
@@ -5018,7 +5049,7 @@ Vector<PhysicalRect> LayoutObject::CollectOutlineRectsAndAdvance(
 Vector<PhysicalRect> LayoutObject::OutlineRects(
     OutlineInfo* info,
     const PhysicalOffset& additional_offset,
-    NGOutlineType outline_type) const {
+    OutlineType outline_type) const {
   NOT_DESTROYED();
   VectorOutlineRectCollector collector;
   AddOutlineRects(collector, info, additional_offset, outline_type);

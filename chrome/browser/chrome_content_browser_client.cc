@@ -1478,19 +1478,14 @@ void HandleStringData(
                  callback,
              const enterprise_connectors::ContentAnalysisDelegate::Data& data,
              enterprise_connectors::ContentAnalysisDelegate::Result& result) {
-            if (!result.text_results[0] && !result.image_result) {
-              std::move(callback).Run(absl::nullopt);
-              return;
-            }
-
-            ChromeContentBrowserClient::ClipboardPasteData clipboard_paste_data;
-            if (result.text_results[0]) {
-              clipboard_paste_data.text = std::move(data.text[0]);
-            }
-            if (result.image_result) {
-              clipboard_paste_data.image = std::move(data.image);
-            }
-            std::move(callback).Run(std::move(clipboard_paste_data));
+            absl::optional<ChromeContentBrowserClient::ClipboardPasteData>
+                clipboard_paste_data;
+            clipboard_paste_data =
+                ChromeContentBrowserClient::ClipboardPasteData(
+                    data.text[0], std::string(), {});
+            std::move(callback).Run(result.text_results[0]
+                                        ? std::move(clipboard_paste_data)
+                                        : absl::nullopt);
           },
           std::move(callback)),
       safe_browsing::DeepScanAccessPoint::PASTE);
@@ -3319,7 +3314,7 @@ bool ChromeContentBrowserClient::IsPrivacySandboxReportingDestinationAttested(
 
   if (invoking_api == content::PrivacySandboxInvokingAPI::kProtectedAudience) {
     if (base::FeatureList::IsEnabled(
-            blink::features::kFencedFramesM120FeaturesPart2) &&
+            blink::features::kFencedFramesReportingAttestationsChanges) &&
         post_impression_reporting) {
       // M120 and afterwards: For beacons sent by `reportEvent()` and automatic
       // beacons, the destination is required to be attested for either
@@ -5602,7 +5597,7 @@ ChromeContentBrowserClient::MaybeCreateSafeBrowsingURLLoaderThrottle(
                              hash_realtime_selection);
 
     return safe_browsing::BrowserURLLoaderThrottle::Create(
-        base::BindOnce(
+        base::BindRepeating(
             &ChromeContentBrowserClient::GetSafeBrowsingUrlCheckerDelegate,
             base::Unretained(this),
             safe_browsing::IsSafeBrowsingEnabled(*profile->GetPrefs()),
@@ -5727,7 +5722,6 @@ ChromeContentBrowserClient::CreateURLLoaderThrottles(
       chrome_navigation_ui_data->is_no_state_prefetching()) {
     result.push_back(
         std::make_unique<prerender::NoStatePrefetchURLLoaderThrottle>(
-            chrome_navigation_ui_data->prerender_histogram_prefix(),
             GetPrerenderCanceler(wc_getter)));
   }
 
@@ -6866,24 +6860,6 @@ bool ChromeContentBrowserClient::HandleWebUI(
   }
 
 #if !BUILDFLAG(IS_ANDROID)
-  if (base::FeatureList::IsEnabled(privacy_sandbox::kPrivacySandboxSettings4)) {
-    // Redirect to the new version of privacy sandbox settings.
-    if (url->SchemeIs(content::kChromeUIScheme) &&
-        url->host() == chrome::kChromeUISettingsHost) {
-      if (url->path() == chrome::kPrivacySandboxSubPagePath) {
-        GURL::Replacements replacements;
-        replacements.SetPathStr(chrome::kAdPrivacySubPagePath);
-        *url = url->ReplaceComponents(replacements);
-        UMA_HISTOGRAM_BOOLEAN("Settings.PrivacySandbox.DeprecatedRedirect",
-                              true);
-      } else if (url->path() == chrome::kAdPrivacySubPagePath) {
-        // Log un-redirected navigations to the page as well to provide context
-        // for the raw number of redirects.
-        UMA_HISTOGRAM_BOOLEAN("Settings.PrivacySandbox.DeprecatedRedirect",
-                              false);
-      }
-    }
-  }
   if (base::FeatureList::IsEnabled(
           features::kPerformanceSettingsPreloadingSubpage)) {
     // Redirect from the preloading sub-page to the performance page.
@@ -7565,9 +7541,11 @@ void ChromeContentBrowserClient::IsClipboardPasteContentAllowed(
                                         std::move(dialog_data), connector,
                                         std::move(paths), std::move(callback)));
   } else {
-    dialog_data.text.push_back(std::move(clipboard_paste_data.text));
-    dialog_data.image = std::move(clipboard_paste_data.image);
-    dialog_data.clipboard_mime_type = data_type.GetName();
+    dialog_data.text.push_back(clipboard_paste_data.text);
+    // Send image only to local agent for analysis.
+    if (dialog_data.settings.cloud_or_local_settings.is_local_analysis()) {
+      dialog_data.image = std::move(clipboard_paste_data.image);
+    }
     HandleStringData(web_contents, std::move(dialog_data), connector,
                      std::move(callback));
   }

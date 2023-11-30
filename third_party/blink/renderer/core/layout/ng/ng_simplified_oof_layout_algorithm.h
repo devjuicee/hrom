@@ -19,24 +19,22 @@ struct PhysicalFragmentLink;
 // This is more a copy-and-append algorithm than a layout algorithm.
 // This algorithm will only run when we are trying to add OOF-positioned
 // elements to an already laid out fragmentainer. It performs a copy of the
-// previous |NGPhysicalFragment| and appends the OOF-positioned elements to the
+// previous |PhysicalFragment| and appends the OOF-positioned elements to the
 // |container_builder_|.
 class CORE_EXPORT SimplifiedOofLayoutAlgorithm
-    : public LayoutAlgorithm<BlockNode,
-                             NGBoxFragmentBuilder,
-                             NGBlockBreakToken> {
+    : public LayoutAlgorithm<BlockNode, BoxFragmentBuilder, BlockBreakToken> {
  public:
   SimplifiedOofLayoutAlgorithm(const LayoutAlgorithmParams&,
-                               const NGPhysicalBoxFragment&,
+                               const PhysicalBoxFragment&,
                                bool is_new_fragment);
 
-  const NGLayoutResult* Layout() override;
+  const LayoutResult* Layout() override;
   MinMaxSizesResult ComputeMinMaxSizes(const MinMaxSizesFloatInput&) override {
     NOTREACHED();
     return MinMaxSizesResult();
   }
 
-  void AppendOutOfFlowResult(const NGLayoutResult* child);
+  void AppendOutOfFlowResult(const LayoutResult* child);
 
  private:
   void AddChildFragment(const PhysicalFragmentLink& old_fragment);

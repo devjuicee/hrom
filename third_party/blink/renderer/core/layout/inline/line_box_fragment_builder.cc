@@ -10,11 +10,11 @@
 #include "third_party/blink/renderer/core/layout/inline/inline_node.h"
 #include "third_party/blink/renderer/core/layout/inline/logical_line_item.h"
 #include "third_party/blink/renderer/core/layout/inline/physical_line_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_positioned_float.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_relative_utils.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 
 namespace blink {
 
@@ -51,13 +51,13 @@ void LineBoxFragmentBuilder::PropagateChildrenData(LogicalLineItems& children) {
       // An accumulated relative offset is applied to an OOF once it reaches its
       // inline container. Subtract out the relative offset to avoid adding it
       // twice.
+      const ComputedStyle& child_style = child.GetPhysicalFragment()->Style();
       PropagateFromLayoutResultAndFragment(
           *child.layout_result,
           child.Offset() -
-              ComputeRelativeOffsetForInline(GetConstraintSpace(),
-                                             child.PhysicalFragment()->Style()),
-          ComputeRelativeOffsetForOOFInInline(
-              GetConstraintSpace(), child.PhysicalFragment()->Style()));
+              ComputeRelativeOffsetForInline(GetConstraintSpace(), child_style),
+          ComputeRelativeOffsetForOOFInInline(GetConstraintSpace(),
+                                              child_style));
 
       // Skip over any children, the information should have already been
       // propagated into this layout result.
@@ -78,14 +78,13 @@ void LineBoxFragmentBuilder::PropagateChildrenData(LogicalLineItems& children) {
   MoveOutOfFlowDescendantCandidatesToDescendants();
 }
 
-const NGLayoutResult* LineBoxFragmentBuilder::ToLineBoxFragment() {
+const LayoutResult* LineBoxFragmentBuilder::ToLineBoxFragment() {
   writing_direction_.SetWritingMode(ToLineWritingMode(GetWritingMode()));
 
   const auto* fragment = PhysicalLineBoxFragment::Create(this);
 
-  return MakeGarbageCollected<NGLayoutResult>(
-      NGLayoutResult::LineBoxFragmentBuilderPassKey(), std::move(fragment),
-      this);
+  return MakeGarbageCollected<LayoutResult>(
+      LayoutResult::LineBoxFragmentBuilderPassKey(), std::move(fragment), this);
 }
 
 }  // namespace blink

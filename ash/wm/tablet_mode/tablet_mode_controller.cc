@@ -490,9 +490,8 @@ bool TabletModeController::TriggerRecordLidAngleTimerForTesting() {
 void TabletModeController::MaybeObserveBoundsAnimation(aura::Window* window) {
   StopObservingAnimation(/*record_stats=*/false, /*delete_screenshot=*/false);
 
-  display::TabletState state = display::Screen::GetScreen()->GetTabletState();
-  if (state != display::TabletState::kEnteringTabletMode &&
-      state != display::TabletState::kExitingTabletMode) {
+  if (!display::IsTabletStateChanging(
+          display::Screen::GetScreen()->GetTabletState())) {
     return;
   }
 
@@ -552,8 +551,7 @@ bool TabletModeController::InTabletMode() const {
   return display::Screen::GetScreen()->InTabletMode();
 }
 
-bool TabletModeController::ForceUiTabletModeState(
-    absl::optional<bool> enabled) {
+bool TabletModeController::ForceUiTabletModeState(std::optional<bool> enabled) {
   if (!enabled.has_value()) {
     tablet_mode_behavior_ = kDefault;
     AccelerometerReader::GetInstance()->SetEnabled(true);
@@ -1030,7 +1028,7 @@ void TabletModeController::HandleHingeRotation(
 }
 
 void TabletModeController::OnGetSwitchStates(
-    absl::optional<chromeos::PowerManagerClient::SwitchStates> result) {
+    std::optional<chromeos::PowerManagerClient::SwitchStates> result) {
   if (!result.has_value())
     return;
 

@@ -300,7 +300,7 @@
     {
       // crbug.com/1500511
       name: "AlignContentForBlocks",
-      status: "test",
+      status: "experimental",
     },
     {
       name: "AllowContentInitiatedDataUrlNavigations",
@@ -521,7 +521,7 @@
     {
       name: "BoundaryEventDispatchTracksNodeRemoval",
       public: true,
-      status: "experimental",
+      status: "stable",
     },
     {
       name: "BrowserVerifiedUserActivationKeyboard",
@@ -912,13 +912,6 @@
       status: "stable",
     },
     {
-      // @font-face Font property descriptors auto range.
-      // https://www.w3.org/TR/css-fonts-4/#font-prop-desc
-      name: "CSSFontFaceAutoVariableRange",
-      status: "stable",
-      base_feature: "none",
-    },
-    {
       name: "CSSFontSizeAdjust",
       status: "experimental",
       base_feature: "none",
@@ -1045,6 +1038,12 @@
       status: "test",
       base_feature: "none",
     },
+    // https://drafts.csswg.org/css-values-5/#progress
+    // progress(), media-progress(), container-progress()
+    {
+      name: "CSSProgressNotation",
+      status: "experimental",
+    },
     {
       // Shipping in M120.  Flag should be removed after M120 has been
       // shipping to stable for a few weeks.
@@ -1079,6 +1078,12 @@
       // https://drafts.csswg.org/css-scroll-snap-2#scroll-start
       name: "CSSScrollStart",
       status: "test",
+    },
+    {
+      // Flag for supporting scroll-state() and container-type: scroll-state
+      // Implied by supporting at least one of the scroll-state query features.
+      name: "CSSScrollStateContainerQueries",
+      implied_by: ["CSSStickyContainerQueries", "CSSStickyContainerQueries"],
     },
     {
       name: "CSSSelectorFragmentAnchor",
@@ -1815,7 +1820,7 @@
     },
     {
       name: "FontPaletteAnimation",
-      status: "experimental",
+      status: "stable",
     },
     {
       name: "FontSrcLocalMatching",
@@ -2178,7 +2183,7 @@
     {
       name: "LayoutNewMeasureCache",
       depends_on: ["LayoutNewMinMaxCache"],
-      status: "test",
+      status: "stable",
     },
     {
       name: "LayoutNewMinMaxCache",
@@ -2435,10 +2440,6 @@
       status: "stable",
     },
     {
-      name: "NavigateEventCancelableTraversals",
-      status: "stable",
-    },
-    {
       name: "NavigateEventCommitBehavior",
       status: "experimental",
     },
@@ -2475,6 +2476,10 @@
         "default": "experimental",
       },
       base_feature: "none",
+    },
+    {
+      name: "NextSiblingPositionUseNextCandidate",
+      status: "stable",
     },
     {
       name: "NoIdleEncodingForWebTests",
@@ -2971,6 +2976,11 @@
       base_feature: "none",
     },
     {
+      name: "PrivateNetworkAccessNullIpAddress",
+      status: "experimental",
+      base_feature: "none",
+    },
+    {
       name: "PrivateNetworkAccessPermissionPrompt",
       origin_trial_feature_name: "PrivateNetworkAccessPermissionPrompt",
       origin_trial_os: ["win", "mac", "linux", "fuchsia", "chromeos"],
@@ -3189,7 +3199,7 @@
     {
       // crbug.com/1493273
       name: "RubyInlinify",
-      status: "experimental",
+      status: "stable",
       depends_on: ["CssDisplayRuby"],
     },
     {
@@ -3804,6 +3814,14 @@
       origin_trial_feature_name: "UnrestrictedSharedArrayBuffer",
       origin_trial_os: ["win", "mac", "linux", "fuchsia", "chromeos"],
     },
+    // Enables using policy-controlled feature "usb-unrestricted" to allow
+    // isolated context to access protected USB interface classes and to
+    // bypass the USB blocklist.
+    {
+      name: "UnrestrictedUsb",
+      status: "experimental",
+      depends_on: ["WebUSB"],
+    },
     {
       // This flag makes IDL reflected attributes with the "URL" IDL attribute
       // return the original string of the attribute when a complete URL can't
@@ -3817,6 +3835,11 @@
     },
     {
       name: "URLPatternCompareComponent",
+      status: "experimental",
+      base_feature: "none",
+    },
+    {
+      name: "URLPatternHasRegExpGroups",
       status: "experimental",
       base_feature: "none",
     },
@@ -4065,7 +4088,7 @@
     // https://w3c.github.io/webauthn/#sctn-parseRequestOptionsFromJSON
     {
       name: "WebAuthenticationJSONSerialization",
-      status: "test",
+      status: "experimental",
     },
     {
       name: "WebAuthenticationLargeBlobExtension",
@@ -4116,7 +4139,7 @@
     },
     {
       name: "WebCodecsContentHint",
-      status: "experimental",
+      status: "stable",
     },
     {
       name: "WebCodecsCopyToRGB",

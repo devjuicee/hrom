@@ -17,24 +17,24 @@ as well). For each different type of layout, we have a
 The input to an [NGLayoutAlgorithm](ng_layout_algorithm.h) is the same tuple
 for every kind of layout:
 
- - The [BlockNode](ng_block_node.h) which we are currently performing layout for. The
+ - The [BlockNode](../block_node.h) which we are currently performing layout for. The
    following information is accessed:
 
    - The [ComputedStyle](../../style/ComputedStyle.h) for the node which we are
      currently performing laying for.
 
-   - The list of children [BlockNode](ng_block_node.h)es to perform layout upon, and their
+   - The list of children [BlockNode](../block_node.h)es to perform layout upon, and their
      respective style objects.
 
- - The [ConstraintSpace](ng_constraint_space.h) which represents the "space"
+ - The [ConstraintSpace](../constraint_space.h) which represents the "space"
    in which the current layout should produce a
-   [NGPhysicalFragment](ng_physical_fragment.h).
+   [PhysicalFragment](ng_physical_fragment.h).
 
  - TODO(layout-dev): BreakTokens should go here once implemented.
 
 The current layout should not access any information outside this set, this
 will break invariants in the system. (As a concrete example we intend to cache
-[NGPhysicalFragment](ng_physical_fragment.h)s based on this set, accessing
+[PhysicalFragment](ng_physical_fragment.h)s based on this set, accessing
 additional information outside this set will break caching behaviour).
 
 ### Box Tree ###
@@ -49,7 +49,7 @@ Please refer to the [inline layout README](../inline/README.md).
 
 TODO(layout-dev): Document with lots of pretty pictures.
 
-All coordinates and sizes associated with an NGPhysicalFragment are physical,
+All coordinates and sizes associated with an PhysicalFragment are physical,
 i.e. pure left/top offsets from the parent fragment, and sizes are expressed
 with widths and heights (not inline-size / block-size). No logical offsets or
 sizes. Writing mode and direction are resolved during layout.
@@ -79,7 +79,7 @@ document](https://docs.google.com/document/d/1RjH_Ofa8O_ucGvaDCEgsBVECPqUTiQKR3z
 Here's how it works:
 
 * We store the input constraint space and the resulting fragment on the
-  [LayoutNGBlockFlow](layout_ng_block_flow.h). However, we only do that if
+  [LayoutNGBlockFlow](../layout_ng_block_flow.h). However, we only do that if
   we have no break token to simplify the initial implementation. We call
   `LayoutNGBlockFlow::SetCachedLayoutResult` from `BlockNode::Layout`.
 * Once cached, `BlockNode::Layout` checks at the beginning if we already
@@ -135,10 +135,10 @@ may be dumped, for debugging, logging and testing purposes.
 Call LayoutInputNode::ShowNodeTree() to dump the tree to stderr.
 
 #### For physical fragment subtree ####
-Call NGPhysicalFragment::ShowFragmentTree() to dump the tree to
+Call PhysicalFragment::ShowFragmentTree() to dump the tree to
 stderr. Fragments in the subtree are not required to be marked as placed
 (i.e. know their offset).
 
 A fragment tree may also be dumped to a String, by calling
-NGPhysicalFragment::DumpFragmentTree(). It takes a flag parameter, so that the
+PhysicalFragment::DumpFragmentTree(). It takes a flag parameter, so that the
 output can be customized to only contain what's relevant for a given purpose.

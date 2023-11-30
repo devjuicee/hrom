@@ -14,15 +14,16 @@ class SearchEngineChoiceJsBrowserTest : public WebUIMochaBrowserTest {
  protected:
   SearchEngineChoiceJsBrowserTest() {
     set_test_loader_host(chrome::kChromeUISearchEngineChoiceHost);
+    scoped_feature_list_.InitAndEnableFeatureWithParameters(
+        switches::kSearchEngineChoice,
+        {{switches::kWithForcedScrollEnabled.name, "false"}});
   }
 
   void SetUpCommandLine(base::CommandLine* command_line) override {
     command_line->AppendSwitchASCII(switches::kSearchEngineChoiceCountry, "BE");
   }
 
- private:
-  base::test::ScopedFeatureList scoped_feature_list_{
-      switches::kSearchEngineChoice};
+  base::test::ScopedFeatureList scoped_feature_list_;
   base::AutoReset<bool> scoped_chrome_build_override_ =
       SearchEngineChoiceServiceFactory::ScopedChromeBuildOverrideForTesting(
           /*force_chrome_build=*/true);

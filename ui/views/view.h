@@ -19,6 +19,7 @@
 #include "base/gtest_prod_util.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/safety_checks.h"
 #include "base/observer_list.h"
 #include "base/strings/string_piece.h"
 #include "build/build_config.h"
@@ -286,6 +287,10 @@ class VIEWS_EXPORT View : public ui::LayerDelegate,
                           public ui::EventHandler,
                           public ui::PropertyHandler,
                           public ui::metadata::MetaDataProvider {
+  // Do not remove this macro!
+  // The macro is maintained by the memory safety team.
+  ADVANCED_MEMORY_SAFETY_CHECKS();
+
  public:
   using Views = std::vector<View*>;
 
@@ -2217,7 +2222,7 @@ class VIEWS_EXPORT View : public ui::LayerDelegate,
   // Tree operations -----------------------------------------------------------
 
   // This view's parent.
-  raw_ptr<View, AcrossTasksDanglingUntriaged> parent_ = nullptr;
+  raw_ptr<View> parent_ = nullptr;
 
   // This view's children.
   Views children_;

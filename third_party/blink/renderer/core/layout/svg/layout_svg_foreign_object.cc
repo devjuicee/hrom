@@ -4,9 +4,9 @@
 
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_foreign_object.h"
 
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
+#include "third_party/blink/renderer/core/layout/block_node.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/svg/svg_resources.h"
 #include "third_party/blink/renderer/core/layout/svg/transformed_hit_test_location.h"
 #include "third_party/blink/renderer/core/paint/paint_layer.h"
@@ -151,7 +151,7 @@ void LayoutSVGForeignObject::UpdateLayout() {
   // Any propagated sticky-descendants may have invalid sticky-constraints.
   // Clear them now.
   if (const auto* sticky_descendants =
-          result->PhysicalFragment().PropagatedStickyDescendants()) {
+          result->GetPhysicalFragment().PropagatedStickyDescendants()) {
     for (const auto& sticky_descendant : *sticky_descendants) {
       sticky_descendant->SetStickyConstraints(nullptr);
     }

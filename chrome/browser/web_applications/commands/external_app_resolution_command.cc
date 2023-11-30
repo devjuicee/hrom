@@ -481,7 +481,6 @@ void ExternalAppResolutionCommand::
                          /*is_offline_install=*/false,
                          ExternallyManagedAppManager::InstallResult(
                              std::move(code), app_id, uninstall_triggered)));
-
   base::OnceClosure finalized_callback;
   if (relaunch_app) {
     apps::AppLaunchParams app_launch_params(
@@ -495,7 +494,7 @@ void ExternalAppResolutionCommand::
         base::BindOnce(&WebAppUiManager::NotifyAppRelaunchState,
                        provider->ui_manager().GetWeakPtr(),
                        *installed_placeholder_app_id_, app_id,
-                       profile_->GetWeakPtr(),
+                       web_app_info_->title, profile_->GetWeakPtr(),
                        AppRelaunchState::kAppAboutToRelaunch)
             .Then(
                 base::BindOnce(
@@ -504,12 +503,12 @@ void ExternalAppResolutionCommand::
                     std::move(app_launch_params),
                     base::IgnoreArgs<base::WeakPtr<Browser>,
                                      base::WeakPtr<content::WebContents>,
-                                     apps::LaunchContainer>(
-                        base::BindOnce(&WebAppUiManager::NotifyAppRelaunchState,
-                                       provider->ui_manager().GetWeakPtr(),
-                                       *installed_placeholder_app_id_, app_id,
-                                       profile_->GetWeakPtr(),
-                                       AppRelaunchState::kAppRelaunched)),
+                                     apps::LaunchContainer>(base::BindOnce(
+                        &WebAppUiManager::NotifyAppRelaunchState,
+                        provider->ui_manager().GetWeakPtr(),
+                        *installed_placeholder_app_id_, app_id,
+                        web_app_info_->title, profile_->GetWeakPtr(),
+                        AppRelaunchState::kAppRelaunched)),
                     FROM_HERE)
                     .Then(std::move(installed_callback_with_arguments_bound)));
   } else {
@@ -530,8 +529,8 @@ void ExternalAppResolutionCommand::
   if (uninstall_placeholder) {
     if (relaunch_app) {
       provider->ui_manager().NotifyAppRelaunchState(
-          *installed_placeholder_app_id_, app_id, profile_->GetWeakPtr(),
-          AppRelaunchState::kAppClosingForRelaunch);
+          *installed_placeholder_app_id_, app_id, web_app_info_->title,
+          profile_->GetWeakPtr(), AppRelaunchState::kAppClosingForRelaunch);
     }
     auto& scheduler =
         WebAppProvider::GetForWebApps(&profile_.get())->scheduler();
@@ -639,10 +638,13 @@ void ExternalAppResolutionCommand::OnInstallFromInfoCompleted(
     const webapps::AppId& app_id,
     webapps::InstallResultCode code,
     OsHooksErrors os_hook_errors) {
-  if (!webapps::IsSuccess(code)) {
+  bool successful_install_from_info = webapps::IsSuccess(code);
+  if (!successful_install_from_info) {
     Abort(code);
     return;
   }
+
+  webapps::InstallableMetrics::TrackInstallResult(successful_install_from_info);
 
   uninstall_and_replace_job_.emplace(
       &profile_.get(), *apps_lock_, install_options_.uninstall_and_replace,

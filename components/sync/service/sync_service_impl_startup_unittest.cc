@@ -288,10 +288,8 @@ TEST_F(SyncServiceImplStartupTest, WebSignoutDuringDeferredStartup) {
   SignInWithSyncConsent();
   SetSyncFeatureEnabledPrefs();
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
-  // On Ash, deferred startup is only possible if first sync completed earlier.
+  // Deferred startup is only possible if first sync completed earlier.
   component_factory()->set_first_time_sync_configure_done(true);
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
   CreateSyncService();
   sync_service()->Initialize();
@@ -485,7 +483,7 @@ TEST_F(SyncServiceImplStartupTest, DisableSync) {
 TEST_F(SyncServiceImplStartupTest, HonorsExistingDatatypePrefs) {
   // Explicitly set Keep Everything Synced to false and have only bookmarks
   // enabled.
-  sync_prefs()->SetSelectedTypes(
+  sync_prefs()->SetSelectedTypesForSyncingUser(
       /*keep_everything_synced=*/false,
       /*registered_types=*/UserSelectableTypeSet::All(),
       /*selected_types=*/{UserSelectableType::kBookmarks});
@@ -751,10 +749,8 @@ TEST_F(SyncServiceImplStartupTest, DeferredStartInterruptedByDataType) {
   base::HistogramTester histogram_tester;
   SetSyncFeatureEnabledPrefs();
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
-  // On Ash, deferred startup is only possible if first sync completed earlier.
+  // Deferred startup is only possible if first sync completed earlier.
   component_factory()->set_first_time_sync_configure_done(true);
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
   SignInWithSyncConsent();
   CreateSyncService();
@@ -813,7 +809,7 @@ TEST_F(SyncServiceImplStartupTest,
        ShouldClearMetadataForAlreadyDisabledTypesBeforeConfigurationDone) {
   SetSyncFeatureEnabledPrefs();
   // Simulate types disabled during previous run.
-  sync_prefs()->SetSelectedTypes(
+  sync_prefs()->SetSelectedTypesForSyncingUser(
       /*keep_everything_synced=*/false,
       /*registered_types=*/
       {UserSelectableType::kBookmarks, UserSelectableType::kReadingList},
@@ -846,7 +842,7 @@ TEST_F(SyncServiceImplStartupTest,
   std::unique_ptr<SyncSetupInProgressHandle> setup_in_progress_handle =
       sync_service()->GetSetupInProgressHandle();
   // Disable READING_LIST type before engine init is over.
-  sync_prefs()->SetSelectedTypes(
+  sync_prefs()->SetSelectedTypesForSyncingUser(
       /*keep_everything_synced=*/false,
       /*registered_types=*/UserSelectableTypeSet::All(),
       /*selected_types=*/{UserSelectableType::kBookmarks});
@@ -878,7 +874,7 @@ TEST_F(SyncServiceImplStartupTest,
   ASSERT_TRUE(sync_service()->IsEngineInitialized());
 
   // Disable READING_LIST type.
-  sync_prefs()->SetSelectedTypes(
+  sync_prefs()->SetSelectedTypesForSyncingUser(
       /*keep_everything_synced=*/false,
       /*registered_types=*/UserSelectableTypeSet::All(),
       /*selected_types=*/{UserSelectableType::kBookmarks});

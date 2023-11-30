@@ -84,14 +84,10 @@ if (is_win) {
       "imm32.lib",  # chrome_elf_init.cc
       "netapi32.lib",
       "ndfapi.lib",  # For browser/net/net_error_diagnostics_dialog_win.h
-      "pdh.lib",  # For browser/private_working_set_snapshot.h
       "wbemuuid.lib",  # For browser/metrics /
                        # antivirus_metrics_provider_win.cc
     ]
-    ldflags = [
-      "/DELAYLOAD:ndfapi.dll",
-      "/DELAYLOAD:pdh.dll",  # The task manager is rarely used.
-    ]
+    ldflags = [ "/DELAYLOAD:ndfapi.dll" ]
   }
 }
 
@@ -2648,6 +2644,10 @@ static_library("browser") {
 
   if (enable_search_engine_choice) {
     sources += [
+      "search_engine_choice/search_engine_choice_client_side_trial.cc",
+      "search_engine_choice/search_engine_choice_client_side_trial.h",
+      "search_engine_choice/search_engine_choice_profile_tagger.cc",
+      "search_engine_choice/search_engine_choice_profile_tagger.h",
       "search_engine_choice/search_engine_choice_service.cc",
       "search_engine_choice/search_engine_choice_service.h",
       "search_engine_choice/search_engine_choice_service_factory.cc",
@@ -3283,6 +3283,8 @@ static_library("browser") {
       "password_manager/android/password_ui_view_android.h",
       "password_manager/android/save_update_password_message_delegate.cc",
       "password_manager/android/save_update_password_message_delegate.h",
+      "password_manager/android/shared_preferences_delegate_android.cc",
+      "password_manager/android/shared_preferences_delegate_android.h",
       "payments/android/service_worker_payment_app_bridge.cc",
       "permissions/notification_blocked_dialog_controller_android.cc",
       "permissions/notification_blocked_dialog_controller_android.h",
@@ -3406,6 +3408,7 @@ static_library("browser") {
       "usb/android/web_usb_chooser_android.cc",
       "usb/android/web_usb_chooser_android.h",
       "wallet/android/boarding_pass_bridge.cc",
+      "webapps/pwa_restore_promo_utils_android.cc",
       "webapps/web_app_offline_android.cc",
       "webauthn/android/cable_module_android.cc",
       "webauthn/android/cable_registration_state.cc",
@@ -3496,6 +3499,7 @@ static_library("browser") {
       "//chrome/browser/ui/webui/feed_internals:mojo_bindings",
       "//chrome/browser/usb/android:jni_headers",
       "//chrome/browser/wallet/android:jni_headers",
+      "//chrome/browser/webapps/android:webapps_jni_headers",
       "//chrome/common:non_code_constants",
       "//chrome/services/media_gallery_util/public/cpp",
       "//components/autofill/android:keyboard_suppressor",
@@ -3994,8 +3998,6 @@ static_library("browser") {
       "media_galleries/media_file_system_registry.h",
       "media_galleries/media_galleries_dialog_controller.cc",
       "media_galleries/media_galleries_dialog_controller.h",
-      "media_galleries/media_galleries_histograms.cc",
-      "media_galleries/media_galleries_histograms.h",
       "media_galleries/media_galleries_permission_controller.cc",
       "media_galleries/media_galleries_permission_controller.h",
       "media_galleries/media_galleries_preferences.cc",
@@ -4120,6 +4122,8 @@ static_library("browser") {
       "new_tab_page/modules/v2/history_clusters/history_clusters_page_handler_v2.h",
       "new_tab_page/modules/v2/tab_resumption/tab_resumption_page_handler.cc",
       "new_tab_page/modules/v2/tab_resumption/tab_resumption_page_handler.h",
+      "new_tab_page/modules/v2/tab_resumption/tab_resumption_util.cc",
+      "new_tab_page/modules/v2/tab_resumption/tab_resumption_util.h",
       "new_tab_page/new_tab_page_util.cc",
       "new_tab_page/new_tab_page_util.h",
       "new_tab_page/one_google_bar/one_google_bar_data.cc",
@@ -5303,6 +5307,7 @@ static_library("browser") {
       "//chrome/browser/scalable_iph:scalable_iph_factory",
       "//chrome/browser/ui/ash/system_web_apps",
       "//chrome/browser/ui/webui/ash/add_supervision:mojo_bindings",
+      "//chrome/browser/ui/webui/ash/app_install:mojo_bindings",
       "//chrome/browser/ui/webui/ash/audio:mojo_bindings",
       "//chrome/browser/ui/webui/ash/borealis_installer:mojo_bindings",
       "//chrome/browser/ui/webui/ash/cloud_upload:mojo_bindings",
@@ -5322,7 +5327,6 @@ static_library("browser") {
       "//chrome/browser/ui/webui/ash/settings/pages/privacy/mojom",
       "//chrome/browser/ui/webui/ash/settings/search/mojom",
       "//chrome/browser/ui/webui/ash/vm:mojo_bindings",
-      "//chrome/browser/ui/webui/ash/web_app_install:mojo_bindings",
       "//chrome/browser/ui/webui/nearby_share:mojom",
       "//chrome/services/sharing/public/cpp",
       "//chrome/services/sharing/public/proto",
@@ -5899,6 +5903,9 @@ static_library("browser") {
 
       # Needed for _variant_t used in browser_dm_token_storage_win.cc
       "comsuppw.lib",
+
+      # Needed for cpu_probe_win.cc
+      "pdh.lib",
     ]
     sources += [
       "accessibility/caption_settings_dialog.h",
@@ -6072,7 +6079,6 @@ static_library("browser") {
 
     deps += [
       ":chrome_process_finder",
-      ":cpu_probe_pdh_support",
       "//base/win:base_win_buildflags",
       "//chrome/app:chrome_exe_main_exports",
       "//chrome/app/theme:chrome_unscaled_resources_grit",
@@ -6219,8 +6225,6 @@ static_library("browser") {
       "mac/install_from_dmg.mm",
       "mac/key_window_notifier.cc",
       "mac/key_window_notifier.h",
-      "mac/mac_startup_profiler.cc",
-      "mac/mac_startup_profiler.h",
       "mac/nsprocessinfo_additions.h",
       "mac/nsprocessinfo_additions.mm",
       "mac/relauncher.h",
@@ -6373,9 +6377,11 @@ static_library("browser") {
       "enterprise/signals/user_permission_service_factory.cc",
       "enterprise/signals/user_permission_service_factory.h",
 
-      # This policy is only supported on non-lacros desktop
+      # These policies are only supported on non-lacros desktop
       "performance_manager/public/user_tuning/high_efficiency_policy_handler.h",
       "performance_manager/user_tuning/high_efficiency_policy_handler.cc",
+      "policy/battery_saver_policy_handler.cc",
+      "policy/battery_saver_policy_handler.h",
     ]
     deps += [
       "//chrome/browser/enterprise/connectors/device_trust:features",
@@ -7030,6 +7036,8 @@ static_library("browser") {
           sources += [
             "printing/web_api/web_printing_service_chromeos.cc",
             "printing/web_api/web_printing_service_chromeos.h",
+            "printing/web_api/web_printing_type_converters.cc",
+            "printing/web_api/web_printing_type_converters.h",
           ]
         }
       }
@@ -7059,8 +7067,8 @@ static_library("browser") {
 
   if (enable_print_content_analysis) {
     sources += [
-      "enterprise/connectors/analysis/print_content_analysis_utils.cc",
-      "enterprise/connectors/analysis/print_content_analysis_utils.h",
+      "enterprise/data_protection/print_utils.cc",
+      "enterprise/data_protection/print_utils.h",
     ]
   }
 
@@ -8117,29 +8125,6 @@ if (is_win) {
     sources = [ "win/titlebar_config.h" ]
     deps = [ "//base" ]
   }
-
-  # This is in a separate config so the flags can be applied to dependents.
-  # ldflags in GN aren't automatically inherited.
-  config("cpu_probe_pdh_support_linker_flags") {
-    libs = [ "pdh.lib" ]
-    ldflags = [
-      # Don't load unless the CpuProbe feature is enabled.
-      "/DELAYLOAD:pdh.dll",
-    ]
-  }
-
-  # This is in a separate source set so that it can specify that it needs
-  # pdh.lib, which isn't commonly used.
-  source_set("cpu_probe_pdh_support") {
-    sources = [
-      "performance_manager/metrics/cpu_probe/scoped_pdh_query.cc",
-      "performance_manager/metrics/cpu_probe/scoped_pdh_query.h",
-    ]
-
-    deps = [ "//base" ]
-
-    all_dependent_configs = [ ":cpu_probe_pdh_support_linker_flags" ]
-  }
 }
 
 proto_library("k_anonymity_storage_proto") {
@@ -8605,8 +8590,6 @@ if (!is_android) {
     sources = [
       "signin/token_revoker_test_utils.cc",
       "signin/token_revoker_test_utils.h",
-      "ui/webui/web_ui_test_handler.cc",
-      "ui/webui/web_ui_test_handler.h",
     ]
 
     deps = [
@@ -8616,7 +8599,11 @@ if (!is_android) {
       "//content/test:test_support",
     ]
     if (is_chromeos_ash) {
-      deps += [ "//chrome/test/data/webui:web_ui_test_bindings" ]
+      sources += [
+        "ui/webui/ash/web_ui_test_handler.cc",
+        "ui/webui/ash/web_ui_test_handler.h",
+      ]
+      deps += [ "//chrome/test/data/webui/chromeos:web_ui_test_bindings" ]
     }
 
     public_deps = [
@@ -8655,5 +8642,30 @@ if (is_chromeos_ash) {
       "//components/exo/wayland:ui_controls_protocol_stub",
       "//third_party/protobuf:protobuf_lite",
     ]
+  }
+}
+
+if (is_win || is_mac || is_linux) {
+  fuzzer_test("browser_switcher_ieem_sitelist_parser_fuzzer") {
+    sources = [ "browser_switcher/ieem_sitelist_parser_fuzzer.cc" ]
+    deps = [
+      ":browser",
+      "//base",
+      "//mojo/core/embedder",
+      "//services/data_decoder/public/cpp:test_support",
+    ]
+
+    if (is_win) {
+      deps += [
+        # Stub out thunks for transitive dependencies (they're normally linked
+        # into the Chrome binary by separate GN rules, but for the fuzzer we
+        # have to do it manually here).
+        "//chrome/chrome_elf:test_stubs",
+        "//components/crash/core/app:test_support",
+      ]
+    }
+
+    # The fuzzed code needs more RAM that the default limit.
+    libfuzzer_options = [ "rss_limit_mb=4096" ]
   }
 }

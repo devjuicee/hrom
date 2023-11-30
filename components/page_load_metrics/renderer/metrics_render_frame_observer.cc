@@ -147,12 +147,13 @@ void MetricsRenderFrameObserver::DidChangePerformanceTiming() {
 void MetricsRenderFrameObserver::DidObserveUserInteraction(
     base::TimeTicks max_event_start,
     base::TimeTicks max_event_end,
-    blink::UserInteractionType interaction_type) {
+    blink::UserInteractionType interaction_type,
+    uint64_t interaction_offset) {
   if (!page_timing_metrics_sender_ || HasNoRenderFrame()) {
     return;
   }
   page_timing_metrics_sender_->DidObserveUserInteraction(
-      max_event_start, max_event_end, interaction_type);
+      max_event_start, max_event_end, interaction_type, interaction_offset);
 }
 
 void MetricsRenderFrameObserver::DidChangeCpuTiming(base::TimeDelta time) {
@@ -311,7 +312,7 @@ void MetricsRenderFrameObserver::DidLoadResourceFromMemoryCache(
   }
 }
 
-void MetricsRenderFrameObserver::WillDetach() {
+void MetricsRenderFrameObserver::WillDetach(blink::DetachReason detach_reason) {
   if (page_timing_metrics_sender_) {
     page_timing_metrics_sender_->SendLatest();
     page_timing_metrics_sender_.reset();
@@ -468,7 +469,7 @@ void MetricsRenderFrameObserver::OnMainFrameImageAdRectangleChanged(
 }
 
 void MetricsRenderFrameObserver::OnFrameDetached() {
-  WillDetach();
+  WillDetach(blink::DetachReason::kNavigation);
 }
 
 bool MetricsRenderFrameObserver::SetUpSmoothnessReporting(

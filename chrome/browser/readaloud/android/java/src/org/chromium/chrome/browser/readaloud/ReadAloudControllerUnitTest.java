@@ -9,6 +9,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
@@ -53,6 +56,7 @@ import org.chromium.chrome.modules.readaloud.Playback;
 import org.chromium.chrome.modules.readaloud.PlaybackArgs;
 import org.chromium.chrome.modules.readaloud.PlaybackArgs.PlaybackVoice;
 import org.chromium.chrome.modules.readaloud.PlaybackListener;
+import org.chromium.chrome.modules.readaloud.PlaybackListener.PlaybackData;
 import org.chromium.chrome.modules.readaloud.Player;
 import org.chromium.chrome.modules.readaloud.ReadAloudPlaybackHooks;
 import org.chromium.chrome.modules.readaloud.contentjs.Highlighter;
@@ -167,6 +171,9 @@ public class ReadAloudControllerUnitTest {
         mController.setHighlighterForTests(mHighlighter);
 
         doReturn(false).when(mPlaybackHooks).voicesInitialized();
+        doReturn(List.of(new PlaybackVoice("en", "voiceA", "")))
+                .when(mPlaybackHooks)
+                .getVoicesFor(anyString());
     }
 
     @Test
@@ -199,7 +206,7 @@ public class ReadAloudControllerUnitTest {
         mController.playTab(mTab);
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
 
         // reload some other tab, playback should keep going
         MockTab newTab = mTabModelSelector.addMockTab();
@@ -223,6 +230,7 @@ public class ReadAloudControllerUnitTest {
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
         mPlaybackCallbackCaptor.getValue().onFailure(new Exception("Very bad error"));
+        resolvePromises();
 
         // Reload this url
         mController.getTabModelTabObserverforTests().onPageLoadStarted(mTab, mTab.getUrl());
@@ -243,7 +251,7 @@ public class ReadAloudControllerUnitTest {
         mController.playTab(mTab);
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
 
         // close some other tab, playback should keep going
         MockTab newTab = mTabModelSelector.addMockTab();
@@ -267,6 +275,7 @@ public class ReadAloudControllerUnitTest {
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
         mPlaybackCallbackCaptor.getValue().onFailure(new Exception("Very bad error"));
+        resolvePromises();
 
         // Close this tab
         mController.getTabModelTabObserverforTests().willCloseTab(mTab);
@@ -392,7 +401,7 @@ public class ReadAloudControllerUnitTest {
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
 
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         verify(mPlayerCoordinator, times(1))
                 .playbackReady(eq(mPlayback), eq(PlaybackListener.State.PLAYING));
         verify(mPlayerCoordinator).addObserver(mController);
@@ -446,6 +455,17 @@ public class ReadAloudControllerUnitTest {
     }
 
     @Test
+    public void testPlayTab_unsupportedLanguage() {
+        doReturn(List.of()).when(mPlaybackHooks).getVoicesFor(anyString());
+        mFakeTranslateBridge.setCurrentLanguage("pl-PL");
+        mTab.setGurlOverrideForTesting(new GURL("https://en.wikipedia.org/wiki/Google"));
+
+        mController.playTab(mTab);
+
+        verify(mPlaybackHooks, never()).createPlayback(mPlaybackArgsCaptor.capture(), any());
+    }
+
+    @Test
     public void testPlayTab_tabLanguageUnd() {
         AppLocaleUtils.setAppLanguagePref("fr-FR");
 
@@ -468,6 +488,7 @@ public class ReadAloudControllerUnitTest {
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
 
         mPlaybackCallbackCaptor.getValue().onFailure(new Throwable());
+        resolvePromises();
         verify(mPlayerCoordinator, times(1)).playbackFailed();
     }
 
@@ -481,7 +502,7 @@ public class ReadAloudControllerUnitTest {
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
 
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         verify(mPlayerCoordinator, times(1))
                 .playbackReady(eq(mPlayback), eq(PlaybackListener.State.PLAYING));
 
@@ -493,6 +514,9 @@ public class ReadAloudControllerUnitTest {
         reset(mPlayback);
         reset(mPlaybackHooks);
 
+        doReturn(List.of(new PlaybackVoice("en", "voiceA", "")))
+                .when(mPlaybackHooks)
+                .getVoicesFor(anyString());
         // Subsequent playTab() should play without trying to release anything.
         mController.playTab(mTab);
         verify(mPlaybackHooks).createPlayback(any(), any());
@@ -506,7 +530,7 @@ public class ReadAloudControllerUnitTest {
         mController.playTab(mTab);
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         verify(mHighlighter).initializeJs(eq(mTab), eq(mMetadata), any(Highlighter.Config.class));
         // Checks that the pref is read to set up highlighter state
         verify(mPrefService).hasPrefPath(eq(ReadAloudPrefs.HIGHLIGHTING_ENABLED_PATH));
@@ -533,7 +557,7 @@ public class ReadAloudControllerUnitTest {
         mController.playTab(mTab);
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         verify(mHighlighter).initializeJs(eq(mTab), eq(mMetadata), any(Highlighter.Config.class));
 
         // Reload this url
@@ -549,7 +573,7 @@ public class ReadAloudControllerUnitTest {
         mController.playTab(mTab);
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         verify(mHighlighter).initializeJs(eq(mTab), eq(mMetadata), any(Highlighter.Config.class));
 
         // Reload tab to a different url.
@@ -567,7 +591,7 @@ public class ReadAloudControllerUnitTest {
         mController.playTab(mTab);
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         verify(mHighlighter).initializeJs(eq(mTab), eq(mMetadata), any(Highlighter.Config.class));
 
         // stopping playback should clear highlighting.
@@ -603,7 +627,7 @@ public class ReadAloudControllerUnitTest {
         mController.playTab(mTab);
         verify(mPlaybackHooks, times(1))
                 .createPlayback(Mockito.any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         mController.setHighlighterMode(2);
         verify(mHighlighter, times(1)).handleTabReloaded(mTab);
 
@@ -632,13 +656,18 @@ public class ReadAloudControllerUnitTest {
         List<PlaybackVoice> gotVoices = mPlaybackArgsCaptor.getValue().getVoices();
         assertEquals(1, gotVoices.size());
         assertEquals("OLD VOICE ID", gotVoices.get(0).getVoiceId());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
 
         reset(mPlaybackHooks);
 
         // Set the new voice.
         var newVoice = new PlaybackVoice("lang", "NEW VOICE ID", "description");
         doReturn(List.of(newVoice)).when(mPlaybackHooks).getPlaybackVoiceList(any());
+        doReturn(List.of(newVoice)).when(mPlaybackHooks).getVoicesFor(anyString());
+        var data = Mockito.mock(PlaybackData.class);
+        doReturn(99).when(data).paragraphIndex();
+        doReturn(PlaybackListener.State.PLAYING).when(data).state();
+        mController.onPlaybackDataChanged(data);
         mController.setVoiceOverrideAndApplyToPlayback(newVoice);
 
         // Pref is updated.
@@ -646,13 +675,18 @@ public class ReadAloudControllerUnitTest {
 
         // Playback is stopped.
         verify(mPlayback).release();
+        doReturn(List.of(newVoice)).when(mPlaybackHooks).getVoicesFor(anyString());
 
-        // Playback starts again with new voice.
-        // TODO: update this test when playback position is restored
-        verify(mPlaybackHooks, times(1)).createPlayback(mPlaybackArgsCaptor.capture(), any());
+        // Playback starts again with new voice and original paragraph index.
+        verify(mPlaybackHooks, times(1))
+                .createPlayback(mPlaybackArgsCaptor.capture(), mPlaybackCallbackCaptor.capture());
         gotVoices = mPlaybackArgsCaptor.getValue().getVoices();
         assertEquals(1, gotVoices.size());
         assertEquals("NEW VOICE ID", gotVoices.get(0).getVoiceId());
+
+        onPlaybackSuccess(mPlayback);
+        verify(mPlayback, times(2)).play();
+        verify(mPlayback).seekToParagraph(eq(99), eq(0L));
     }
 
     @Test
@@ -660,18 +694,20 @@ public class ReadAloudControllerUnitTest {
         // Play tab.
         mController.playTab(mTab);
         verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         verify(mPlayback).addListener(mPlaybackListenerCaptor.capture());
         reset(mPlaybackHooks);
         reset(mPlayback);
 
-        // Pause.
+        // Pause at paragraph 99.
         var data = Mockito.mock(PlaybackListener.PlaybackData.class);
         doReturn(PlaybackListener.State.PAUSED).when(data).state();
+        doReturn(99).when(data).paragraphIndex();
         mPlaybackListenerCaptor.getValue().onPlaybackDataChanged(data);
 
         // Change voice setting.
         var newVoice = new PlaybackVoice("lang", "NEW VOICE ID", "description");
+        doReturn(List.of(newVoice)).when(mPlaybackHooks).getVoicesFor(anyString());
         doReturn(List.of(newVoice)).when(mPlaybackHooks).getPlaybackVoiceList(any());
         mController.setVoiceOverrideAndApplyToPlayback(newVoice);
 
@@ -683,8 +719,9 @@ public class ReadAloudControllerUnitTest {
         assertEquals("NEW VOICE ID", voices.get(0).getVoiceId());
 
         doReturn(Mockito.mock(Playback.Metadata.class)).when(mPlayback).getMetadata();
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         verify(mPlayback, never()).play();
+        verify(mPlayback).seekToParagraph(eq(99), eq(0L));
     }
 
     @Test
@@ -694,11 +731,12 @@ public class ReadAloudControllerUnitTest {
         mTab.setGurlOverrideForTesting(new GURL("https://en.wikipedia.org/wiki/Google"));
         mController.playTab(mTab);
         verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         reset(mPlaybackHooks);
 
         // Preview a voice.
         var voice = new PlaybackVoice("en", "asdf", "");
+        doReturn(List.of(voice)).when(mPlaybackHooks).getVoicesFor(anyString());
         doReturn(List.of(voice)).when(mPlaybackHooks).getPlaybackVoiceList(any());
         mController.previewVoice(voice);
 
@@ -723,7 +761,7 @@ public class ReadAloudControllerUnitTest {
 
         // Preview playback succeeds.
         Playback previewPlayback = Mockito.mock(Playback.class);
-        mPlaybackCallbackCaptor.getValue().onSuccess(previewPlayback);
+        onPlaybackSuccess(previewPlayback);
         verify(previewPlayback).play();
         verify(previewPlayback).addListener(mPlaybackListenerCaptor.capture());
         assertNotNull(mPlaybackListenerCaptor.getValue());
@@ -743,11 +781,12 @@ public class ReadAloudControllerUnitTest {
         mTab.setGurlOverrideForTesting(new GURL("https://en.wikipedia.org/wiki/Google"));
         mController.playTab(mTab);
         verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         reset(mPlaybackHooks);
 
         // Preview a voice.
         var voice = new PlaybackVoice("en", "asdf", "");
+        doReturn(List.of(voice)).when(mPlaybackHooks).getVoicesFor(anyString());
         doReturn(List.of(voice)).when(mPlaybackHooks).getPlaybackVoiceList(any());
         mController.previewVoice(voice);
 
@@ -757,6 +796,7 @@ public class ReadAloudControllerUnitTest {
 
         // Preview fails. Nothing to verify here yet.
         mPlaybackCallbackCaptor.getValue().onFailure(new Throwable());
+        resolvePromises();
     }
 
     @Test
@@ -766,27 +806,29 @@ public class ReadAloudControllerUnitTest {
         mTab.setGurlOverrideForTesting(new GURL("https://en.wikipedia.org/wiki/Google"));
         mController.playTab(mTab);
         verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         reset(mPlaybackHooks);
 
         // Preview a voice.
         var voice = new PlaybackVoice("en", "asdf", "");
         doReturn(List.of(voice)).when(mPlaybackHooks).getPlaybackVoiceList(any());
+        doReturn(List.of(voice)).when(mPlaybackHooks).getVoicesFor(anyString());
         mController.previewVoice(voice);
 
         verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
         Playback previewPlayback = Mockito.mock(Playback.class);
-        mPlaybackCallbackCaptor.getValue().onSuccess(previewPlayback);
+        onPlaybackSuccess(previewPlayback);
         reset(mPlaybackHooks);
 
         // Start another preview.
+        doReturn(List.of(voice)).when(mPlaybackHooks).getVoicesFor(anyString());
         mController.previewVoice(new PlaybackVoice("en", "abcd", ""));
         // Preview playback should be stopped and cleaned up.
         verify(previewPlayback).release();
         reset(previewPlayback);
         verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
         reset(mPlaybackHooks);
-        mPlaybackCallbackCaptor.getValue().onSuccess(previewPlayback);
+        onPlaybackSuccess(previewPlayback);
         verify(previewPlayback).addListener(mPlaybackListenerCaptor.capture());
 
         // Preview finishes playing.
@@ -799,8 +841,17 @@ public class ReadAloudControllerUnitTest {
 
     @Test
     public void testPreviewVoice_closeVoiceMenu() {
+        // Set up playback and restorable state.
         mController.playTab(mTab);
         reset(mPlaybackHooks);
+        doReturn(List.of(new PlaybackVoice("en", "voiceA", "")))
+                .when(mPlaybackHooks)
+                .getVoicesFor(anyString());
+
+        var data = Mockito.mock(PlaybackListener.PlaybackData.class);
+        doReturn(PlaybackListener.State.STOPPED).when(data).state();
+        doReturn(99).when(data).paragraphIndex();
+        mController.onPlaybackDataChanged(data);
 
         // Preview a voice.
         var voice = new PlaybackVoice("en", "asdf", "");
@@ -809,17 +860,86 @@ public class ReadAloudControllerUnitTest {
 
         verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
         Playback previewPlayback = Mockito.mock(Playback.class);
-        mPlaybackCallbackCaptor.getValue().onSuccess(previewPlayback);
+        onPlaybackSuccess(previewPlayback);
         reset(mPlaybackHooks);
+        doReturn(List.of(new PlaybackVoice("en", "voiceA", "")))
+                .when(mPlaybackHooks)
+                .getVoicesFor(anyString());
 
         // Closing the voice menu should stop the preview.
         mController.onVoiceMenuClosed();
         verify(previewPlayback).release();
 
-        // Tab audio should be loaded and played.
+        // Tab audio should be loaded and played. Position should be restored.
         verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
+        // Don't play, because original state was STOPPED.
+        verify(mPlayback, never()).play();
+        verify(mPlayback).seekToParagraph(eq(99), eq(0L));
+    }
+
+    @Test
+    public void testRestorePlaybackState_whileLoading() {
+        // Request playback but don't succeed yet.
+        mController.playTab(mTab);
+        verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
+        reset(mPlaybackHooks);
+        doReturn(List.of(new PlaybackVoice("en", "voiceA", "")))
+                .when(mPlaybackHooks)
+                .getVoicesFor(anyString());
+        // User changes voices before the first playback is ready.
+        mController.setVoiceOverrideAndApplyToPlayback(new PlaybackVoice("en", "1234", ""));
+        verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
+
+        // Playback succeeds just once. No seeking.
+        onPlaybackSuccess(mPlayback);
+        verify(mPlayback, times(1)).play();
+        verify(mPlayback, never()).seekToParagraph(anyInt(), anyLong());
+    }
+
+    @Test
+    public void testRestorePlaybackState_previewThenChangeVoice() {
+        // When previewing a voice, tab playback should only be restored when closing
+        // the menu. This test makes sure it doesn't start up early when a voice is
+        // selected.
+
+        // Set up playback and restorable state.
+        mController.playTab(mTab);
+        verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
+        onPlaybackSuccess(mPlayback);
+        reset(mPlaybackHooks);
+        doReturn(List.of(new PlaybackVoice("en", "voiceA", "")))
+                .when(mPlaybackHooks)
+                .getVoicesFor(anyString());
+        var data = Mockito.mock(PlaybackListener.PlaybackData.class);
+        doReturn(PlaybackListener.State.PLAYING).when(data).state();
+        doReturn(99).when(data).paragraphIndex();
+        mController.onPlaybackDataChanged(data);
+
         verify(mPlayback).play();
+
+        // Preview voice.
+        var voice = new PlaybackVoice("en", "asdf", "");
+        doReturn(List.of(voice)).when(mPlaybackHooks).getPlaybackVoiceList(any());
+        mController.previewVoice(voice);
+        verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
+        reset(mPlaybackHooks);
+        doReturn(List.of(new PlaybackVoice("en", "voiceA", "")))
+                .when(mPlaybackHooks)
+                .getVoicesFor(anyString());
+        Playback previewPlayback = Mockito.mock(Playback.class);
+        onPlaybackSuccess(previewPlayback);
+
+        // Select a voice. Tab shouldn't start playing.
+        mController.setVoiceOverrideAndApplyToPlayback(new PlaybackVoice("en", "1234", ""));
+        verify(mPlaybackHooks, never()).createPlayback(any(), any());
+
+        // Close the menu. Now the tab should resume playback.
+        mController.onVoiceMenuClosed();
+        verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
+        onPlaybackSuccess(mPlayback);
+        verify(mPlayback, times(2)).play();
+        verify(mPlayback).seekToParagraph(eq(99), eq(0L));
     }
 
     @Test
@@ -829,12 +949,21 @@ public class ReadAloudControllerUnitTest {
         mTab.setGurlOverrideForTesting(new GURL("https://en.wikipedia.org/wiki/Google"));
         mController.playTab(mTab);
         verify(mPlaybackHooks).createPlayback(any(), mPlaybackCallbackCaptor.capture());
-        mPlaybackCallbackCaptor.getValue().onSuccess(mPlayback);
+        onPlaybackSuccess(mPlayback);
         verify(mPlayback).play();
 
         // request to stop any playback
         mController.maybeStopPlayback(null);
         verify(mPlayback).release();
         verify(mPlayerCoordinator).dismissPlayers();
+    }
+
+    private void onPlaybackSuccess(Playback playback) {
+        mPlaybackCallbackCaptor.getValue().onSuccess(playback);
+        resolvePromises();
+    }
+
+    private static void resolvePromises() {
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks();
     }
 }

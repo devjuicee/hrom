@@ -294,6 +294,7 @@ Her er nogle af de ting, du kan prøve for at komme godt i gang.</translation>
 <translation id="2224075387478458881">Skærmoptagelse er ikke tilladt, når beskyttet indhold er synligt</translation>
 <translation id="2227179592712503583">Fjern forslag</translation>
 <translation id="2248634276911611268">Åbn link på ny fane, og skift til denne nye fane</translation>
+<translation id="2253808149208613283">Installer appen for at tilpasse denne enhed</translation>
 <translation id="225680501294068881">Søger efter enheder...</translation>
 <translation id="2257486738914982088">Noget gik galt under download af <ph name="FILENAME" /></translation>
 <translation id="2258734398699965611">Foreslåede filer</translation>
@@ -650,6 +651,7 @@ Her er nogle af de ting, du kan prøve for at komme godt i gang.</translation>
 <translation id="3659667652322717492">Du kan til enhver tid ændre mikrofonadfærden senere.</translation>
 <translation id="3659814201068740063">Cirka <ph name="TIME_LEFT" /> tilbage (<ph name="PERCENTAGE" /> %).
 Slut din enhed til en strømkilde.</translation>
+<translation id="3660860940251915011">Slå høj synlighed til/fra for <ph name="FEATURE_NAME" /></translation>
 <translation id="366222428570480733"><ph name="USER_EMAIL_ADDRESS" /> Administreret bruger</translation>
 <translation id="3666266999138159418">Stryg for at skjule det svævende vindue</translation>
 <translation id="367531336287639526">Vælg det første ikon til venstre for adresselinjen</translation>
@@ -980,6 +982,7 @@ Nogle funktioner er begrænset for at forlænge batteritiden.</translation>
         <ph name="NOTIFICATION_1" />,
         <ph name="NOTIFICATION_2" />,
         <ph name="NUM_OTHER_NOTIFICATION" /></translation>
+<translation id="4981175556418720939">Ændret <ph name="DATE_AND_TIME" /></translation>
 <translation id="4987738733603015246">Skrivebord 16</translation>
 <translation id="4989163558385430922">Se alle</translation>
 <translation id="5003993274120026347">Næste sætning</translation>
@@ -1440,6 +1443,7 @@ Installeret for nylig</translation>
 <translation id="6827049576281411231">Luk panelet for begivenheder</translation>
 <translation id="6831561626108366035">Gå til knappen <ph name="ACTIVE_STATE" /> <ph name="DESK_NAME" />.</translation>
 <translation id="6836499262298959512">Farlig fil</translation>
+<translation id="6837621009301897464">Du kan tage et screenshot ved at trykke på</translation>
 <translation id="6852052252232534364">Aktivér</translation>
 <translation id="6855029042976311970">Redigeret lige nu</translation>
 <translation id="6856708615407876657">Slå søgeresultatkategorier til/fra</translation>

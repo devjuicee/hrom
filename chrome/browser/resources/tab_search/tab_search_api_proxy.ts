@@ -43,9 +43,13 @@ export interface TabSearchApiProxy {
 
   startTabGroupTutorial(): void;
 
+  triggerFeedback(sessionId: number): void;
+
   triggerSync(): void;
 
   triggerSignIn(): void;
+
+  openHelpPage(): void;
 
   openSyncSettings(): void;
 
@@ -125,12 +129,20 @@ export class TabSearchApiProxyImpl implements TabSearchApiProxy {
     this.handler.startTabGroupTutorial();
   }
 
+  triggerFeedback(sessionId: number) {
+    this.handler.triggerFeedback(sessionId);
+  }
+
   triggerSync() {
     this.handler.triggerSync();
   }
 
   triggerSignIn() {
     this.handler.triggerSignIn();
+  }
+
+  openHelpPage() {
+    this.handler.openHelpPage();
   }
 
   openSyncSettings() {

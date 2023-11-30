@@ -8,7 +8,7 @@ import {queryRequiredElement} from '../common/js/dom_utils.js';
 import {isEntryInsideDrive} from '../common/js/entry_utils.js';
 import {recordUserAction} from '../common/js/metrics.js';
 import {str, strf} from '../common/js/translations.js';
-import {VolumeManagerCommon} from '../common/js/volume_manager_types.js';
+import {RootType} from '../common/js/volume_manager_types.js';
 import type {FakeEntry} from '../externs/files_app_entry_interfaces.js';
 import {CurrentDirectory, PropStatus, SearchData, SearchLocation, SearchOptions, SearchRecency, State} from '../externs/ts/state.js';
 import type {VolumeManager} from '../externs/volume_manager.js';
@@ -21,12 +21,6 @@ import {getStore, type Store} from '../state/store.js';
 import {type BreadcrumbClickedEvent, XfBreadcrumb} from '../widgets/xf_breadcrumb.js';
 import {OptionKind, SEARCH_OPTIONS_CHANGED, type SearchOptionsChangedEvent, XfSearchOptionsElement} from '../widgets/xf_search_options.js';
 import type {XfOption} from '../widgets/xf_select.js';
-
-/**
- * @fileoverview
- * This file is checked via TS, so we suppress Closure checks.
- * @suppress {checkTypes}
- */
 
 /**
  * Defines the possible states of the query input widget. This is a widget with
@@ -44,7 +38,7 @@ enum SearchInputState {
  * directory.
  */
 function isInRecent(dir: CurrentDirectory|undefined): boolean {
-  return dir?.rootType == VolumeManagerCommon.RootType.RECENT;
+  return dir?.rootType == RootType.RECENT;
 }
 
 /**

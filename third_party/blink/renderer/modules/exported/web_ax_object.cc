@@ -214,14 +214,14 @@ void WebAXObject::MarkSerializerSubtreeDirty() const {
   private_->AXObjectCache().MarkSerializerSubtreeDirty(*private_);
 }
 
-void WebAXObject::AddDirtyObjectToSerializationQueue(
+void WebAXObject::MarkAXObjectDirtyWithDetails(
     bool subtree,
     ax::mojom::blink::EventFrom event_from,
     ax::mojom::blink::Action event_from_action,
     std::vector<ui::AXEventIntent> event_intents) const {
   if (IsDetached())
     return;
-  private_->AXObjectCache().AddDirtyObjectToSerializationQueue(
+  private_->AXObjectCache().MarkAXObjectDirtyWithDetails(
       private_.Get(), subtree, event_from, event_from_action, event_intents);
 }
 
@@ -875,8 +875,8 @@ void WebAXObject::GetWordBoundaries(WebVector<int>& starts,
     word_end_offsets[i] = src_ends[i];
   }
 
-  starts.Swap(word_start_offsets);
-  ends.Swap(word_end_offsets);
+  starts.swap(word_start_offsets);
+  ends.swap(word_end_offsets);
 }
 
 gfx::Point WebAXObject::GetScrollOffset() const {

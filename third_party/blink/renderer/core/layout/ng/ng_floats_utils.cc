@@ -5,20 +5,20 @@
 #include "third_party/blink/renderer/core/layout/ng/ng_floats_utils.h"
 
 #include "third_party/blink/renderer/core/frame/local_frame_view.h"
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/layout_box.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/min_max_sizes.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_positioned_float.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_space_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_unpositioned_float.h"
+#include "third_party/blink/renderer/core/layout/physical_fragment.h"
+#include "third_party/blink/renderer/core/layout/space_utils.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 
 namespace blink {
@@ -194,7 +194,8 @@ LayoutUnit ComputeMarginBoxInlineSizeForUnpositionedFloat(
   LayoutFloatWithoutFragmentation(unpositioned_float);
   DCHECK(unpositioned_float->layout_result);
 
-  const auto& fragment = unpositioned_float->layout_result->PhysicalFragment();
+  const auto& fragment =
+      unpositioned_float->layout_result->GetPhysicalFragment();
   DCHECK(!fragment.GetBreakToken());
 
   const ConstraintSpace& parent_space = unpositioned_float->parent_space;
@@ -216,7 +217,7 @@ PositionedFloat PositionFloat(UnpositionedFloat* unpositioned_float,
   bool is_fragmentable =
       is_same_writing_mode && parent_space.HasBlockFragmentation();
 
-  const NGLayoutResult* layout_result = nullptr;
+  const LayoutResult* layout_result = nullptr;
   BoxStrut fragment_margins;
   LayoutOpportunity opportunity;
   bool need_break_before = false;
@@ -229,7 +230,7 @@ PositionedFloat PositionFloat(UnpositionedFloat* unpositioned_float,
     fragment_margins = unpositioned_float->margins;
 
     LogicalFragment float_fragment(parent_space.GetWritingDirection(),
-                                   layout_result->PhysicalFragment());
+                                   layout_result->GetPhysicalFragment());
 
     // Find a layout opportunity that will fit our float.
     opportunity = FindLayoutOpportunityForFloat(
@@ -251,7 +252,7 @@ PositionedFloat PositionFloat(UnpositionedFloat* unpositioned_float,
       // We have already laid out the float to find its inline-size.
       LogicalFragment float_fragment(
           parent_space.GetWritingDirection(),
-          unpositioned_float->layout_result->PhysicalFragment());
+          unpositioned_float->layout_result->GetPhysicalFragment());
       // We can find a layout opportunity and set the fragmentainer offset right
       // away.
       opportunity = FindLayoutOpportunityForFloat(
@@ -279,14 +280,14 @@ PositionedFloat PositionFloat(UnpositionedFloat* unpositioned_float,
       is_at_fragmentainer_start = space.IsAtFragmentainerStart();
 
       layout_result = node.Layout(space, unpositioned_float->token);
-      DCHECK_EQ(layout_result->Status(), NGLayoutResult::kSuccess);
+      DCHECK_EQ(layout_result->Status(), LayoutResult::kSuccess);
 
       // If we knew the right block-offset up front, we're done.
       if (!optimistically_placed)
         break;
 
       LogicalFragment float_fragment(parent_space.GetWritingDirection(),
-                                     layout_result->PhysicalFragment());
+                                     layout_result->GetPhysicalFragment());
 
       // Find a layout opportunity that will fit our float, and see if our
       // initial estimate was correct.
@@ -334,8 +335,8 @@ PositionedFloat PositionFloat(UnpositionedFloat* unpositioned_float,
           FragmentainerOffsetAtBfc(parent_space) +
           opportunity.rect.start_offset.block_offset +
           fragment_margins.block_start;
-      const auto* break_token = To<NGBlockBreakToken>(
-          layout_result->PhysicalFragment().GetBreakToken());
+      const auto* break_token = To<BlockBreakToken>(
+          layout_result->GetPhysicalFragment().GetBreakToken());
       bool is_at_block_end = !break_token || break_token->IsAtBlockEnd();
       if (!is_at_block_end) {
         // We need to resume in the next fragmentainer (or even push the whole
@@ -350,7 +351,7 @@ PositionedFloat PositionFloat(UnpositionedFloat* unpositioned_float,
       } else if (is_at_block_end &&
                  parent_space.HasKnownFragmentainerBlockSize()) {
         LogicalFragment float_fragment(parent_space.GetWritingDirection(),
-                                       layout_result->PhysicalFragment());
+                                       layout_result->GetPhysicalFragment());
         LayoutUnit outer_block_end = fragmentainer_block_offset +
                                      float_fragment.BlockSize() +
                                      fragment_margins.block_end;
@@ -366,7 +367,7 @@ PositionedFloat PositionFloat(UnpositionedFloat* unpositioned_float,
   }
 
   const auto& physical_fragment =
-      To<NGPhysicalBoxFragment>(layout_result->PhysicalFragment());
+      To<PhysicalBoxFragment>(layout_result->GetPhysicalFragment());
   LogicalFragment float_fragment(parent_space.GetWritingDirection(),
                                  physical_fragment);
 
@@ -411,7 +412,7 @@ PositionedFloat PositionFloat(UnpositionedFloat* unpositioned_float,
     // If the float broke inside and will continue to take up layout space in
     // the next fragmentainer, it means that we cannot fit any subsequent
     // content that wants clearance past this float.
-    if (const NGBlockBreakToken* break_token =
+    if (const BlockBreakToken* break_token =
             physical_fragment.GetBreakToken()) {
       if (!break_token->IsAtBlockEnd())
         exclusion_space->SetHasBreakInsideFloat(float_type);
@@ -424,10 +425,10 @@ PositionedFloat PositionFloat(UnpositionedFloat* unpositioned_float,
           fragment_margins.LineLeft(parent_space.Direction()),
       float_margin_bfc_offset.block_offset + fragment_margins.block_start);
 
-  const NGBlockBreakToken* break_before_token = nullptr;
+  const BlockBreakToken* break_before_token = nullptr;
   if (need_break_before) {
     break_before_token =
-        NGBlockBreakToken::CreateBreakBefore(node, /* is_forced_break */ false);
+        BlockBreakToken::CreateBreakBefore(node, /* is_forced_break */ false);
   }
 
   LayoutUnit minimum_space_shortage;

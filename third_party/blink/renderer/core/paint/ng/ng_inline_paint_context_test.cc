@@ -6,7 +6,7 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_cursor.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/testing/core_unit_test_helper.h"
 
 namespace blink {
@@ -19,21 +19,22 @@ String StringFromTextItem(const InlineCursor& cursor) {
 
 }  // namespace
 
-class NGInlinePaintContextTest : public RenderingTest,
-                                 private ScopedTextDecoratingBoxForTest {
+class InlinePaintContextTest : public RenderingTest,
+                               private ScopedTextDecoratingBoxForTest {
  public:
-  NGInlinePaintContextTest() : ScopedTextDecoratingBoxForTest(true) {}
+  InlinePaintContextTest() : ScopedTextDecoratingBoxForTest(true) {}
 
   Vector<float> GetFontSizes(
-      const NGInlinePaintContext::DecoratingBoxList& boxes) {
+      const InlinePaintContext::DecoratingBoxList& boxes) {
     Vector<float> font_sizes;
-    for (const NGDecoratingBox& box : boxes)
+    for (const DecoratingBox& box : boxes) {
       font_sizes.push_back(box.Style().ComputedFontSize());
+    }
     return font_sizes;
   }
 };
 
-TEST_F(NGInlinePaintContextTest, MultiLine) {
+TEST_F(InlinePaintContextTest, MultiLine) {
   LoadAhem();
   SetBodyInnerHTML(R"HTML(
     <style>
@@ -65,18 +66,18 @@ TEST_F(NGInlinePaintContextTest, MultiLine) {
   ASSERT_TRUE(cursor.Current());
   EXPECT_EQ(cursor.Current()->Type(), FragmentItem::kBox);
   const FragmentItem& span0_item = *cursor.Current();
-  EXPECT_EQ(span0_item.InkOverflow(), PhysicalRect(0, 0, 10, 10));
+  EXPECT_EQ(span0_item.InkOverflowRect(), PhysicalRect(0, 0, 10, 10));
 
   // Test the text "0".
   cursor.MoveToNext();
   EXPECT_EQ(StringFromTextItem(cursor), "0");
   const FragmentItem& text0_item = *cursor.Current();
-  EXPECT_EQ(text0_item.InkOverflow(), PhysicalRect(0, 0, 10, 10));
+  EXPECT_EQ(text0_item.InkOverflowRect(), PhysicalRect(0, 0, 10, 10));
 
   cursor.MoveToNext();
   EXPECT_TRUE(cursor.Current().IsLineBreak());
   const FragmentItem& br_item = *cursor.Current();
-  EXPECT_EQ(br_item.InkOverflow(), PhysicalRect(0, 0, 0, 10));
+  EXPECT_EQ(br_item.InkOverflowRect(), PhysicalRect(0, 0, 0, 10));
 
   // Test the `#span` fragment in the second line.
   cursor.MoveToNext();
@@ -84,20 +85,20 @@ TEST_F(NGInlinePaintContextTest, MultiLine) {
   cursor.MoveToNext();
   EXPECT_EQ(cursor.Current()->Type(), FragmentItem::kBox);
   const FragmentItem& span1_item = *cursor.Current();
-  EXPECT_EQ(span1_item.InkOverflow(), PhysicalRect(0, 0, 10, 10));
+  EXPECT_EQ(span1_item.InkOverflowRect(), PhysicalRect(0, 0, 10, 10));
 
   // Test the text "1".
   cursor.MoveToNext();
   EXPECT_EQ(StringFromTextItem(cursor), "1");
   const FragmentItem& text1_item = *cursor.Current();
-  EXPECT_EQ(text1_item.InkOverflow(), PhysicalRect(0, 0, 10, 10));
+  EXPECT_EQ(text1_item.InkOverflowRect(), PhysicalRect(0, 0, 10, 10));
 
   // Test the containing block.
-  const NGPhysicalBoxFragment& container_fragment = cursor.ContainerFragment();
-  EXPECT_EQ(container_fragment.InkOverflow(), PhysicalRect(0, 0, 800, 40));
+  const PhysicalBoxFragment& container_fragment = cursor.ContainerFragment();
+  EXPECT_EQ(container_fragment.InkOverflowRect(), PhysicalRect(0, 0, 800, 40));
 }
 
-TEST_F(NGInlinePaintContextTest, VerticalAlign) {
+TEST_F(InlinePaintContextTest, VerticalAlign) {
   LoadAhem();
   SetBodyInnerHTML(R"HTML(
     <style>
@@ -143,17 +144,17 @@ TEST_F(NGInlinePaintContextTest, VerticalAlign) {
 
   // The bottom of ink overflows of `span1`, `span2`, and `span3` should match,
   // because underlines are drawn at the decorating box; i.e., `span1`.
-  EXPECT_EQ(span1_item.InkOverflow().Bottom() +
+  EXPECT_EQ(span1_item.InkOverflowRect().Bottom() +
                 span1_item.OffsetInContainerFragment().top,
-            span2_item.InkOverflow().Bottom() +
+            span2_item.InkOverflowRect().Bottom() +
                 span2_item.OffsetInContainerFragment().top);
-  EXPECT_EQ(span1_item.InkOverflow().Bottom() +
+  EXPECT_EQ(span1_item.InkOverflowRect().Bottom() +
                 span1_item.OffsetInContainerFragment().top,
-            span3_item.InkOverflow().Bottom() +
+            span3_item.InkOverflowRect().Bottom() +
                 span3_item.OffsetInContainerFragment().top);
 }
 
-TEST_F(NGInlinePaintContextTest, NestedBlocks) {
+TEST_F(InlinePaintContextTest, NestedBlocks) {
   SetBodyInnerHTML(R"HTML(
     <style>
     .ul {
@@ -170,7 +171,7 @@ TEST_F(NGInlinePaintContextTest, NestedBlocks) {
     </div>
   )HTML");
 
-  NGInlinePaintContext context;
+  InlinePaintContext context;
   const auto* ifc = To<LayoutBlockFlow>(GetLayoutObjectByElementId("ifc"));
   InlineCursor cursor(*ifc);
   cursor.MoveToFirstLine();
@@ -196,13 +197,13 @@ TEST_F(NGInlinePaintContextTest, NestedBlocks) {
               testing::ElementsAre(20.f, 20.f, 10.f, 5.f));
 
   // Push all decorating boxes in the ancestor chain of the `span5`.
-  NGInlinePaintContext context2;
+  InlinePaintContext context2;
   context2.PushDecoratingBoxAncestors(cursor);
   EXPECT_THAT(GetFontSizes(context2.DecoratingBoxes()),
               testing::ElementsAre(20.f, 20.f, 10.f));
 }
 
-TEST_F(NGInlinePaintContextTest, StopPropagateTextDecorations) {
+TEST_F(InlinePaintContextTest, StopPropagateTextDecorations) {
   // The `<rt>` element produces an inline box that stops propagations.
   SetBodyInnerHTML(R"HTML(
     <style>

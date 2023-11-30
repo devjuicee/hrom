@@ -11,7 +11,7 @@
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_out_of_flow_layout_part.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/mathml/mathml_element.h"
 #include "third_party/blink/renderer/core/mathml/mathml_operator_element.h"
 
@@ -66,10 +66,10 @@ void MathRowLayoutAlgorithm::LayoutRowItems(ChildrenVector* children,
   if (!inherits_block_stretch_size_constraint &&
       !inherits_inline_stretch_size_constraint) {
     auto UpdateBlockStretchSizes =
-        [&](const NGLayoutResult* result) {
+        [&](const LayoutResult* result) {
           LogicalBoxFragment fragment(
               constraint_space.GetWritingDirection(),
-              To<NGPhysicalBoxFragment>(result->PhysicalFragment()));
+              To<PhysicalBoxFragment>(result->GetPhysicalFragment()));
           LayoutUnit ascent = fragment.FirstBaselineOrSynthesize(baseline_type);
           stretch_sizes.ascent = std::max(stretch_sizes.ascent, ascent),
           stretch_sizes.descent =
@@ -154,7 +154,7 @@ void MathRowLayoutAlgorithm::LayoutRowItems(ChildrenVector* children,
     if (should_add_space)
       DetermineOperatorSpacing(To<BlockNode>(child), &lspace, &rspace);
     const auto& physical_fragment =
-        To<NGPhysicalBoxFragment>(child_layout_result->PhysicalFragment());
+        To<PhysicalBoxFragment>(child_layout_result->GetPhysicalFragment());
     LogicalBoxFragment fragment(constraint_space.GetWritingDirection(),
                                 physical_fragment);
 
@@ -189,7 +189,7 @@ void MathRowLayoutAlgorithm::LayoutRowItems(ChildrenVector* children,
   row_total_size->block_size = max_row_ascent + max_row_descent;
 }
 
-const NGLayoutResult* MathRowLayoutAlgorithm::Layout() {
+const LayoutResult* MathRowLayoutAlgorithm::Layout() {
   DCHECK(!IsBreakInside(GetBreakToken()));
 
   bool is_display_block_math =

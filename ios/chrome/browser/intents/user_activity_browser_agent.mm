@@ -24,7 +24,7 @@
 #import "ios/chrome/app/startup/app_launch_metrics.h"
 #import "ios/chrome/browser/intents/intent_type.h"
 #import "ios/chrome/browser/intents/intents_constants.h"
-#import "ios/chrome/browser/metrics/first_user_action_recorder.h"
+#import "ios/chrome/browser/metrics/model/first_user_action_recorder.h"
 #import "ios/chrome/browser/policy/policy_util.h"
 #import "ios/chrome/browser/search_engines/model/template_url_service_factory.h"
 #import "ios/chrome/browser/shared/coordinator/scene/connection_information.h"
@@ -119,11 +119,6 @@ BOOL UserActivityBrowserAgent::ContinueUserActivity(
       [user_activity.activityType
           isEqualToString:NSUserActivityTypeBrowsingWeb]) {
     // App was launched by iOS as a result of Handoff.
-    NSString* origin_string = base::apple::ObjCCast<NSString>(
-        user_activity.userInfo[handoff::kOriginKey]);
-    handoff::Origin origin = handoff::OriginFromString(origin_string);
-    base::UmaHistogramEnumeration("IOS.Handoff.Origin", origin,
-                                  handoff::ORIGIN_COUNT);
     base::UmaHistogramEnumeration(kAppLaunchSource, AppLaunchSource::HANDOFF);
   } else if (spotlight::IsSpotlightAvailable() &&
              [user_activity.activityType
@@ -133,8 +128,7 @@ BOOL UserActivityBrowserAgent::ContinueUserActivity(
     NSString* item_id = [user_activity.userInfo
         objectForKey:CSSearchableItemActivityIdentifier];
     spotlight::Domain domain = spotlight::SpotlightDomainFromString(item_id);
-    base::UmaHistogramEnumeration("IOS.Spotlight.Origin", domain,
-                                  spotlight::DOMAIN_COUNT);
+    base::UmaHistogramEnumeration("IOS.Spotlight.Origin", domain);
 
     base::UmaHistogramEnumeration(kAppLaunchSource,
                                   AppLaunchSource::SPOTLIGHT_CHROME);
@@ -192,7 +186,6 @@ BOOL UserActivityBrowserAgent::ContinueUserActivity(
     SearchInChromeIntent* intent =
         base::apple::ObjCCastStrict<SearchInChromeIntent>(
             user_activity.interaction.intent);
-
     if (!intent) {
       return NO;
     }
@@ -476,8 +469,9 @@ BOOL UserActivityBrowserAgent::ContinueUserActivity(
   return ContinueUserActivityURL(webpage_url, application_is_active, NO);
 }
 
-BOOL UserActivityBrowserAgent::Handle3DTouchApplicationShortcuts() {
-  BOOL handledShortcutItem = HandleShortcutItem();
+BOOL UserActivityBrowserAgent::Handle3DTouchApplicationShortcuts(
+    UIApplicationShortcutItem* shortcut_item) {
+  BOOL handledShortcutItem = HandleShortcutItem(shortcut_item);
   BOOL isActive = [[UIApplication sharedApplication] applicationState] ==
                   UIApplicationStateActive;
   if (handledShortcutItem && isActive) {
@@ -615,7 +609,8 @@ UserActivityBrowserAgent::StartupParametersForOpeningNewTab(
   return startup_params;
 }
 
-BOOL UserActivityBrowserAgent::HandleShortcutItem() {
+BOOL UserActivityBrowserAgent::HandleShortcutItem(
+    UIApplicationShortcutItem* shortcut_item) {
   SceneState* scene_state = browser_->GetSceneState();
   InitStage init_stage = scene_state.appState.initStage;
   if (init_stage <= InitStageFirstRun) {
@@ -623,9 +618,6 @@ BOOL UserActivityBrowserAgent::HandleShortcutItem() {
   }
   base::UmaHistogramEnumeration(kAppLaunchSource,
                                 AppLaunchSource::LONG_PRESS_ON_APP_ICON);
-
-  UIApplicationShortcutItem* shortcut_item =
-      scene_state.connectionOptions.shortcutItem;
 
   // Lens entry points should not open an extra new tab page.
   GURL startup_url =

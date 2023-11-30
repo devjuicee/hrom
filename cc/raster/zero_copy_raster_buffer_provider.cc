@@ -62,8 +62,7 @@ class ZeroCopyGpuBacking : public ResourcePool::GpuBacking {
       if (!shared_image) {
         return;
       }
-      auto mapping =
-          shared_image_interface->MapSharedImage(shared_image->mailbox());
+      auto mapping = shared_image->Map();
       if (!mapping) {
         return;
       }
@@ -104,7 +103,7 @@ class ZeroCopyRasterBufferImpl : public RasterBuffer {
   ZeroCopyRasterBufferImpl(const ZeroCopyRasterBufferImpl&) = delete;
 
   ~ZeroCopyRasterBufferImpl() override {
-    // If MapSharedImage() or GpuMemoryBuffer allocation failed
+    // If MappableSharedImage or GpuMemoryBuffer allocation failed
     // (https://crbug.com/554541), then we don't have anything to give to the
     // display compositor, so we report a zero mailbox that will result in
     // checkerboarding.
@@ -159,7 +158,7 @@ class ZeroCopyRasterBufferImpl : public RasterBuffer {
                 const GURL& url) override {
     TRACE_EVENT0("cc", "ZeroCopyRasterBuffer::Playback");
 
-    std::unique_ptr<gpu::SharedImageInterface::ScopedMapping> mapping;
+    std::unique_ptr<gpu::ClientSharedImage::ScopedMapping> mapping;
     void* memory = nullptr;
     size_t stride = 0;
 
@@ -182,7 +181,7 @@ class ZeroCopyRasterBufferImpl : public RasterBuffer {
         }
       }
 
-      mapping = sii->MapSharedImage(backing_->shared_image->mailbox());
+      mapping = backing_->shared_image->Map();
       if (!mapping) {
         LOG(ERROR) << "MapSharedImage Failed.";
         sii->DestroySharedImage(gpu::SyncToken(),

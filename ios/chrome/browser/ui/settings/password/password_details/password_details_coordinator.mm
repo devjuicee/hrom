@@ -37,7 +37,6 @@
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_consumer.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_coordinator_delegate.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_handler.h"
-#import "ios/chrome/browser/ui/settings/password/password_details/password_details_mediator+private.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_mediator.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_mediator_delegate.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_table_view_controller.h"
@@ -461,6 +460,7 @@ using password_manager::features::IsAuthOnEntryV2Enabled;
   [self dismissAlertCoordinator];
   [self dismissActionSheetCoordinator];
   [self dismissPasswordSharingCoordinator];
+  [self stopPasswordSharingFirstRunCoordinatorWithCompletion:nil];
 }
 
 #pragma mark - PasswordSharingCoordinatorDelegate

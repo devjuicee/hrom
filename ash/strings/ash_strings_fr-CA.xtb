@@ -294,6 +294,7 @@ Voici quelques exemples de choses que vous pouvez essayer pour commencer.</trans
 <translation id="2224075387478458881">L'enregistrement de l'écran n"est pas autorisé lorsque du contenu protégé est visible</translation>
 <translation id="2227179592712503583">Supprimer la suggestion</translation>
 <translation id="2248634276911611268">Ouvrir le lien dans un nouvel onglet et passer à ce nouvel onglet</translation>
+<translation id="2253808149208613283">Installez l'application pour personnaliser cet appareil</translation>
 <translation id="225680501294068881">Recherche d'appareils en cours…</translation>
 <translation id="2257486738914982088">Un problème est survenu lors du téléchargement de <ph name="FILENAME" /></translation>
 <translation id="2258734398699965611">Fichiers suggérés</translation>
@@ -1441,6 +1442,7 @@ Nouvelle installation</translation>
 <translation id="6827049576281411231">Fermer le panneau d'événements</translation>
 <translation id="6831561626108366035">Accédez au bouton <ph name="DESK_NAME" /> <ph name="ACTIVE_STATE" />.</translation>
 <translation id="6836499262298959512">Fichier dangereux</translation>
+<translation id="6837621009301897464">Pour prendre une capture d'écran, appuyez sur</translation>
 <translation id="6852052252232534364">Cliquer pour activer</translation>
 <translation id="6855029042976311970">Modifié au cours des dernières minutes</translation>
 <translation id="6856708615407876657">Basculer entre les catégories de résultats de recherche</translation>

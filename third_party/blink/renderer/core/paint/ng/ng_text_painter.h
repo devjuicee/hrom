@@ -9,7 +9,7 @@
 #include "third_party/blink/renderer/core/layout/ng/ng_style_variant.h"
 #include "third_party/blink/renderer/core/paint/line_relative_rect.h"
 #include "third_party/blink/renderer/core/paint/text_painter_base.h"
-#include "third_party/blink/renderer/platform/fonts/ng_text_fragment_paint_info.h"
+#include "third_party/blink/renderer/platform/fonts/text_fragment_paint_info.h"
 #include "third_party/blink/renderer/platform/graphics/dom_node_id.h"
 
 namespace blink {
@@ -18,14 +18,14 @@ class FragmentItem;
 class LayoutObject;
 class LayoutSVGInlineText;
 struct AutoDarkMode;
-struct NGTextFragmentPaintInfo;
+struct TextFragmentPaintInfo;
 
 // Text painter for LayoutNG, logic shared between legacy layout and LayoutNG
 // is implemented in the TextPainterBase base class.
 // Operates on NGPhysicalTextFragments and only paints text and decorations.
-// Border painting etc is handled by the NGTextFragmentPainter class.
+// Border painting etc is handled by the TextFragmentPainter class.
 // TODO(layout-dev): Does this distinction make sense?
-class CORE_EXPORT NGTextPainter : public TextPainterBase {
+class CORE_EXPORT TextPainter : public TextPainterBase {
   STACK_ALLOCATED();
 
  public:
@@ -62,32 +62,28 @@ class CORE_EXPORT NGTextPainter : public TextPainterBase {
     StyleVariant style_variant_ = StyleVariant::kStandard;
     PaintFlags paint_flags_ = PaintFlag::kNoFlag;
     bool is_painting_selection_ = false;
-    friend class NGTextPainter;
+    friend class TextPainter;
   };
 
-  NGTextPainter(GraphicsContext& context,
-                const Font& font,
-                const gfx::Rect& visual_rect,
-                const LineRelativeOffset& text_origin,
-                NGInlinePaintContext* inline_context,
-                bool horizontal)
-      : TextPainterBase(context,
-                        font,
-                        text_origin,
-                        inline_context,
-                        horizontal),
+  TextPainter(GraphicsContext& context,
+              const Font& font,
+              const gfx::Rect& visual_rect,
+              const LineRelativeOffset& text_origin,
+              InlinePaintContext* inline_context,
+              bool horizontal)
+      : TextPainterBase(context, font, text_origin, inline_context, horizontal),
         visual_rect_(visual_rect) {
     DCHECK(inline_context_);
   }
-  ~NGTextPainter() = default;
+  ~TextPainter() = default;
 
-  void Paint(const NGTextFragmentPaintInfo& fragment_paint_info,
+  void Paint(const TextFragmentPaintInfo& fragment_paint_info,
              const TextPaintStyle&,
              DOMNodeId,
              const AutoDarkMode& auto_dark_mode,
              ShadowMode = kBothShadowsAndTextProper);
 
-  void PaintSelectedText(const NGTextFragmentPaintInfo& fragment_paint_info,
+  void PaintSelectedText(const TextFragmentPaintInfo& fragment_paint_info,
                          unsigned selection_start,
                          unsigned selection_end,
                          const TextPaintStyle& text_style,
@@ -97,7 +93,7 @@ class CORE_EXPORT NGTextPainter : public TextPainterBase {
                          const AutoDarkMode& auto_dark_mode);
 
   void PaintDecorationsExceptLineThrough(
-      const NGTextFragmentPaintInfo& fragment_paint_info,
+      const TextFragmentPaintInfo& fragment_paint_info,
       const FragmentItem& text_item,
       const PaintInfo& paint_info,
       const ComputedStyle& style,
@@ -121,23 +117,23 @@ class CORE_EXPORT NGTextPainter : public TextPainterBase {
   SvgTextPaintState* GetSvgState();
 
  protected:
-  void ClipDecorationsStripe(const NGTextFragmentPaintInfo&,
+  void ClipDecorationsStripe(const TextFragmentPaintInfo&,
                              float upper,
                              float stripe_width,
                              float dilation) override;
 
  private:
   template <PaintInternalStep step>
-  void PaintInternalFragment(const NGTextFragmentPaintInfo&,
+  void PaintInternalFragment(const TextFragmentPaintInfo&,
                              DOMNodeId node_id,
                              const AutoDarkMode& auto_dark_mode);
 
-  void PaintSvgTextFragment(const NGTextFragmentPaintInfo&,
+  void PaintSvgTextFragment(const TextFragmentPaintInfo&,
                             DOMNodeId node_id,
                             const AutoDarkMode& auto_dark_mode);
   void PaintSvgDecorationsExceptLineThrough(
-      const NGTextFragmentPaintInfo&,
-      const NGTextDecorationOffset& decoration_offset,
+      const TextFragmentPaintInfo&,
+      const TextDecorationOffset& decoration_offset,
       TextDecorationInfo& decoration_info,
       TextDecorationLine lines_to_paint,
       const PaintInfo& paint_info,

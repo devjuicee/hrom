@@ -44,6 +44,7 @@ class MODULES_EXPORT MLOperator : public GarbageCollected<MLOperator> {
     kLogicalNot,
     kReciprocal,
     kSqrt,
+    kCast,
     kLeakyRelu,
     kMax,
     kMin,
@@ -76,7 +77,8 @@ class MODULES_EXPORT MLOperator : public GarbageCollected<MLOperator> {
     kSoftsign,
     kSplit,
     kTanh,
-    kTranspose
+    kTranspose,
+    kWhere
   };
 
   static String OperatorKindToString(MLOperator::OperatorKind kind);

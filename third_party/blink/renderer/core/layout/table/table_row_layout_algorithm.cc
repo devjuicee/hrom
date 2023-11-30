@@ -4,13 +4,14 @@
 
 #include "third_party/blink/renderer/core/layout/table/table_row_layout_algorithm.h"
 
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_child_iterator.h"
+#include "third_party/blink/renderer/core/layout/ng/ng_block_layout_algorithm_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_out_of_flow_layout_part.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/table/layout_table_cell.h"
 #include "third_party/blink/renderer/core/layout/table/table_layout_utils.h"
 #include "third_party/blink/renderer/core/layout/table/table_row_break_token_data.h"
@@ -21,10 +22,10 @@ struct ResultWithOffset {
   DISALLOW_NEW();
 
  public:
-  Member<const NGLayoutResult> result;
+  Member<const LayoutResult> result;
   LogicalOffset offset;
 
-  ResultWithOffset(const NGLayoutResult* result, LogicalOffset offset)
+  ResultWithOffset(const LayoutResult* result, LogicalOffset offset)
       : result(result), offset(offset) {}
 
   void Trace(Visitor* visitor) const { visitor->Trace(result); }
@@ -34,14 +35,14 @@ TableRowLayoutAlgorithm::TableRowLayoutAlgorithm(
     const LayoutAlgorithmParams& params)
     : LayoutAlgorithm(params) {}
 
-const NGLayoutResult* TableRowLayoutAlgorithm::Layout() {
+const LayoutResult* TableRowLayoutAlgorithm::Layout() {
   const TableConstraintSpaceData& table_data =
       *GetConstraintSpace().TableData();
   const auto& row = table_data.rows[GetConstraintSpace().TableRowIndex()];
 
   auto CreateCellConstraintSpace =
       [this, &table_data](
-          BlockNode cell, const NGBlockBreakToken* cell_break_token,
+          BlockNode cell, const BlockBreakToken* cell_break_token,
           const TableConstraintSpaceData::Cell& cell_data,
           LayoutUnit row_block_size, absl::optional<LayoutUnit> row_baseline,
           bool min_block_size_should_encompass_intrinsic_size) {
@@ -138,12 +139,12 @@ const NGLayoutResult* TableRowLayoutAlgorithm::Layout() {
     results.clear();
     has_inflow_break_inside = false;
 
-    NGBlockChildIterator child_iterator(Node().FirstChild(), GetBreakToken(),
-                                        /* calculate_child_idx */ true);
+    BlockChildIterator child_iterator(Node().FirstChild(), GetBreakToken(),
+                                      /* calculate_child_idx */ true);
     for (auto entry = child_iterator.NextChild();
          BlockNode cell = To<BlockNode>(entry.node);
          entry = child_iterator.NextChild()) {
-      const auto* cell_break_token = To<NGBlockBreakToken>(entry.token);
+      const auto* cell_break_token = To<BlockBreakToken>(entry.token);
       const auto& cell_style = cell.Style();
       const wtf_size_t cell_index = row.start_cell_index + *entry.index;
       const TableConstraintSpaceData::Cell& cell_data =
@@ -155,9 +156,9 @@ const NGLayoutResult* TableRowLayoutAlgorithm::Layout() {
       const auto cell_space = CreateCellConstraintSpace(
           cell, cell_break_token, cell_data, row_block_size, row_baseline,
           min_block_size_should_encompass_intrinsic_size);
-      const NGLayoutResult* cell_result =
+      const LayoutResult* cell_result =
           cell.Layout(cell_space, cell_break_token);
-      DCHECK_EQ(cell_result->Status(), NGLayoutResult::kSuccess);
+      DCHECK_EQ(cell_result->Status(), LayoutResult::kSuccess);
 
       const LogicalOffset offset(
           table_data.column_locations[cell_data.start_column].offset -
@@ -181,11 +182,12 @@ const NGLayoutResult* TableRowLayoutAlgorithm::Layout() {
 
       bool has_rowspan = cell_data.rowspan_block_size != kIndefiniteSize;
       const auto& physical_fragment =
-          To<NGPhysicalBoxFragment>(cell_result->PhysicalFragment());
+          To<PhysicalBoxFragment>(cell_result->GetPhysicalFragment());
       const LogicalBoxFragment fragment(table_data.table_writing_direction,
                                         physical_fragment);
       row_baseline_tabulator.ProcessCell(
-          fragment, cell_style.VerticalAlign(), has_rowspan,
+          fragment, ComputeContentAlignmentForTableCell(cell_style),
+          has_rowspan,
           cell_data.has_descendant_that_depends_on_percentage_block_size);
       if (min_block_size_should_encompass_intrinsic_size) {
         max_cell_block_size =
@@ -259,13 +261,13 @@ const NGLayoutResult* TableRowLayoutAlgorithm::Layout() {
   }
 
   if (UNLIKELY(InvolvedInBlockFragmentation(container_builder_))) {
-    NGBreakStatus status = FinishFragmentation(
+    BreakStatus status = FinishFragmentation(
         Node(), GetConstraintSpace(),
         /* trailing_border_padding */ LayoutUnit(),
         FragmentainerSpaceLeft(GetConstraintSpace()), &container_builder_);
 
     // TODO(mstensho): Deal with early-breaks.
-    DCHECK_EQ(status, NGBreakStatus::kContinue);
+    DCHECK_EQ(status, BreakStatus::kContinue);
 
     container_builder_.SetBreakTokenData(
         MakeGarbageCollected<TableRowBreakTokenData>(

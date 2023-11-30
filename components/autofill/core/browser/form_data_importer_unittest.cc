@@ -203,7 +203,7 @@ std::unique_ptr<FormStructure> ConstructFormStructureFromTypeValuePairs(
 // profile is finalizes in the end.
 AutofillProfile ConstructProfileFromTypeValuePairs(
     TypeValuePairs type_value_pairs) {
-  AutofillProfile profile;
+  AutofillProfile profile(i18n_model_definition::kLegacyHierarchyCountryCode);
   for (const auto& [type, value] : type_value_pairs) {
     profile.SetRawInfoWithVerificationStatus(type, base::UTF8ToUTF16(value),
                                              VerificationStatus::kObserved);
@@ -699,9 +699,9 @@ class FormDataImporterTest : public testing::Test {
       bool payment_methods_autofill_enabled) {
     ExtractedFormData extracted_data = form_data_importer().ExtractFormData(
         form, profile_autofill_enabled, payment_methods_autofill_enabled);
-    return extracted_data.iban_import_candidate &&
+    return extracted_data.extracted_iban &&
            form_data_importer().ProcessIbanImportCandidate(
-               extracted_data.iban_import_candidate.value());
+               extracted_data.extracted_iban.value());
   }
 
   void ExtractAddressProfilesAndVerifyExpectation(
@@ -1702,18 +1702,6 @@ TEST_F(FormDataImporterTest, ImportAddressProfiles_InsufficientAddress) {
   ImportAddressProfileAndVerifyImportOfNoProfile(*form_structure);
 }
 
-// Tests that a profile with an empty name is not imported.
-TEST_F(FormDataImporterTest, ImportAddressProfiles_MissingName) {
-  base::test::ScopedFeatureList scoped_feature_list;
-  scoped_feature_list.InitAndEnableFeature(
-      features::kAutofillRequireNameForProfileImport);
-  TypeValuePairs type_value_pairs = GetDefaultProfileTypeValuePairs();
-  SetValueForType(type_value_pairs, NAME_FIRST, "");
-  SetValueForType(type_value_pairs, NAME_LAST, "");
-  ImportAddressProfileAndVerifyImportOfNoProfile(
-      *ConstructFormStructureFromTypeValuePairs(type_value_pairs));
-}
-
 // Tests that a profile is created for countries with composed names.
 TEST_F(FormDataImporterTest,
        ImportAddressProfiles_CompleteComposedCountryName) {
@@ -1738,7 +1726,7 @@ TEST_F(FormDataImporterTest,
                                          nullptr);
   ExtractAddressProfiles(/*extraction_successful=*/true, form_structure);
 
-  AutofillProfile expected;
+  AutofillProfile expected(i18n_model_definition::kLegacyHierarchyCountryCode);
   test::SetProfileInfo(&expected, "George", nullptr, "Washington",
                        "theprez@gmail.com", nullptr,
                        "No. 43 Bo Aung Gyaw Street", nullptr, "Yangon", "",
@@ -3031,7 +3019,7 @@ TEST_F(FormDataImporterTest, ExtractFormData_ImportIbanRecordType_NoIban) {
   auto extracted_data = ExtractFormDataAndProcessAddressCandidates(
       form_structure, /*profile_autofill_enabled=*/true,
       /*payment_methods_autofill_enabled=*/true);
-  ASSERT_FALSE(extracted_data.iban_import_candidate);
+  ASSERT_FALSE(extracted_data.extracted_iban);
 }
 
 TEST_F(FormDataImporterTest, ExtractFormData_SubmittingIbanFormUpdatesPref) {
@@ -3077,7 +3065,7 @@ TEST_F(FormDataImporterTest,
       /*payment_methods_autofill_enabled=*/true);
 
   // IBAN candidate is empty as the value is invalid.
-  ASSERT_FALSE(extracted_data.iban_import_candidate);
+  ASSERT_FALSE(extracted_data.extracted_iban);
 }
 
 TEST_F(FormDataImporterTest,
@@ -3089,7 +3077,7 @@ TEST_F(FormDataImporterTest,
   auto extracted_data = ExtractFormDataAndProcessAddressCandidates(
       form_structure, /*profile_autofill_enabled=*/true,
       /*payment_methods_autofill_enabled=*/true);
-  EXPECT_TRUE(extracted_data.iban_import_candidate);
+  EXPECT_TRUE(extracted_data.extracted_iban);
 }
 
 TEST_F(FormDataImporterTest, ExtractFormData_ImportIbanRecordType_LocalIban) {
@@ -3116,7 +3104,7 @@ TEST_F(FormDataImporterTest, ExtractFormData_ImportIbanRecordType_LocalIban) {
   auto extracted_data = ExtractFormDataAndProcessAddressCandidates(
       form_structure, /*profile_autofill_enabled=*/true,
       /*payment_methods_autofill_enabled=*/true);
-  EXPECT_TRUE(extracted_data.iban_import_candidate);
+  EXPECT_TRUE(extracted_data.extracted_iban);
 }
 
 #endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
@@ -3592,7 +3580,7 @@ TEST_F(FormDataImporterTest, SilentlyUpdateExistingProfileByIncompleteProfile) {
   scoped_feature_list.InitAndEnableFeature(
       features::kAutofillSilentProfileUpdateForInsufficientImport);
 
-  AutofillProfile profile;
+  AutofillProfile profile(i18n_model_definition::kLegacyHierarchyCountryCode);
   test::SetProfileInfo(&profile, "Marion", "Mitchell", "Morrison",
                        "johnwayne@me.xyz", "Fox", "123 Zoo St.", "unit 5",
                        "Hollywood", "CA", "91601", "US", "12345678910");
@@ -3641,7 +3629,7 @@ TEST_F(
   scoped_feature_list.InitAndEnableFeature(
       features::kAutofillSilentProfileUpdateForInsufficientImport);
 
-  AutofillProfile profile;
+  AutofillProfile profile(i18n_model_definition::kLegacyHierarchyCountryCode);
   test::SetProfileInfo(&profile, "Marion", "Mitchell", "Morrison",
                        "johnwayne@me.xyz", "Fox", "123 Zoo St.", "unit 5",
                        "Hollywood", "CA", "91601", "US", "12345678910");
@@ -3689,7 +3677,7 @@ TEST_F(FormDataImporterTest, UnusableIncompleteProfile) {
   scoped_feature_list.InitAndEnableFeature(
       features::kAutofillSilentProfileUpdateForInsufficientImport);
 
-  AutofillProfile profile;
+  AutofillProfile profile(i18n_model_definition::kLegacyHierarchyCountryCode);
   test::SetProfileInfo(&profile, "Marion", "Mitchell", "Morrison",
                        "johnwayne@me.xyz", "Fox", "123 Zoo St.", "unit 5",
                        "Hollywood", "CA", "91601", "US", "12345678910");
@@ -3940,10 +3928,10 @@ TEST_F(FormDataImporterTest, SkipAutocompleteUnrecognizedFields) {
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
 TEST_F(FormDataImporterTest,
        ProcessIbanImportCandidate_ShouldOfferLocalSave_NewIban) {
-  Iban iban_import_candidate = test::GetLocalIban();
+  Iban extracted_iban = test::GetLocalIban();
 
   EXPECT_TRUE(
-      form_data_importer().ProcessIbanImportCandidate(iban_import_candidate));
+      form_data_importer().ProcessIbanImportCandidate(extracted_iban));
 }
 
 TEST_F(FormDataImporterTest,

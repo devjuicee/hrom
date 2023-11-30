@@ -5,10 +5,10 @@
 #include "extensions/browser/api/messaging/extension_message_port.h"
 
 #include <memory>
+#include <set>
 #include <utility>
 
 #include "base/containers/contains.h"
-#include "base/containers/cxx20_erase_set.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
@@ -324,7 +324,7 @@ void ExtensionMessagePort::RemoveCommonFrames(const MessagePort& port) {
   CHECK(frames_.empty());
   // Avoid overlap in the set of frames to make sure that it does not matter
   // when UnregisterFrame is called.
-  base::EraseIf(
+  std::erase_if(
       pending_frames_,
       [&port](const content::GlobalRenderFrameHostToken& frame_token) {
         return port.HasFrame(frame_token);
@@ -435,7 +435,10 @@ void ExtensionMessagePort::DispatchOnConnect(
   info->guest_process_id = guest_process_id;
   info->guest_render_frame_routing_id = guest_render_frame_routing_id;
 
-  for (const auto& frame_token : pending_frames_) {
+  // `ShouldSkipFrameForBFCache` could mutate `pending_frames_` so we
+  // take it before iterating on it.
+  auto pending_frames = std::move(pending_frames_);
+  for (const auto& frame_token : pending_frames) {
     auto* frame = content::RenderFrameHost::FromFrameToken(frame_token);
     if (!frame || ShouldSkipFrameForBFCache(frame)) {
       continue;
@@ -835,26 +838,27 @@ void ExtensionMessagePort::SendToPort(SendCallback send_callback) {
   // We should have called OnConnect before SentToPort.
   CHECK(pending_frames_.empty());
   CHECK(pending_service_workers_.empty());
-  std::vector<mojom::MessagePort*> targets;
+  std::vector<content::GlobalRenderFrameHostToken> frame_targets;
   // Build the list of targets.
   for (const auto& item : frames_) {
-    auto* frame = content::RenderFrameHost::FromFrameToken(item.first);
-    if (!frame || ShouldSkipFrameForBFCache(frame)) {
+    frame_targets.push_back(item.first);
+  }
+
+  for (const auto& target : frame_targets) {
+    auto item = frames_.find(target);
+    // `ShouldSkipFrameForBFCache` can mutate `frames_`, so verify the frame
+    // still exists.
+    if (item == frames_.end()) {
       continue;
     }
-    if (item.second.is_bound()) {
-      targets.push_back(item.second.get());
+    auto* frame = content::RenderFrameHost::FromFrameToken(item->first);
+    if (frame && !ShouldSkipFrameForBFCache(frame)) {
+      send_callback.Run(item->second.get());
     }
   }
 
   for (const auto& running_worker : service_workers_) {
-    if (running_worker.second.is_bound()) {
-      targets.push_back(running_worker.second.get());
-    }
-  }
-
-  for (auto* target : targets) {
-    send_callback.Run(target);
+    send_callback.Run(running_worker.second.get());
   }
 }
 #endif

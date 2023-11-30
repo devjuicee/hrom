@@ -11,7 +11,7 @@
 #include "third_party/blink/renderer/core/layout/inline/line_utils.h"
 #include "third_party/blink/renderer/core/layout/inline/logical_line_item.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/platform/text/writing_direction_mode.h"
 
 namespace blink {
@@ -22,7 +22,7 @@ namespace {
 // letter text and shift down amount of surrounding text in
 // `initial_letter_block_start_adjust`,
 LayoutUnit ComputeInitialLetterBoxBlockOffset(
-    const NGPhysicalBoxFragment& initial_letter_box_fragment,
+    const PhysicalBoxFragment& initial_letter_box_fragment,
     const LayoutUnit block_size,
     const ComputedStyle& initial_letter_box_style,
     const ComputedStyle& paragraph_style,
@@ -256,7 +256,7 @@ const ExclusionArea* PostPlaceInitialLetterBox(
       [](const auto& line_item) { return line_item.IsInitialLetterBox(); });
 
   const auto& initial_letter_box_fragment =
-      *To<NGPhysicalBoxFragment>(initial_letter_line_item->PhysicalFragment());
+      *To<PhysicalBoxFragment>(initial_letter_line_item->GetPhysicalFragment());
 
   DCHECK(initial_letter_box_fragment.IsInitialLetterBox());
   DCHECK(!initial_letter_box_fragment.Style().InitialLetter().IsNormal());

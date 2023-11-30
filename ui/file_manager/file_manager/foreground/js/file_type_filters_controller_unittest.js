@@ -7,8 +7,7 @@ import {assertEquals, assertFalse, assertTrue} from 'chrome://webui-test/chromeo
 
 import {EntryList, FakeEntryImpl} from '../../common/js/files_app_entry_types.js';
 import {installMockChrome} from '../../common/js/mock_chrome.js';
-import {VolumeManagerCommon} from '../../common/js/volume_manager_types.js';
-import {DirectoryChangeEvent} from '../../externs/directory_change_event.js';
+import {RootType} from '../../common/js/volume_manager_types.js';
 import {FakeEntry} from '../../externs/files_app_entry_interfaces.js';
 
 import {DirectoryModel} from './directory_model.js';
@@ -70,9 +69,12 @@ export function setUp() {
       this.currentDirEntry = dirEntry;
 
       // Emit 'directory-changed' event synchronously to simplify testing.
-      const event = new DirectoryChangeEvent('directory-changed');
-      event.previousDirEntry = previousDirEntry;
-      event.newDirEntry = this.currentDirEntry;
+      const event = new CustomEvent('directory-changed', {
+        detail: {
+          previousDirEntry,
+          newDirEntry: this.currentDirEntry,
+        },
+      });
       this.dispatchEvent(event);
     }
 
@@ -90,15 +92,14 @@ export function setUp() {
   container = /** @type {!HTMLInputElement} */ (document.createElement('div'));
   directoryModel = MockDirectoryModel.create();
   recentEntry = new FakeEntryImpl(
-      'Recent', VolumeManagerCommon.RootType.RECENT,
+      'Recent', RootType.RECENT,
       chrome.fileManagerPrivate.SourceRestriction.ANY_SOURCE,
       chrome.fileManagerPrivate.FileCategory.ALL);
   fileTypeFiltersController = new FileTypeFiltersController(
       container, directoryModel, recentEntry, mockA11y);
 
   // Create a directory entry which is not Recents to simulate directory change.
-  myFilesEntry =
-      new EntryList('My Files', VolumeManagerCommon.RootType.MY_FILES);
+  myFilesEntry = new EntryList('My Files', RootType.MY_FILES);
 }
 
 /**

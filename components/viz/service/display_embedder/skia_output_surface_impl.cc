@@ -751,8 +751,10 @@ SkiaOutputSurfaceImpl::CreateImageContext(
       /*is_for_render_pass=*/false, raw_draw_if_possible);
 }
 
-DBG_FLAG_FBOOL("skia_gpu.swap_buffers.force_disable_makecurrent",
-               force_disable_makecurrent)
+#if BUILDFLAG(IS_CHROMEOS_LACROS)
+DBG_FLAG_FBOOL("skia_gpu.swap_buffers.force_calling_makecurrent",
+               force_makecurrent)
+#endif
 
 void SkiaOutputSurfaceImpl::SwapBuffers(OutputSurfaceFrame frame) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
@@ -780,7 +782,19 @@ void SkiaOutputSurfaceImpl::SwapBuffers(OutputSurfaceFrame frame) {
   auto callback =
       base::BindOnce(&SkiaOutputSurfaceImplOnGpu::SwapBuffers,
                      base::Unretained(impl_on_gpu_.get()), std::move(frame));
-  bool make_current = !force_disable_makecurrent();
+  bool make_current =
+#if BUILDFLAG(IS_CHROMEOS_LACROS)
+      // Normally we don't need MakeCurrent for SwapBuffers, but it is done
+      // historically and there are edge cases too.
+      // For lacros, we do not call MakeCurrent here, and delay it where
+      // appropriated.
+      //
+      // TODO(crbug.com/1494032): Extend that approach for other platforms.
+      force_makecurrent();  // Defaults to false.
+#else
+      true;
+#endif
+
   EnqueueGpuTask(std::move(callback), std::move(resource_sync_tokens_),
                  make_current,
                  /*need_framebuffer=*/!dependency_->IsOffscreen());
@@ -1528,13 +1542,10 @@ GrBackendFormat SkiaOutputSurfaceImpl::GetGrBackendFormatForTexture(
 #endif  // BUILDFLAG(ENABLE_VULKAN)
     CHECK_EQ(gr_context_type_, gpu::GrContextType::kGL);
     // Convert internal format from GLES2 to platform GL.
-    bool use_angle_rgbx_format = impl_on_gpu_->GetFeatureInfo()
-                                     ->feature_flags()
-                                     .angle_rgbx_internal_format;
+    gpu::GLFormatCaps caps(impl_on_gpu_->GetFeatureInfo());
     auto gl_format_desc = si_format.PrefersExternalSampler()
-                              ? gpu::ToGLFormatDescExternalSampler(si_format)
-                              : gpu::ToGLFormatDesc(si_format, plane_index,
-                                                    use_angle_rgbx_format);
+                              ? caps.ToGLFormatDescExternalSampler(si_format)
+                              : caps.ToGLFormatDesc(si_format, plane_index);
     auto gl_storage_internal_format = gl_format_desc.storage_internal_format;
     unsigned int texture_storage_format = gpu::GetGrGLBackendTextureFormat(
         impl_on_gpu_->GetFeatureInfo(), gl_storage_internal_format,

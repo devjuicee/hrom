@@ -31,7 +31,7 @@ suite('SearchEngineChoiceTest', function() {
   });
 
   // Selects the first search engine from the list of search engine choices.
-  function selectChoice() {
+  async function selectChoice() {
     const radioButtons =
         testElement.shadowRoot!.querySelectorAll('cr-radio-button');
 
@@ -40,17 +40,17 @@ suite('SearchEngineChoiceTest', function() {
   }
 
   test('Submit button enabled on choice click', function() {
-    assertTrue(testElement.$.submitButton.disabled);
+    assertTrue(testElement.$.actionButton.disabled);
 
     selectChoice();
-    assertFalse(testElement.$.submitButton.disabled);
+    assertFalse(testElement.$.actionButton.disabled);
   });
 
   test('Clicking submit button calls correct function', function() {
     // Select a search engine to enable the submit button.
     selectChoice();
 
-    testElement.$.submitButton.click();
+    testElement.$.actionButton.click();
     assertEquals(handler.getCallCount('handleSearchEngineChoiceSelected'), 1);
   });
 

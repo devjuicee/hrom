@@ -16,21 +16,20 @@
 #include "services/on_device_model/public/cpp/model_assets.h"
 #include "services/on_device_model/public/cpp/on_device_model.h"
 #include "services/on_device_model/public/mojom/on_device_model.mojom.h"
+#include "services/on_device_model/public/mojom/on_device_model_service.mojom.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace ml {
 
 // Uses the ChromeML API to create a model based on the params passed to
 // |Create()|. This is the main interface for interacting with the model.
-class OnDeviceModelExecutor : public on_device_model::OnDeviceModel {
+class OnDeviceModelExecutor
+    : public on_device_model::OnDeviceModel,
+      public base::SupportsWeakPtr<OnDeviceModelExecutor> {
  public:
   explicit OnDeviceModelExecutor(base::PassKey<OnDeviceModelExecutor>,
                                  const ChromeML& chrome_ml);
   ~OnDeviceModelExecutor() override;
-
-  static std::unique_ptr<OnDeviceModelExecutor> Create(
-      const ChromeML& chrome_ml,
-      on_device_model::mojom::LoadModelParamsPtr params);
 
   static base::expected<std::unique_ptr<OnDeviceModelExecutor>,
                         on_device_model::mojom::LoadModelResult>
@@ -46,19 +45,21 @@ class OnDeviceModelExecutor : public on_device_model::OnDeviceModel {
   on_device_model::mojom::LoadModelResult Init(
       on_device_model::mojom::LoadModelParamsPtr params);
 
+  void DisposeSentencepiece();
+  void DisposeModelProto();
+  void DisposeWeights();
+
   static void Schedule(uintptr_t context, std::function<void()>* fn);
 
   const raw_ref<const ChromeML> chrome_ml_;
 
-  base::MemoryMappedFile sentencepiece_model_proto_;
-  base::MemoryMappedFile model_proto_;
-  base::MemoryMappedFile weights_;
+  std::unique_ptr<base::MemoryMappedFile> sentencepiece_model_proto_;
+  std::unique_ptr<base::MemoryMappedFile> model_proto_;
+  std::unique_ptr<base::MemoryMappedFile> weights_;
+  base::MemoryMappedFile ts_data_;
+  base::MemoryMappedFile ts_sp_model_;
 
   ChromeMLModel model_ = 0;
-  // TODO(cduvall): |responder_| should be owned by the session, but we need
-  // to change the underlying API to take a output fn per input instead of
-  // at initialization.
-  mojo::Remote<on_device_model::mojom::StreamingResponder> responder_;
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
 };
 

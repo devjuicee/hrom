@@ -123,7 +123,9 @@ base::expected<void, compose::ComposeShowStatus> ComposeEnabling::IsEnabled(
   // Check signin status.
   CoreAccountInfo core_account_info =
       identity_manager->GetPrimaryAccountInfo(signin::ConsentLevel::kSignin);
-  if (core_account_info.IsEmpty()) {
+  if (core_account_info.IsEmpty() ||
+      identity_manager->HasAccountWithRefreshTokenInPersistentErrorState(
+          core_account_info.account_id)) {
     DVLOG(2) << "user not signed in " << __func__;
     return base::unexpected(compose::ComposeShowStatus::kSignedOut);
   }
@@ -141,7 +143,7 @@ bool ComposeEnabling::ShouldTriggerPopup(
     std::string_view autocomplete_attribute,
     Profile* profile,
     translate::TranslateManager* translate_manager,
-    bool has_saved_state,
+    bool ongoing_session,
     const url::Origin& top_level_frame_origin,
     const url::Origin& element_frame_origin,
     GURL url) {
@@ -173,7 +175,7 @@ bool ComposeEnabling::ShouldTriggerPopup(
 
   auto& config = compose::GetComposeConfig();
 
-  if (has_saved_state) {
+  if (ongoing_session) {
     if (!config.popup_with_saved_state) {
       return false;
     }

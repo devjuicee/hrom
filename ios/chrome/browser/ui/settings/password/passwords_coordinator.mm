@@ -152,8 +152,7 @@ using password_manager::WarningType;
                                        GetForBrowserState(browserState)
                      faviconLoader:faviconLoader
                        syncService:SyncServiceFactory::GetForBrowserState(
-                                       browserState)
-                       prefService:browserState->GetPrefs()];
+                                       browserState)];
   self.mediator.tracker =
       feature_engagement::TrackerFactory::GetForBrowserState(browserState);
 
@@ -401,8 +400,6 @@ using password_manager::WarningType;
   // low.
   DUMP_WILL_BE_CHECK(!self.widgetPromoInstructionsCoordinator);
 
-  // TODO(crbug.com/1486873): Validate that reauth coordinator should be stopped
-  // here.
   [self stopReauthCoordinatorBeforeStartingChildCoordinator];
 
   self.widgetPromoInstructionsCoordinator =

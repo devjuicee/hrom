@@ -4,18 +4,18 @@
 
 #include "third_party/blink/renderer/core/layout/ng/ng_fieldset_layout_algorithm.h"
 
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_layout_algorithm.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fieldset_break_token_data.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_out_of_flow_layout_part.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_space_utils.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/space_utils.h"
 
 namespace blink {
 
@@ -68,7 +68,7 @@ FieldsetLayoutAlgorithm::FieldsetLayoutAlgorithm(
   border_box_size_ = container_builder_.InitialBorderBoxSize();
 }
 
-const NGLayoutResult* FieldsetLayoutAlgorithm::Layout() {
+const LayoutResult* FieldsetLayoutAlgorithm::Layout() {
   // Layout of a fieldset container consists of two parts: Create a child
   // fragment for the rendered legend (if any), and create a child fragment for
   // the fieldset contents anonymous box (if any).
@@ -89,10 +89,10 @@ const NGLayoutResult* FieldsetLayoutAlgorithm::Layout() {
             container_builder_.GetBreakTokenData()));
   }
 
-  NGBreakStatus break_status = LayoutChildren();
-  if (break_status == NGBreakStatus::kNeedsEarlierBreak) {
+  BreakStatus break_status = LayoutChildren();
+  if (break_status == BreakStatus::kNeedsEarlierBreak) {
     // We need to abort the layout. No fragment will be generated.
-    return container_builder_.Abort(NGLayoutResult::kNeedsEarlierBreak);
+    return container_builder_.Abort(LayoutResult::kNeedsEarlierBreak);
   }
 
   intrinsic_block_size_ = ClampIntrinsicBlockSize(
@@ -125,18 +125,18 @@ const NGLayoutResult* FieldsetLayoutAlgorithm::Layout() {
   container_builder_.SetIsFieldsetContainer();
 
   if (UNLIKELY(InvolvedInBlockFragmentation(container_builder_))) {
-    NGBreakStatus status = FinishFragmentation(
+    BreakStatus status = FinishFragmentation(
         Node(), GetConstraintSpace(), Borders().block_end,
         FragmentainerSpaceLeft(GetConstraintSpace()), &container_builder_);
-    if (status == NGBreakStatus::kNeedsEarlierBreak) {
+    if (status == BreakStatus::kNeedsEarlierBreak) {
       // If we found a good break somewhere inside this block, re-layout and
       // break at that location.
       return RelayoutAndBreakEarlier<FieldsetLayoutAlgorithm>(
           container_builder_.GetEarlyBreak());
-    } else if (status == NGBreakStatus::kDisableFragmentation) {
+    } else if (status == BreakStatus::kDisableFragmentation) {
       return RelayoutWithoutFragmentation<FieldsetLayoutAlgorithm>();
     }
-    DCHECK_EQ(status, NGBreakStatus::kContinue);
+    DCHECK_EQ(status, BreakStatus::kContinue);
   } else {
 #if DCHECK_IS_ON()
     // If we're not participating in a fragmentation context, no block
@@ -160,14 +160,14 @@ const NGLayoutResult* FieldsetLayoutAlgorithm::Layout() {
   return container_builder_.ToBoxFragment();
 }
 
-NGBreakStatus FieldsetLayoutAlgorithm::LayoutChildren() {
-  const NGBlockBreakToken* content_break_token = nullptr;
+BreakStatus FieldsetLayoutAlgorithm::LayoutChildren() {
+  const BlockBreakToken* content_break_token = nullptr;
   bool has_seen_all_children = false;
   if (const auto* token = GetBreakToken()) {
     const auto child_tokens = token->ChildBreakTokens();
     if (base::checked_cast<wtf_size_t>(child_tokens.size())) {
-      const NGBlockBreakToken* child_token =
-          To<NGBlockBreakToken>(child_tokens[0].Get());
+      const BlockBreakToken* child_token =
+          To<BlockBreakToken>(child_tokens[0].Get());
       if (child_token) {
         DCHECK(!child_token->InputNode().IsRenderedLegend());
         content_break_token = child_token;
@@ -227,14 +227,15 @@ NGBreakStatus FieldsetLayoutAlgorithm::LayoutChildren() {
   if (content_break_token || !has_seen_all_children) {
     BlockNode fieldset_content = Node().GetFieldsetContent();
     DCHECK(fieldset_content);
-    NGBreakStatus break_status =
+    BreakStatus break_status =
         LayoutFieldsetContent(fieldset_content, content_break_token,
                               adjusted_padding_box_size, !!legend);
-    if (break_status == NGBreakStatus::kNeedsEarlierBreak)
+    if (break_status == BreakStatus::kNeedsEarlierBreak) {
       return break_status;
+    }
   }
 
-  return NGBreakStatus::kContinue;
+  return BreakStatus::kContinue;
 }
 
 void FieldsetLayoutAlgorithm::LayoutLegend(BlockNode& legend) {
@@ -249,12 +250,12 @@ void FieldsetLayoutAlgorithm::LayoutLegend(BlockNode& legend) {
 
   auto legend_space = CreateConstraintSpaceForLegend(
       legend, ChildAvailableSize(), percentage_size);
-  const NGLayoutResult* result = legend.Layout(legend_space, GetBreakToken());
+  const LayoutResult* result = legend.Layout(legend_space, GetBreakToken());
 
   // Legends are monolithic, so abortions are not expected.
-  DCHECK_EQ(result->Status(), NGLayoutResult::kSuccess);
+  DCHECK_EQ(result->Status(), LayoutResult::kSuccess);
 
-  const auto& physical_fragment = result->PhysicalFragment();
+  const auto& physical_fragment = result->GetPhysicalFragment();
 
   LayoutUnit legend_border_box_block_size =
       LogicalFragment(writing_direction_, physical_fragment).BlockSize();
@@ -287,7 +288,7 @@ void FieldsetLayoutAlgorithm::LayoutLegend(BlockNode& legend) {
 
   LayoutUnit legend_inline_start = ComputeLegendInlineOffset(
       legend.Style(),
-      LogicalFragment(writing_direction_, result->PhysicalFragment())
+      LogicalFragment(writing_direction_, result->GetPhysicalFragment())
           .InlineSize(),
       legend_margins, Style(), BorderScrollbarPadding().inline_start,
       ChildAvailableSize().inline_size);
@@ -319,12 +320,12 @@ LayoutUnit FieldsetLayoutAlgorithm::ComputeLegendInlineOffset(
   return legend_inline_start;
 }
 
-NGBreakStatus FieldsetLayoutAlgorithm::LayoutFieldsetContent(
+BreakStatus FieldsetLayoutAlgorithm::LayoutFieldsetContent(
     BlockNode& fieldset_content,
-    const NGBlockBreakToken* content_break_token,
+    const BlockBreakToken* content_break_token,
     LogicalSize adjusted_padding_box_size,
     bool has_legend) {
-  const NGEarlyBreak* early_break_in_child = nullptr;
+  const EarlyBreak* early_break_in_child = nullptr;
   if (UNLIKELY(early_break_)) {
     if (IsEarlyBreakTarget(*early_break_, container_builder_,
                            fieldset_content)) {
@@ -332,14 +333,14 @@ NGBreakStatus FieldsetLayoutAlgorithm::LayoutFieldsetContent(
                                              kBreakAppealPerfect,
                                              /* is_forced_break */ false);
       ConsumeRemainingFragmentainerSpace();
-      return NGBreakStatus::kContinue;
+      return BreakStatus::kContinue;
     } else {
       early_break_in_child =
           EnterEarlyBreakInChild(fieldset_content, *early_break_);
     }
   }
 
-  const NGLayoutResult* result = nullptr;
+  const LayoutResult* result = nullptr;
   bool is_past_end = GetBreakToken() && GetBreakToken()->IsAtBlockEnd();
 
   LayoutUnit max_content_block_size = LayoutUnit::Max();
@@ -366,7 +367,7 @@ NGBreakStatus FieldsetLayoutAlgorithm::LayoutFieldsetContent(
   // - The intrinsic block-size of the content is larger than the
   //   max-block-size.
   if (max_content_block_size != LayoutUnit::Max() &&
-      (!result || result->Status() == NGLayoutResult::kSuccess)) {
+      (!result || result->Status() == LayoutResult::kSuccess)) {
     DCHECK_EQ(adjusted_padding_box_size.block_size, kIndefiniteSize);
     if (max_content_block_size > Padding().BlockSum()) {
       // intrinsic_block_size_ is
@@ -378,7 +379,7 @@ NGBreakStatus FieldsetLayoutAlgorithm::LayoutFieldsetContent(
     }
 
     if (result) {
-      const auto& fragment = result->PhysicalFragment();
+      const auto& fragment = result->GetPhysicalFragment();
       LayoutUnit total_block_size =
           LogicalFragment(writing_direction_, fragment).BlockSize();
       if (content_break_token)
@@ -399,7 +400,7 @@ NGBreakStatus FieldsetLayoutAlgorithm::LayoutFieldsetContent(
   }
   DCHECK(result);
 
-  NGBreakStatus break_status = NGBreakStatus::kContinue;
+  BreakStatus break_status = BreakStatus::kContinue;
   if (GetConstraintSpace().HasBlockFragmentation() && !early_break_) {
     break_status = BreakBeforeChildIfNeeded(
         GetConstraintSpace(), fieldset_content, *result,
@@ -407,13 +408,13 @@ NGBreakStatus FieldsetLayoutAlgorithm::LayoutFieldsetContent(
         /* has_container_separation */ false, &container_builder_);
   }
 
-  if (break_status == NGBreakStatus::kContinue) {
-    DCHECK_EQ(result->Status(), NGLayoutResult::kSuccess);
+  if (break_status == BreakStatus::kContinue) {
+    DCHECK_EQ(result->Status(), LayoutResult::kSuccess);
     LogicalOffset offset(Borders().inline_start, intrinsic_block_size_);
     container_builder_.AddResult(*result, offset);
 
     const auto& fragment =
-        To<NGPhysicalBoxFragment>(result->PhysicalFragment());
+        To<PhysicalBoxFragment>(result->GetPhysicalFragment());
     if (auto first_baseline = fragment.FirstBaseline()) {
       container_builder_.SetFirstBaseline(offset.block_offset +
                                           *first_baseline);
@@ -426,7 +427,7 @@ NGBreakStatus FieldsetLayoutAlgorithm::LayoutFieldsetContent(
     intrinsic_block_size_ +=
         LogicalFragment(writing_direction_, fragment).BlockSize();
     container_builder_.SetHasSeenAllChildren();
-  } else if (break_status == NGBreakStatus::kBrokeBefore) {
+  } else if (break_status == BreakStatus::kBrokeBefore) {
     ConsumeRemainingFragmentainerSpace();
   }
 

@@ -472,7 +472,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
   bool IsInactiveAndDisallowActivation(uint64_t reason) override;
   size_t GetProxyCount() override;
   bool HasSelection() override;
-  const net::HttpResponseHeaders* GetLastResponseHeaders() override;
+  const network::mojom::URLResponseHead* GetLastResponseHead() override;
   void RequestTextSurroundingSelection(
       blink::mojom::LocalFrame::GetTextSurroundingSelectionCallback callback,
       int max_length) override;
@@ -993,9 +993,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
   bool is_local_root_subframe() const {
     return !is_main_frame() && is_local_root();
   }
-
-  media::MediaMetricsProvider::RecordAggregateWatchTimeCallback
-  GetRecordAggregateWatchTimeCallback();
 
   // The unique ID of the latest NavigationEntry that this RenderFrameHost is
   // showing. This may change even when this frame hasn't committed a page,
@@ -3168,11 +3165,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
                            UnloadACKArrivesPriorToProcessShutdownRequest);
   FRIEND_TEST_ALL_PREFIXES(WebContentsImplBrowserTest,
                            FullscreenAfterFrameUnload);
-  FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest, UnloadHandlerSubframes);
-  FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest, Unload_ABAB);
+  FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest, PagehideHandlerSubframes);
+  FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest, PagehideHandlerABAB);
   FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest,
                            UnloadNestedPendingDeletion);
-  FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest, PartialUnloadHandler);
+  FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest, PartialPagehideHandler);
   FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest,
                            PendingDeletionCheckCompletedOnSubtree);
   FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest,
@@ -3235,7 +3232,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
   FRIEND_TEST_ALL_PREFIXES(NavigationRequestTest, SharedStorageWritable);
   FRIEND_TEST_ALL_PREFIXES(WebContentsImplBrowserTest, SetTitleOnPagehide);
   FRIEND_TEST_ALL_PREFIXES(SitePerProcessBrowserTest,
-                           DetachedIframeUnloadHandlerABCB);
+                           DetachedIframePagehideHandlerABCB);
 
   class SubresourceLoaderFactoriesConfig;
 

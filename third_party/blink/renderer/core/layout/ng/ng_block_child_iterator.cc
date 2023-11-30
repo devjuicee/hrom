@@ -4,16 +4,16 @@
 
 #include "third_party/blink/renderer/core/layout/ng/ng_block_child_iterator.h"
 
+#include "third_party/blink/renderer/core/layout/block_node.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_break_token.h"
+#include "third_party/blink/renderer/core/layout/layout_input_node.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_input_node.h"
 
 namespace blink {
 
-NGBlockChildIterator::NGBlockChildIterator(LayoutInputNode first_child,
-                                           const NGBlockBreakToken* break_token,
-                                           bool calculate_child_idx)
+BlockChildIterator::BlockChildIterator(LayoutInputNode first_child,
+                                       const BlockBreakToken* break_token,
+                                       bool calculate_child_idx)
     : next_unstarted_child_(first_child),
       break_token_(break_token),
       child_token_idx_(0) {
@@ -37,7 +37,7 @@ NGBlockChildIterator::NGBlockChildIterator(LayoutInputNode first_child,
   }
 }
 
-NGBlockChildIterator::Entry NGBlockChildIterator::NextChild(
+BlockChildIterator::Entry BlockChildIterator::NextChild(
     const InlineBreakToken* previous_inline_break_token) {
   if (previous_inline_break_token) {
     DCHECK(!child_idx_);
@@ -64,7 +64,7 @@ NGBlockChildIterator::Entry NGBlockChildIterator::NextChild(
     did_handle_first_child_ = true;
   }
 
-  const NGBreakToken* current_child_break_token = nullptr;
+  const BreakToken* current_child_break_token = nullptr;
   absl::optional<wtf_size_t> current_child_idx;
   LayoutInputNode current_child = next_unstarted_child_;
   if (break_token_) {
@@ -101,7 +101,7 @@ NGBlockChildIterator::Entry NGBlockChildIterator::NextChild(
   return Entry(current_child, current_child_break_token, current_child_idx);
 }
 
-void NGBlockChildIterator::AdvanceToNextChild(const LayoutInputNode& child) {
+void BlockChildIterator::AdvanceToNextChild(const LayoutInputNode& child) {
   next_unstarted_child_ = child.NextSibling();
   if (child_idx_)
     (*child_idx_)++;

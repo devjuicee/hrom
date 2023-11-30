@@ -5,21 +5,20 @@
 #include "third_party/blink/renderer/core/paint/ng/ng_text_combine_painter.h"
 
 #include "third_party/blink/renderer/core/layout/layout_text_combine.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_text_decoration_offset.h"
+#include "third_party/blink/renderer/core/layout/text_decoration_offset.h"
 #include "third_party/blink/renderer/core/paint/paint_auto_dark_mode.h"
 #include "third_party/blink/renderer/core/paint/paint_info.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
-#include "third_party/blink/renderer/platform/fonts/ng_text_fragment_paint_info.h"
+#include "third_party/blink/renderer/platform/fonts/text_fragment_paint_info.h"
 #include "third_party/blink/renderer/platform/fonts/text_run_paint_info.h"
 #include "third_party/blink/renderer/platform/graphics/graphics_context.h"
 #include "third_party/blink/renderer/platform/graphics/graphics_context_state_saver.h"
 
 namespace blink {
 
-NGTextCombinePainter::NGTextCombinePainter(
-    GraphicsContext& context,
-    const ComputedStyle& style,
-    const LineRelativeOffset& text_origin)
+TextCombinePainter::TextCombinePainter(GraphicsContext& context,
+                                       const ComputedStyle& style,
+                                       const LineRelativeOffset& text_origin)
     : TextPainterBase(context,
                       style.GetFont(),
                       text_origin,
@@ -27,11 +26,11 @@ NGTextCombinePainter::NGTextCombinePainter(
                       /* horizontal */ false),
       style_(style) {}
 
-NGTextCombinePainter::~NGTextCombinePainter() = default;
+TextCombinePainter::~TextCombinePainter() = default;
 
-void NGTextCombinePainter::Paint(const PaintInfo& paint_info,
-                                 const PhysicalOffset& paint_offset,
-                                 const LayoutTextCombine& text_combine) {
+void TextCombinePainter::Paint(const PaintInfo& paint_info,
+                               const PhysicalOffset& paint_offset,
+                               const LayoutTextCombine& text_combine) {
   if (paint_info.phase == PaintPhase::kBlockBackground ||
       paint_info.phase == PaintPhase::kForcedColorsModeBackplate ||
       paint_info.phase == PaintPhase::kFloat ||
@@ -67,8 +66,8 @@ void NGTextCombinePainter::Paint(const PaintInfo& paint_info,
       text_frame_rect.ComputeRelativeToPhysicalTransform(
           style.GetWritingMode()));
 
-  NGTextCombinePainter text_painter(paint_info.context, style,
-                                    text_frame_rect.offset);
+  TextCombinePainter text_painter(paint_info.context, style,
+                                  text_frame_rect.offset);
   const TextPaintStyle text_style = TextPainterBase::TextPaintingStyle(
       text_combine.GetDocument(), style, paint_info);
 
@@ -83,29 +82,29 @@ void NGTextCombinePainter::Paint(const PaintInfo& paint_info,
 }
 
 // static
-bool NGTextCombinePainter::ShouldPaint(const LayoutTextCombine& text_combine) {
+bool TextCombinePainter::ShouldPaint(const LayoutTextCombine& text_combine) {
   const auto& style = text_combine.Parent()->StyleRef();
   return style.HasAppliedTextDecorations() ||
          style.GetTextEmphasisMark() != TextEmphasisMark::kNone;
 }
 
-void NGTextCombinePainter::ClipDecorationsStripe(const NGTextFragmentPaintInfo&,
-                                                 float upper,
-                                                 float stripe_width,
-                                                 float dilation) {
+void TextCombinePainter::ClipDecorationsStripe(const TextFragmentPaintInfo&,
+                                               float upper,
+                                               float stripe_width,
+                                               float dilation) {
   // Nothing to do.
 }
 
-void NGTextCombinePainter::PaintDecorations(const PaintInfo& paint_info,
-                                            LayoutUnit width,
-                                            const TextPaintStyle& text_style) {
+void TextCombinePainter::PaintDecorations(const PaintInfo& paint_info,
+                                          LayoutUnit width,
+                                          const TextPaintStyle& text_style) {
   // Setup arguments for painting text decorations
   TextDecorationInfo decoration_info(text_origin_, width, style_,
                                      /* inline_context */ nullptr, {});
-  const NGTextDecorationOffset decoration_offset(style_);
+  const TextDecorationOffset decoration_offset(style_);
 
   // Paint underline and overline text decorations
-  PaintUnderOrOverLineDecorations(NGTextFragmentPaintInfo{}, decoration_offset,
+  PaintUnderOrOverLineDecorations(TextFragmentPaintInfo{}, decoration_offset,
                                   decoration_info, ~TextDecorationLine::kNone,
                                   paint_info, text_style);
 
@@ -113,8 +112,8 @@ void NGTextCombinePainter::PaintDecorations(const PaintInfo& paint_info,
   PaintDecorationsOnlyLineThrough(decoration_info, paint_info, text_style);
 }
 
-void NGTextCombinePainter::PaintEmphasisMark(const TextPaintStyle& text_style,
-                                             const Font& emphasis_mark_font) {
+void TextCombinePainter::PaintEmphasisMark(const TextPaintStyle& text_style,
+                                           const Font& emphasis_mark_font) {
   DCHECK_NE(style_.GetTextEmphasisMark(), TextEmphasisMark::kNone);
   SetEmphasisMark(style_.TextEmphasisMarkString(),
                   style_.GetTextEmphasisPosition());

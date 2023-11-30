@@ -38,10 +38,12 @@
 #include "media/audio/audio_device_description.h"
 #include "media/audio/audio_system.h"
 #include "media/base/media_switches.h"
+#include "media/capture/capture_switches.h"
 #include "media/capture/mojom/video_capture_types.mojom-shared.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/audio/public/mojom/device_notifications.mojom.h"
+#include "services/video_capture/public/cpp/features.h"
 #include "third_party/blink/public/common/mediastream/media_devices.h"
 #include "third_party/blink/public/mojom/mediastream/media_devices.mojom.h"
 
@@ -625,15 +627,30 @@ void MediaDevicesManager::StartMonitoring() {
   }
 
 #if BUILDFLAG(IS_MAC)
-  GetUIThreadTaskRunner({})->PostTask(
-      FROM_HERE, base::BindOnce(&MediaDevicesManager::StartMonitoringOnUIThread,
-                                base::Unretained(this)));
+  if (base::FeatureList::IsEnabled(
+          video_capture::features::kCameraMonitoringInVideoCaptureService)) {
+    RegisterVideoCaptureDevicesChangedObserver();
+  } else {
+    GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&MediaDevicesManager::StartMonitoringOnUIThread,
+                       base::Unretained(this)));
+  }
+#endif
+#if BUILDFLAG(IS_WIN)
+  if (switches::IsMediaFoundationCameraUsageMonitoringEnabled() &&
+      !base::FeatureList::IsEnabled(
+          features::kRunVideoCaptureServiceInBrowserProcess)) {
+    RegisterVideoCaptureDevicesChangedObserver();
+  }
 #endif
 }
 
 #if BUILDFLAG(IS_MAC)
 void MediaDevicesManager::StartMonitoringOnUIThread() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  CHECK(!base::FeatureList::IsEnabled(
+      video_capture::features::kCameraMonitoringInVideoCaptureService));
   BrowserMainLoop* browser_main_loop = content::BrowserMainLoop::GetInstance();
   if (!browser_main_loop)
     return;
@@ -1335,6 +1352,33 @@ void MediaDevicesManager::NotifyDeviceChange(
       TranslateMediaDeviceInfoArray(has_permission, salt_and_origin,
                                     enumeration[static_cast<size_t>(type)]));
 }
+
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+void MediaDevicesManager::RegisterVideoCaptureDevicesChangedObserver() {
+  CHECK(!video_capture_service_device_changed_observer_);
+  if (base::FeatureList::IsEnabled(
+          features::kRunVideoCaptureServiceInBrowserProcess)) {
+    // Do not create a mojo connection when the video capture service is running
+    // in the browser process as the device monitor will send device change
+    // notifications directly to the system monitor in the browser process.
+    return;
+  }
+  // base::Unretained(this) is safe here because |this| owns
+  // |video_capture_service_device_changed_observer_|.
+  video_capture_service_device_changed_observer_ =
+      std::make_unique<VideoCaptureDevicesChangedObserver>(
+          /*disconnect_cb=*/base::BindRepeating(
+              &MediaDevicesManager::HandleDevicesChanged,
+              base::Unretained(this), MediaDeviceType::kMediaVideoInput),
+          /*listener_cb=*/base::BindRepeating([] {
+            if (auto* monitor = base::SystemMonitor::Get()) {
+              monitor->ProcessDevicesChanged(
+                  base::SystemMonitor::DEVTYPE_VIDEO_CAPTURE);
+            }
+          }));
+  video_capture_service_device_changed_observer_->ConnectToService();
+}
+#endif
 
 MediaDevicesManager::EnumerationState::EnumerationState() = default;
 MediaDevicesManager::EnumerationState::EnumerationState(

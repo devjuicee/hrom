@@ -10,10 +10,10 @@
 #include "third_party/blink/renderer/core/layout/inline/inline_item_result.h"
 #include "third_party/blink/renderer/core/layout/inline/line_box_fragment_builder.h"
 #include "third_party/blink/renderer/core/layout/inline/line_utils.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/layout_text_combine.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_relative_utils.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_inline_text.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/core/svg/svg_length_functions.h"
@@ -795,7 +795,7 @@ void InlineLayoutStateStack::CreateBoxFragments(const ConstraintSpace& space,
     DCHECK_GT(end, start);
     LogicalLineItem* child = &(*line_box)[start];
     DCHECK(box_data.item->ShouldCreateBoxFragment());
-    const NGLayoutResult* box_fragment =
+    const LayoutResult* box_fragment =
         box_data.CreateBoxFragment(space, line_box, is_opaque);
     if (child->IsPlaceholder()) {
       child->layout_result = std::move(box_fragment);
@@ -814,7 +814,7 @@ void InlineLayoutStateStack::CreateBoxFragments(const ConstraintSpace& space,
   box_data_list_.clear();
 }
 
-const NGLayoutResult* InlineLayoutStateStack::BoxData::CreateBoxFragment(
+const LayoutResult* InlineLayoutStateStack::BoxData::CreateBoxFragment(
     const ConstraintSpace& space,
     LogicalLineItems* line_box,
     bool is_opaque) {
@@ -832,10 +832,10 @@ const NGLayoutResult* InlineLayoutStateStack::BoxData::CreateBoxFragment(
 
   // Because children are already in the visual order, use LTR for the
   // fragment builder so that it should not transform the coordinates for RTL.
-  NGBoxFragmentBuilder box(item->GetLayoutObject(), &style, space,
-                           {style.GetWritingMode(), TextDirection::kLtr});
+  BoxFragmentBuilder box(item->GetLayoutObject(), &style, space,
+                         {style.GetWritingMode(), TextDirection::kLtr});
   box.SetInitialFragmentGeometry(fragment_geometry);
-  box.SetBoxType(NGPhysicalFragment::kInlineBox);
+  box.SetBoxType(PhysicalFragment::kInlineBox);
   box.SetStyleVariant(item->GetStyleVariant());
 
   if (UNLIKELY(is_opaque)) {
@@ -874,17 +874,16 @@ const NGLayoutResult* InlineLayoutStateStack::BoxData::CreateBoxFragment(
 
     // Propagate any OOF-positioned descendants from any atomic-inlines, etc.
     if (child.layout_result) {
+      const ComputedStyle& child_style = child.GetPhysicalFragment()->Style();
       box.PropagateFromLayoutResultAndFragment(
           *child.layout_result,
           child.rect.offset - rect.offset -
-              ComputeRelativeOffsetForInline(space,
-                                             child.PhysicalFragment()->Style()),
-          ComputeRelativeOffsetForOOFInInline(
-              space, child.PhysicalFragment()->Style()));
+              ComputeRelativeOffsetForInline(space, child_style),
+          ComputeRelativeOffsetForOOFInInline(space, child_style));
     }
 
     // |FragmentItems| has a flat list of all descendants, except
-    // OOF-positioned descendants. We still create a |NGPhysicalBoxFragment|,
+    // OOF-positioned descendants. We still create a |PhysicalBoxFragment|,
     // but don't add children to it and keep them in the flat list.
   }
 

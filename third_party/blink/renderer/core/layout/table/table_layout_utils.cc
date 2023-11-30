@@ -4,17 +4,18 @@
 
 #include "third_party/blink/renderer/core/layout/table/table_layout_utils.h"
 
+#include "third_party/blink/renderer/core/layout/block_node.h"
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/geometry/logical_size.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
+#include "third_party/blink/renderer/core/layout/ng/ng_block_layout_algorithm_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment_builder.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_disable_side_effects_scope.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/table/layout_table.h"
 #include "third_party/blink/renderer/core/layout/table/layout_table_cell.h"
 #include "third_party/blink/renderer/core/layout/table/layout_table_column.h"
@@ -230,11 +231,11 @@ TableTypes::Row ComputeMinimumRowBlockSize(
         LayoutResultCacheSlot::kMeasure, &space_builder);
 
     const auto cell_space = space_builder.ToConstraintSpace();
-    const NGLayoutResult* layout_result = cell.Layout(cell_space);
+    const LayoutResult* layout_result = cell.Layout(cell_space);
 
     const LogicalBoxFragment fragment(
         table_writing_direction,
-        To<NGPhysicalBoxFragment>(layout_result->PhysicalFragment()));
+        To<PhysicalBoxFragment>(layout_result->GetPhysicalFragment()));
     const Length& cell_specified_block_length =
         IsParallelWritingMode(table_writing_direction.GetWritingMode(),
                               cell_style.GetWritingMode())
@@ -257,7 +258,8 @@ TableTypes::Row ComputeMinimumRowBlockSize(
     is_constrained |=
         cell_block_constraint.is_constrained && !has_effective_rowspan;
     row_baseline_tabulator.ProcessCell(
-        fragment, cell_style.VerticalAlign(), has_effective_rowspan,
+        fragment, ComputeContentAlignmentForTableCell(cell_style),
+        has_effective_rowspan,
         has_descendant_that_depends_on_percentage_block_size);
 
     // Compute cell's css block size.
@@ -454,15 +456,6 @@ void ComputeSectionInlineConstraints(
     *row_index += 1;
     colspan_cell_tabulator.EndRow();
   }
-}
-
-bool IsBaseline(EVerticalAlign align) {
-  return align == EVerticalAlign::kBaseline ||
-         align == EVerticalAlign::kBaselineMiddle ||
-         align == EVerticalAlign::kSub || align == EVerticalAlign::kSuper ||
-         align == EVerticalAlign::kTextTop ||
-         align == EVerticalAlign::kTextBottom ||
-         align == EVerticalAlign::kLength;
 }
 
 // Implements spec distribution algorithm:
@@ -1603,7 +1596,7 @@ void ComputeSectionMinimumRowBlockSizes(
 }
 
 void FinalizeTableCellLayout(LayoutUnit unconstrained_intrinsic_block_size,
-                             NGBoxFragmentBuilder* builder) {
+                             BoxFragmentBuilder* builder) {
   const BlockNode& node = builder->Node();
   const auto& space = builder->GetConstraintSpace();
   const bool has_inflow_children = !builder->Children().empty();
@@ -1623,19 +1616,19 @@ void FinalizeTableCellLayout(LayoutUnit unconstrained_intrinsic_block_size,
   if (IsBreakInside(builder->PreviousBreakToken()))
     return;
 
-  switch (node.Style().VerticalAlign()) {
-    case EVerticalAlign::kTop:
-      // Do nothing for 'top' vertical alignment.
+  LayoutUnit free_space =
+      builder->FragmentBlockSize() - unconstrained_intrinsic_block_size;
+  BlockContentAlignment alignment =
+      ComputeContentAlignmentForTableCell(builder->Style());
+  if (alignment == BlockContentAlignment::kSafeCenter ||
+      alignment == BlockContentAlignment::kSafeEnd) {
+    free_space = free_space.ClampNegativeToZero();
+  }
+  switch (alignment) {
+    case BlockContentAlignment::kStart:
+      // Nothing to do.
       break;
-    case EVerticalAlign::kBaselineMiddle:
-    case EVerticalAlign::kSub:
-    case EVerticalAlign::kSuper:
-    case EVerticalAlign::kTextTop:
-    case EVerticalAlign::kTextBottom:
-    case EVerticalAlign::kLength:
-      // All of the above are treated as 'baseline' for the purposes of
-      // table-cell vertical alignment.
-    case EVerticalAlign::kBaseline:
+    case BlockContentAlignment::kBaseline:
       // Table-cells (with baseline vertical alignment) always produce a
       // first/last baseline of their end-content edge (even if the content
       // doesn't have any baselines).
@@ -1653,16 +1646,15 @@ void FinalizeTableCellLayout(LayoutUnit unconstrained_intrinsic_block_size,
         }
       }
       break;
-    case EVerticalAlign::kMiddle:
-      builder->MoveChildrenInBlockDirection(
-          (builder->FragmentBlockSize() - unconstrained_intrinsic_block_size) /
-          2);
+    case BlockContentAlignment::kSafeCenter:
+    case BlockContentAlignment::kUnsafeCenter:
+      builder->MoveChildrenInBlockDirection(free_space / 2);
       break;
-    case EVerticalAlign::kBottom:
-      builder->MoveChildrenInBlockDirection(builder->FragmentBlockSize() -
-                                            unconstrained_intrinsic_block_size);
+    case BlockContentAlignment::kSafeEnd:
+    case BlockContentAlignment::kUnsafeEnd:
+      builder->MoveChildrenInBlockDirection(free_space);
       break;
-  };
+  }
 }
 
 void ColspanCellTabulator::StartRow() {
@@ -1705,11 +1697,11 @@ void ColspanCellTabulator::ProcessCell(const BlockNode& cell) {
 
 void RowBaselineTabulator::ProcessCell(
     const LogicalBoxFragment& fragment,
-    EVerticalAlign align,
+    BlockContentAlignment align,
     const bool is_rowspanned,
     const bool descendant_depends_on_percentage_block_size) {
-  if (IsBaseline(align) && fragment.HasDescendantsForTablePart() &&
-      fragment.FirstBaseline()) {
+  if (align == BlockContentAlignment::kBaseline &&
+      fragment.HasDescendantsForTablePart() && fragment.FirstBaseline()) {
     max_cell_baseline_depends_on_percentage_block_descendant_ |=
         descendant_depends_on_percentage_block_size;
     const LayoutUnit cell_baseline = *fragment.FirstBaseline();

@@ -9,8 +9,8 @@
 #include "third_party/blink/renderer/core/layout/inline/inline_cursor.h"
 #include "third_party/blink/renderer/core/layout/inline/line_box_fragment_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_relative_utils.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/platform/wtf/size_assertions.h"
 
@@ -18,7 +18,7 @@ namespace blink {
 
 namespace {
 
-struct SameSizeAsPhysicalLineBoxFragment : NGPhysicalFragment {
+struct SameSizeAsPhysicalLineBoxFragment : PhysicalFragment {
   FontHeight metrics;
 };
 
@@ -40,10 +40,10 @@ const PhysicalLineBoxFragment* PhysicalLineBoxFragment::Clone(
 PhysicalLineBoxFragment::PhysicalLineBoxFragment(
     PassKey key,
     LineBoxFragmentBuilder* builder)
-    : NGPhysicalFragment(builder,
-                         builder->GetWritingMode(),
-                         kFragmentLineBox,
-                         builder->line_box_type_),
+    : PhysicalFragment(builder,
+                       builder->GetWritingMode(),
+                       kFragmentLineBox,
+                       builder->line_box_type_),
       metrics_(builder->metrics_) {
   // A line box must have a metrics unless it's an empty line box.
   DCHECK(!metrics_.IsEmpty() || IsEmptyLineBox());
@@ -57,7 +57,7 @@ PhysicalLineBoxFragment::PhysicalLineBoxFragment(
 PhysicalLineBoxFragment::PhysicalLineBoxFragment(
     PassKey key,
     const PhysicalLineBoxFragment& other)
-    : NGPhysicalFragment(other), metrics_(other.metrics_) {
+    : PhysicalFragment(other), metrics_(other.metrics_) {
   base_direction_ = other.base_direction_;
   has_hanging_ = other.has_hanging_;
   has_propagated_descendants_ = other.has_propagated_descendants_;
@@ -99,7 +99,7 @@ inline void AddInlineSizeToRubyEmHeightBox(
 }  // namespace
 
 PhysicalRect PhysicalLineBoxFragment::ComputeRubyEmHeightBox(
-    const NGPhysicalBoxFragment& container,
+    const PhysicalBoxFragment& container,
     const ComputedStyle& container_style) const {
   const WritingMode container_writing_mode = container_style.GetWritingMode();
   PhysicalRect overflow;
@@ -111,7 +111,7 @@ PhysicalRect PhysicalLineBoxFragment::ComputeRubyEmHeightBox(
 }
 
 PhysicalRect PhysicalLineBoxFragment::ComputeRubyEmHeightBoxForLine(
-    const NGPhysicalBoxFragment& container,
+    const PhysicalBoxFragment& container,
     const ComputedStyle& container_style,
     const FragmentItem& line,
     const InlineCursor& cursor) const {
@@ -137,7 +137,7 @@ bool PhysicalLineBoxFragment::HasSoftWrapToNextLine() const {
 }
 
 void PhysicalLineBoxFragment::TraceAfterDispatch(Visitor* visitor) const {
-  NGPhysicalFragment::TraceAfterDispatch(visitor);
+  PhysicalFragment::TraceAfterDispatch(visitor);
 }
 
 }  // namespace blink

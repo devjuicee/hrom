@@ -5,11 +5,13 @@
 #include "chrome/browser/web_applications/commands/external_app_resolution_command.h"
 
 #include <memory>
+#include <string>
 
 #include "base/containers/contains.h"
 #include "base/containers/flat_map.h"
 #include "base/run_loop.h"
 #include "base/test/bind.h"
+#include "base/test/metrics/histogram_tester.h"
 #include "base/test/test_future.h"
 #include "base/test/to_vector.h"
 #include "chrome/browser/web_applications/commands/callback_command.h"
@@ -59,8 +61,9 @@ class MockWebAppUiManager : public web_app::FakeWebAppUiManager {
  public:
   MOCK_METHOD(void,
               NotifyAppRelaunchState,
-              (std::string placeholder_app_id,
-               std::string final_app_id,
+              (const webapps::AppId& placeholder_app_id,
+               const webapps::AppId& final_app_id,
+               const std::u16string& final_app_name,
                base::WeakPtr<Profile> profile,
                AppRelaunchState relaunch_state),
               (override));
@@ -433,7 +436,7 @@ TEST_F(ExternalAppResolutionCommandTest, ReinstallPlaceholderSucceeds) {
 
   MockWebAppUiManager& ui_manager =
       static_cast<MockWebAppUiManager&>(fake_ui_manager());
-  EXPECT_CALL(ui_manager, NotifyAppRelaunchState(_, _, _, _)).Times(0);
+  EXPECT_CALL(ui_manager, NotifyAppRelaunchState(_, _, _, _, _)).Times(0);
 
   auto result = InstallAndWait(options, std::move(data_retriever));
 
@@ -489,15 +492,15 @@ TEST_F(ExternalAppResolutionCommandTest,
                               /*manifest_id_path=*/absl::nullopt, kWebAppUrl)))
       .WillOnce(Return(1u));
   EXPECT_CALL(ui_manager,
-              NotifyAppRelaunchState(placeholder_app_id, final_app_id, _,
+              NotifyAppRelaunchState(placeholder_app_id, final_app_id, _, _,
                                      AppRelaunchState::kAppAboutToRelaunch))
       .Times(1);
   EXPECT_CALL(ui_manager,
-              NotifyAppRelaunchState(placeholder_app_id, final_app_id, _,
+              NotifyAppRelaunchState(placeholder_app_id, final_app_id, _, _,
                                      AppRelaunchState::kAppClosingForRelaunch))
       .Times(1);
   EXPECT_CALL(ui_manager,
-              NotifyAppRelaunchState(placeholder_app_id, final_app_id, _,
+              NotifyAppRelaunchState(placeholder_app_id, final_app_id, _, _,
                                      AppRelaunchState::kAppRelaunched))
       .Times(1);
 
@@ -558,7 +561,7 @@ TEST_F(ExternalAppResolutionCommandTest,
   EXPECT_CALL(ui_manager, GetNumWindowsForApp(GenerateAppId(
                               /*manifest_id_path=*/absl::nullopt, kWebAppUrl)))
       .WillOnce(Return(0u));
-  EXPECT_CALL(ui_manager, NotifyAppRelaunchState(_, _, _, _)).Times(0);
+  EXPECT_CALL(ui_manager, NotifyAppRelaunchState(_, _, _, _, _)).Times(0);
 
   auto result = InstallAndWait(options);
 
@@ -714,6 +717,7 @@ TEST_F(ExternalAppResolutionCommandTest, InstallURLLoadFailed) {
 }
 
 TEST_F(ExternalAppResolutionCommandTest, InstallWithWebAppInfoSucceeds) {
+  base::HistogramTester tester;
   const GURL kWebAppUrl("https://foo.example");
   ExternalInstallOptions options(kWebAppUrl,
                                  mojom::UserDisplayMode::kStandalone,
@@ -746,9 +750,14 @@ TEST_F(ExternalAppResolutionCommandTest, InstallWithWebAppInfoSucceeds) {
             mojom::UserDisplayMode::kStandalone);
   EXPECT_EQ(registrar().GetLatestAppInstallSource(app_id),
             webapps::WebappInstallSource::EXTERNAL_DEFAULT);
+
+  // Ensure that the WebApp.Install.Result histogram is only measured once.
+  tester.ExpectBucketCount("WebApp.Install.Result", /*sample=*/true,
+                           /*expected_count=*/1);
 }
 
 TEST_F(ExternalAppResolutionCommandTest, InstallWithWebAppInfoFails) {
+  base::HistogramTester tester;
   const GURL kWebAppUrl("https://foo.example");
   ExternalInstallOptions options(kWebAppUrl,
                                  mojom::UserDisplayMode::kStandalone,
@@ -774,6 +783,8 @@ TEST_F(ExternalAppResolutionCommandTest, InstallWithWebAppInfoFails) {
   EXPECT_FALSE(result.app_id.has_value());
 
   EXPECT_FALSE(id.has_value());
+  tester.ExpectBucketCount("WebApp.Install.Result", /*sample=*/false,
+                           /*expected_count=*/1);
 }
 
 TEST_F(ExternalAppResolutionCommandTest, SucessInstallForcedContainerWindow) {

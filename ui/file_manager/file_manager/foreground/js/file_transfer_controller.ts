@@ -16,7 +16,7 @@ import {ProgressCenterItem, ProgressItemState} from '../../common/js/progress_ce
 import {str, strf} from '../../common/js/translations.js';
 import {getEnabledTrashVolumeURLs, isAllTrashEntries, TrashEntry} from '../../common/js/trash.js';
 import {FileErrorToDomError, visitURL} from '../../common/js/util.js';
-import {VolumeManagerCommon} from '../../common/js/volume_manager_types.js';
+import {RootType, VolumeType} from '../../common/js/volume_manager_types.js';
 import {ProgressCenter} from '../../externs/background/progress_center.js';
 import {FakeEntry, FilesAppDirEntry} from '../../externs/files_app_entry_interfaces.js';
 import {FileKey} from '../../externs/ts/state.js';
@@ -628,6 +628,7 @@ export class FileTransferController {
       writeFileFunc = writeFile) {
     destinationEntry =
         destinationEntry || this.directoryModel_.getCurrentDirEntry();
+    assert(destinationEntry);
 
     // When FilesApp does drag and drop to itself, it uses fs/sources to
     // populate sourceURLs, and it will resolve sourceEntries later using
@@ -865,7 +866,8 @@ export class FileTransferController {
       onlyIntoDirectories: boolean, _: List|DirectoryTree|XfTree,
       event: DragEvent) {
     event.preventDefault();
-    let entry = this.destinationEntry_;
+    let entry: DirectoryEntry|FilesAppDirEntry|null|undefined =
+        this.destinationEntry_;
     if (!entry && !onlyIntoDirectories) {
       entry = this.directoryModel_.getCurrentDirEntry();
     }
@@ -946,7 +948,8 @@ export class FileTransferController {
     }
     const destinationEntry =
         this.destinationEntry_ || this.directoryModel_.getCurrentDirEntry();
-    if (getRootType(destinationEntry) === VolumeManagerCommon.RootType.TRASH &&
+    assert(destinationEntry);
+    if (getRootType(destinationEntry) === RootType.TRASH &&
         this.canTrashSelection_(
             getRootType(destinationEntry), event.dataTransfer)) {
       event.preventDefault();
@@ -1046,8 +1049,7 @@ export class FileTransferController {
     }
 
     // Change directory immediately if it's a fake entry for Crostini.
-    if (getRootType(destinationEntry) ===
-        VolumeManagerCommon.RootType.CROSTINI) {
+    if (getRootType(destinationEntry) === RootType.CROSTINI) {
       this.changeToDropTargetDirectory_();
       return;
     }
@@ -1162,8 +1164,7 @@ export class FileTransferController {
     }
 
     // When this value is false, we cannot copy between different sources.
-    const missingFileContents =
-        volumeInfo.volumeType === VolumeManagerCommon.VolumeType.DRIVE &&
+    const missingFileContents = volumeInfo.volumeType === VolumeType.DRIVE &&
         this.volumeManager_.getDriveConnectionState().type ===
             chrome.fileManagerPrivate.DriveConnectionStateType.OFFLINE;
 
@@ -1284,9 +1285,9 @@ export class FileTransferController {
       return;
     }
     // queryCommandEnabled returns true if event.defaultPrevented is true.
-    if (this.canPasteOrDrop_(
-            getClipboardData(event),
-            this.directoryModel_.getCurrentDirEntry())) {
+    const currentDirEntry = this.directoryModel_.getCurrentDirEntry();
+    if (currentDirEntry &&
+        this.canPasteOrDrop_(getClipboardData(event), currentDirEntry)) {
       event.preventDefault();
     }
   }
@@ -1309,8 +1310,7 @@ export class FileTransferController {
     }
 
     // Recent isn't read-only, but it doesn't support paste/drop.
-    if (destinationLocationInfo.rootType ===
-        VolumeManagerCommon.RootType.RECENT) {
+    if (destinationLocationInfo.rootType === RootType.RECENT) {
       return false;
     }
 
@@ -1328,8 +1328,7 @@ export class FileTransferController {
 
     // A drop on the Trash root should always perform a "Send to Trash"
     // operation.
-    if (destinationLocationInfo.rootType ===
-        VolumeManagerCommon.RootType.TRASH) {
+    if (destinationLocationInfo.rootType === RootType.TRASH) {
       return this.canTrashSelection_(
           getRootType(destinationLocationInfo), clipboardData);
     }
@@ -1498,8 +1497,7 @@ export class FileTransferController {
       return DropEffectType.NONE;
     }
     // Recent isn't read-only, but it doesn't support drop.
-    if (destinationLocationInfo.rootType ===
-        VolumeManagerCommon.RootType.RECENT) {
+    if (destinationLocationInfo.rootType === RootType.RECENT) {
       return DropEffectType.NONE;
     }
     if (destinationLocationInfo.isReadOnly) {
@@ -1507,8 +1505,7 @@ export class FileTransferController {
         // The location is a fake entry that corresponds to special search.
         return DropEffectType.NONE;
       }
-      if (destinationLocationInfo.rootType ==
-          VolumeManagerCommon.RootType.CROSTINI) {
+      if (destinationLocationInfo.rootType == RootType.CROSTINI) {
         // The location is a the fake entry for crostini.  Start container.
         return DropEffectType.NONE;
       }
@@ -1524,8 +1521,7 @@ export class FileTransferController {
     // Decryption of CSE files is not currently supported on ChromeOS. However,
     // moving such a file around Google Drive works fine.
     if (dragAndDropData && dragAndDropData.encrypted &&
-        destinationLocationInfo.rootType !==
-            VolumeManagerCommon.RootType.DRIVE) {
+        destinationLocationInfo.rootType !== RootType.DRIVE) {
       return DropEffectType.NONE;
     }
     const destinationMetadata = this.metadataModel_.getCache(
@@ -1538,8 +1534,7 @@ export class FileTransferController {
     }
     // Files can be dragged onto the TrashRootEntry, but they must reside on a
     // volume that is trashable.
-    if (destinationLocationInfo.rootType ===
-        VolumeManagerCommon.RootType.TRASH) {
+    if (destinationLocationInfo.rootType === RootType.TRASH) {
       const effect =
           (this.canTrashSelection_(
               getRootType(destinationLocationInfo), event.dataTransfer!)) ?
@@ -1577,12 +1572,11 @@ export class FileTransferController {
    * the drop event occurring.
    */
   private canTrashSelection_(
-      rootType: VolumeManagerCommon.RootType|null,
-      clipboardData: DataTransfer|null) {
+      rootType: RootType|null, clipboardData: DataTransfer|null) {
     if (!rootType) {
       return false;
     }
-    if (rootType !== VolumeManagerCommon.RootType.TRASH) {
+    if (rootType !== RootType.TRASH) {
       return false;
     }
     if (!clipboardData) {

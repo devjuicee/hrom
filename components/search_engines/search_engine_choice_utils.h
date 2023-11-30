@@ -13,6 +13,7 @@ class PolicyService;
 }
 
 class PrefService;
+struct TemplateURLData;
 class TemplateURLService;
 
 namespace search_engines {
@@ -20,7 +21,6 @@ namespace search_engines {
 extern const char kSearchEngineChoiceScreenProfileInitConditionsHistogram[];
 extern const char kSearchEngineChoiceScreenNavigationConditionsHistogram[];
 extern const char kSearchEngineChoiceScreenEventsHistogram[];
-extern const char kDefaultSearchEngineChoiceLocationHistogram[];
 extern const char kSearchEngineChoiceScreenDefaultSearchEngineTypeHistogram[];
 
 // These values are persisted to logs. Entries should not be renumbered and
@@ -180,6 +180,23 @@ void RecordChoiceScreenEvent(SearchEngineChoiceScreenEvents event);
 // Records the type of the default search engine that was chosen by the user
 // in the search engine choice screen or in the settings page.
 void RecordChoiceScreenDefaultSearchProviderType(SearchEngineType engine_type);
+
+// Clears the search engine choice prefs, such as the timestamp and the Chrome
+// version, to ensure the choice screen is shown again.
+void WipeSearchEngineChoicePrefs(PrefService& profile_prefs);
+
+#if !BUILDFLAG(IS_ANDROID)
+// Returns the engine marketing snippet string resource id or -1 if the snippet
+// was not found.
+// The function definition is generated in `generated_marketing_snippets.cc`.
+// `engine_keyword` is the search engine keyword.
+int GetMarketingSnippetResourceId(const std::u16string& engine_keyword);
+
+// Returns the marketing snippet string or the fallback string if the search
+// engine didn't provide its own.
+std::u16string GetMarketingSnippetString(
+    const TemplateURLData& template_url_data);
+#endif
 
 }  // namespace search_engines
 

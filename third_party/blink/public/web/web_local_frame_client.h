@@ -154,6 +154,18 @@ enum class SyncCondition {
   kForced,     // Force a sync even if the value is unchanged.
 };
 
+// The reason a WebLocalFrame is being detached. See
+// `WebLocalFrameClient::WillDetach()` for more details.
+enum class DetachReason {
+  // The WebLocalFrame is detached because the browsing context that contains it
+  // is getting deleted (e.g. <iframe> element getting detached)
+  kFrameDeletion,
+  // The WebLocalFrame is detached because of a navigation, which will create a
+  // new WebLocalFrame (possibly in a different renderer process) that will
+  // replace the current one and takes its place in the same browsing context.
+  kNavigation,
+};
+
 class BLINK_EXPORT WebLocalFrameClient {
  public:
   virtual ~WebLocalFrameClient() = default;
@@ -276,13 +288,16 @@ class BLINK_EXPORT WebLocalFrameClient {
   // from outside of the browsing instance.
   virtual WebFrame* FindFrame(const WebString& name) { return nullptr; }
 
-  // Notification that the frame will be swapped out and replaced by another
-  // frame.
-  virtual void WillSwap() {}
-
   // Notification that the frame is being detached and sends the current frame's
-  // navigation state to the browser.
-  virtual void WillDetach() {}
+  // navigation state to the browser. Note that WebLocalFrame lifetime is not
+  // identical to the lifetime of a "browsing context" in the HTML standard.
+  // A WebLocalFrame can be detached for two reasons:
+  // - a cross-document navigation, in which case, it will be replaced by a new
+  // local or remote frame. In this case, the "browsing context" itself remains.
+  // - destruction, e.g. the frame owner element is removed from the DOM, or
+  // the window is closed. In this case, the "browsing context" itself is
+  // gone.
+  virtual void WillDetach(DetachReason detach_reason) {}
 
   // This frame has been detached. Embedders should release any resources
   // associated with this frame.
@@ -567,8 +582,8 @@ class BLINK_EXPORT WebLocalFrameClient {
   // detailed motivation and explanation.
   virtual void DidObserveUserInteraction(base::TimeTicks max_event_start,
                                          base::TimeTicks max_event_end,
-                                         UserInteractionType interaction_type) {
-  }
+                                         UserInteractionType interaction_type,
+                                         uint64_t interaction_offset) {}
 
   // The first scroll delay, which measures the time between the user's first
   // scrolling and the resultant display update, has been observed.
@@ -807,21 +822,6 @@ class BLINK_EXPORT WebLocalFrameClient {
   // Called when script in the frame (and it subframes) wishes to be printed via
   // a window.print() call.
   virtual void ScriptedPrint() {}
-
-  // This method is ONLY for web tests and is not supposed to be overridden in
-  // classes other than web_frame_test_proxy. It's called from accessibility and
-  // is used as a way to tunnel events to the accessibility_controller in web
-  // tests.
-  virtual void HandleWebAccessibilityEventForTest(
-      const blink::WebAXObject& object,
-      const char* event_name,
-      const std::vector<ui::AXEventIntent>& event_intents) {}
-
-  // This method is ONLY for web tests and is not supposed to be overridden in
-  // classes other than web_frame_test_proxy. It's called from accessibility and
-  // is used as a way to tunnel events to the accessibility_controller in web
-  // tests.
-  virtual void HandleWebAccessibilityEventForTest(const ui::AXEvent& event) {}
 
   // Create a new related WebView.  This method must clone its session storage
   // so any subsequent calls to createSessionStorageNamespace conform to the

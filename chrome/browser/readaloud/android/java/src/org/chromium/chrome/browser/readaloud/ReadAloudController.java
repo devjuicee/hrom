@@ -4,12 +4,17 @@
 
 package org.chromium.chrome.browser.readaloud;
 
+import static org.chromium.chrome.modules.readaloud.PlaybackListener.State.PAUSED;
+import static org.chromium.chrome.modules.readaloud.PlaybackListener.State.PLAYING;
+import static org.chromium.chrome.modules.readaloud.PlaybackListener.State.STOPPED;
+
 import android.app.Activity;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import org.chromium.base.Log;
+import org.chromium.base.Promise;
 import org.chromium.base.ResettersForTesting;
 import org.chromium.base.supplier.ObservableSupplier;
 import org.chromium.base.supplier.ObservableSupplierImpl;
@@ -66,32 +71,80 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
 
     private ReadAloudReadabilityHooks mReadabilityHooks;
 
-    @Nullable
-    private static ReadAloudReadabilityHooks sReadabilityHooksForTesting;
-    @Nullable
-    private ReadAloudPlaybackHooks mPlaybackHooks;
-    @Nullable
-    private static ReadAloudPlaybackHooks sPlaybackHooksForTesting;
+    @Nullable private static ReadAloudReadabilityHooks sReadabilityHooksForTesting;
+    @Nullable private ReadAloudPlaybackHooks mPlaybackHooks;
+    @Nullable private static ReadAloudPlaybackHooks sPlaybackHooksForTesting;
     @Nullable private Highlighter mHighlighter;
     @Nullable private Highlighter.Config mHighlighterConfig;
-
-    // Whether to start playing audio immediately when it is loaded. This flag is to
-    // be set by playTab() and read by its createPlayback callback.
-    private boolean mPlayWhenPlaybackReady;
-    // Current tab playback state, or UNKNOWN if nothing is playing.
-    private @PlaybackListener.State int mPlaybackState = PlaybackListener.State.UNKNOWN;
 
     // Information tied to a playback. When playback is reset it should be set to null together
     //  with the mCurrentlyPlayingTab and mGlobalRenderFrameId
     @Nullable private Playback mPlayback;
-    @Nullable
-    private Tab mCurrentlyPlayingTab;
+    @Nullable private Tab mCurrentlyPlayingTab;
     @Nullable private GlobalRenderFrameHostId mGlobalRenderFrameId;
+    // Current tab playback data, or null if there is no playback.
+    @Nullable private PlaybackData mCurrentPlaybackData;
 
     // Playback for voice previews.
     @Nullable private Playback mVoicePreviewPlayback;
-    // Tab to resume playback on after closing the voice menu if preview was played.
-    @Nullable private Tab mTabToResumeOnCloseVoiceMenu;
+
+    // Information about a tab playback necessary for resuming later. Does not
+    // include language or voice which should come from current tab state or
+    // settings respectively.
+    private class RestoreState {
+        // Tab to play.
+        private final Tab mTab;
+        // Paragraph index to resume from.
+        private final int mParagraphIndex;
+        // True if audio should start playing immediately when this state is restored.
+        private final boolean mPlaying;
+
+        /**
+         * Constructor.
+         *
+         * @param tab Tab to play.
+         * @param data Current PlaybackData which may be null if playback hasn't started yet.
+         */
+        RestoreState(Tab tab, @Nullable PlaybackData data) {
+            mTab = tab;
+            if (data == null) {
+                mParagraphIndex = 0;
+                mPlaying = true;
+            } else {
+                mParagraphIndex = data.paragraphIndex();
+                mPlaying = data.state() != PAUSED && data.state() != STOPPED;
+            }
+        }
+
+        /** Apply the saved playback state. */
+        void restore() {
+            createTabPlayback(mTab)
+                    .then(
+                            playback -> {
+                                if (mPlaying) {
+                                    mPlayerCoordinator.playbackReady(playback, PLAYING);
+                                    playback.play();
+                                } else {
+                                    mPlayerCoordinator.playbackReady(playback, PAUSED);
+                                }
+
+                                if (mParagraphIndex != 0) {
+                                    playback.seekToParagraph(
+                                            mParagraphIndex, /* offsetNanos= */ 0L);
+                                }
+                            },
+                            exception -> {
+                                Log.d(
+                                        TAG,
+                                        "Failed to restore playback state: %s",
+                                        exception.getMessage());
+                            });
+        }
+    }
+
+    // State of playback that was interrupted by a voice preview and should be
+    // restored when closing the voice menu.
+    @Nullable private RestoreState mStateToRestoreOnVoiceMenuClose;
 
     // Whether or not to highlight the page. Change will only have effect if
     // isHighlightingSupported() returns true.
@@ -121,37 +174,6 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
                 public void onFailure(String url, Throwable t) {
                     Log.d(TAG, "onFailure called for %s because %s", url, t);
                     mPendingRequests.remove(url);
-                }
-            };
-
-    private ReadAloudPlaybackHooks.CreatePlaybackCallback mPlaybackCallback =
-            new ReadAloudPlaybackHooks.CreatePlaybackCallback() {
-                @Override
-                public void onSuccess(Playback playback) {
-                    Log.d(TAG, "Playback created");
-                    maybeSetUpHighlighter(playback.getMetadata());
-
-                    mHighlightingEnabled.addObserver(
-                            ReadAloudController.this::onHighlightingEnabledChanged);
-                    mHighlightingEnabled.set(
-                            ReadAloudPrefs.isHighlightingEnabled(getPrefService()));
-                    mPlayback = playback;
-                    mPlayback.addListener(ReadAloudController.this);
-
-                    if (mPlayWhenPlaybackReady) {
-                        mPlayerCoordinator.playbackReady(mPlayback, PlaybackListener.State.PLAYING);
-                        mPlayback.play();
-                    } else {
-                        mPlayerCoordinator.playbackReady(mPlayback, PlaybackListener.State.PAUSED);
-                    }
-
-                    updateVoiceMenu(playback.getMetadata().languageCode());
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    Log.d(TAG, t.getMessage());
-                    mPlayerCoordinator.playbackFailed();
                 }
             };
 
@@ -251,7 +273,8 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
      *     www.google.com/... is reserved for Search features and content.
      */
     public boolean isURLReadAloudSupported(GURL url) {
-        return url.isValid() && !url.isEmpty()
+        return url.isValid()
+                && !url.isEmpty()
                 && (url.getScheme().equals(UrlConstants.HTTP_SCHEME)
                         || url.getScheme().equals(UrlConstants.HTTPS_SCHEME))
                 && !url.getSpec().startsWith(UrlConstants.GOOGLE_ACCOUNT_HOME_URL)
@@ -267,9 +290,7 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
         return ReadAloudFeatures.isAllowed(mProfileSupplier.get());
     }
 
-    /**
-     * Returns true if the web contents within current Tab is readable.
-     */
+    /** Returns true if the web contents within current Tab is readable. */
     public boolean isReadable(Tab tab) {
         if (isAvailable() && tab.getUrl().isValid()) {
             Boolean isReadable = mReadabilityMap.get(stripUserData(tab.getUrl()).getSpec());
@@ -285,10 +306,18 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
      * @param tab Tab to play.
      */
     public void playTab(Tab tab) {
-        playTab(tab, /* playWhenReady= */ true);
+        createTabPlayback(tab)
+                .then(
+                        playback -> {
+                            mPlayerCoordinator.playbackReady(playback, PLAYING);
+                            playback.play();
+                        },
+                        exception -> {
+                            Log.d(TAG, "playTab failed: %s", exception.getMessage());
+                        });
     }
 
-    private void playTab(Tab tab, boolean playWhenReady) {
+    private Promise<Playback> createTabPlayback(Tab tab) {
         assert tab.getUrl().isValid();
         if (mPlaybackHooks == null) {
             mPlaybackHooks =
@@ -299,32 +328,60 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
             mPlayerCoordinator.addObserver(this);
         }
         // only start a new playback if different URL or no active playback for that url
-        if (mCurrentlyPlayingTab == null || !tab.getUrl().equals(mCurrentlyPlayingTab.getUrl())) {
-            mCurrentlyPlayingTab = tab;
-            mPlayWhenPlaybackReady = playWhenReady;
-
-            if (mPlayback != null) {
-                mPlayback.release();
-                mPlayback = null;
-            }
-
-            if (!mPlaybackHooks.voicesInitialized()) {
-                mPlaybackHooks.initVoices();
-            }
-
-            PlaybackArgs args =
-                    new PlaybackArgs(
-                            stripUserData(tab.getUrl()).getSpec(),
-                            getLanguageForNewPlayback(tab),
-                            mPlaybackHooks.getPlaybackVoiceList(
-                                    ReadAloudPrefs.getVoices(getPrefService())),
-                            /* dateModifiedMsSinceEpoch= */ 0);
-            Log.d(TAG, "Creating playback with args: %s", args);
-            mPlaybackHooks.createPlayback(args, mPlaybackCallback);
-
-            // Notify player UI that playback is happening soon.
-            mPlayerCoordinator.playTabRequested();
+        if (mCurrentlyPlayingTab != null && tab.getUrl().equals(mCurrentlyPlayingTab.getUrl())) {
+            var promise = new Promise<Playback>();
+            promise.reject(new Exception("Tab already playing"));
+            return promise;
         }
+
+        resetCurrentPlayback();
+        mCurrentlyPlayingTab = tab;
+
+        if (!mPlaybackHooks.voicesInitialized()) {
+            mPlaybackHooks.initVoices();
+        }
+
+        String playbackLanguage = getLanguageForNewPlayback(tab);
+        var voices = mPlaybackHooks.getVoicesFor(playbackLanguage);
+        // TODO: Don't show entrypoints for unsupported languages
+        if (voices == null || voices.isEmpty()) {
+            var promise = new Promise<Playback>();
+            promise.reject(new Exception("Unsupported language"));
+            return promise;
+        }
+
+        PlaybackArgs args =
+                new PlaybackArgs(
+                        stripUserData(tab.getUrl()).getSpec(),
+                        playbackLanguage,
+                        mPlaybackHooks.getPlaybackVoiceList(
+                                ReadAloudPrefs.getVoices(getPrefService())),
+                        /* dateModifiedMsSinceEpoch= */ 0);
+        Log.d(TAG, "Creating playback with args: %s", args);
+
+        Promise<Playback> promise = createPlayback(args);
+        promise.then(
+                playback -> {
+                    Log.d(TAG, "Playback created");
+                    maybeSetUpHighlighter(playback.getMetadata());
+
+                    mHighlightingEnabled.addObserver(
+                            ReadAloudController.this::onHighlightingEnabledChanged);
+                    mHighlightingEnabled.set(
+                            ReadAloudPrefs.isHighlightingEnabled(getPrefService()));
+                    mPlayback = playback;
+                    mPlayback.addListener(ReadAloudController.this);
+
+                    updateVoiceMenu(playback.getMetadata().languageCode());
+                },
+                exception -> {
+                    Log.e(TAG, exception.getMessage());
+                    mPlayerCoordinator.playbackFailed();
+                });
+
+        // Notify player UI that playback is happening soon.
+        mPlayerCoordinator.playTabRequested();
+        return promise;
     }
 
     /**
@@ -353,6 +410,7 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
             mCurrentlyPlayingTab = null;
         }
         mGlobalRenderFrameId = null;
+        mCurrentPlaybackData = null;
     }
 
     /** Cleanup: unregister listeners. */
@@ -530,25 +588,21 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
         mSelectedVoiceId.set(voice.getVoiceId());
 
         if (mCurrentlyPlayingTab != null) {
-            // TODO: don't dismiss player, and restart from close to same place
-            Tab currentTab = mCurrentlyPlayingTab;
+            RestoreState state = new RestoreState(mCurrentlyPlayingTab, mCurrentPlaybackData);
             resetCurrentPlayback();
-            playTab(
-                    currentTab,
-                    /* playWhenReady= */ mPlaybackState == PlaybackListener.State.PLAYING);
+            // This should re-request playback with the same playback state and paragraph
+            // and the new voice.
+            state.restore();
         }
     }
 
     @Override
-    public void previewVoice(PlaybackVoice voice) {
-        if (mTabToResumeOnCloseVoiceMenu == null) {
-            mTabToResumeOnCloseVoiceMenu = mCurrentlyPlayingTab;
-        }
-
+    public Promise<Playback> previewVoice(PlaybackVoice voice) {
         // Only one playback possible at a time, so current playback must be stopped and
         // cleaned up. May be null if the most recent playback was a voice preview.
         if (mCurrentlyPlayingTab != null) {
-            // TODO record playback position here
+            mStateToRestoreOnVoiceMenuClose =
+                    new RestoreState(mCurrentlyPlayingTab, mCurrentPlaybackData);
             resetCurrentPlayback();
         }
 
@@ -572,28 +626,42 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
                         /* dateModifiedMsSinceEpoch= */ 0);
         Log.d(TAG, "Voice preview args: %s", args);
 
-        mPlaybackHooks.createPlayback(
-                args,
-                new ReadAloudPlaybackHooks.CreatePlaybackCallback() {
-                    @Override
-                    public void onSuccess(Playback playback) {
-                        Log.d(TAG, "Preview playback created.");
-                        mVoicePreviewPlayback = playback;
-                        playback.addListener(mVoicePreviewPlaybackListener);
-                        mVoicePreviewPlayback.play();
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        Log.e(TAG, "Preview playback failed. Reason: %s", t.getMessage());
-                    }
+        Promise<Playback> promise = createPlayback(args);
+        promise.then(
+                playback -> {
+                    Log.d(TAG, "Voice preview playback created.");
+                    mVoicePreviewPlayback = playback;
+                    playback.addListener(mVoicePreviewPlaybackListener);
+                    mVoicePreviewPlayback.play();
+                },
+                exception -> {
+                    Log.e(TAG, "Failed to create voice preview: %s", exception.getMessage());
                 });
+        return promise;
     }
 
     private void destroyVoicePreview() {
         mVoicePreviewPlayback.removeListener(mVoicePreviewPlaybackListener);
         mVoicePreviewPlayback.release();
         mVoicePreviewPlayback = null;
+    }
+
+    private Promise<Playback> createPlayback(PlaybackArgs args) {
+        final var promise = new Promise<Playback>();
+        mPlaybackHooks.createPlayback(
+                args,
+                new ReadAloudPlaybackHooks.CreatePlaybackCallback() {
+                    @Override
+                    public void onSuccess(Playback playback) {
+                        promise.fulfill(playback);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        promise.reject(new Exception(throwable));
+                    }
+                });
+        return promise;
     }
 
     @Override
@@ -633,14 +701,9 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
             destroyVoicePreview();
         }
 
-        if (mTabToResumeOnCloseVoiceMenu != null) {
-            // TODO restore playback position
-            // Load audio, and then play if audio wasn't paused or stopped last.
-            playTab(
-                    mTabToResumeOnCloseVoiceMenu,
-                    /* playWhenReady= */ mPlaybackState != PlaybackListener.State.PAUSED
-                            && mPlaybackState != PlaybackListener.State.STOPPED);
-            mTabToResumeOnCloseVoiceMenu = null;
+        if (mStateToRestoreOnVoiceMenuClose != null) {
+            mStateToRestoreOnVoiceMenuClose.restore();
+            mStateToRestoreOnVoiceMenuClose = null;
         }
     }
 
@@ -652,7 +715,7 @@ public class ReadAloudController implements Player.Observer, Player.Delegate, Pl
 
     @Override
     public void onPlaybackDataChanged(PlaybackData data) {
-        mPlaybackState = data.state();
+        mCurrentPlaybackData = data;
     }
 
     // Tests.

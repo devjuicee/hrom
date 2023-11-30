@@ -8,6 +8,7 @@ load("//lib/builder_config.star", "builder_config")
 load("//lib/builders.star", "builders", "cpu", "os", "reclient", "xcode")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
+load("//lib/gn_args.star", "gn_args")
 load("//lib/structs.star", "structs")
 
 ci.defaults.set(
@@ -171,6 +172,58 @@ This is experimental.
         short_name = "jcz",
     ),
     contact_team_email = "chromeos-velocity@google.com",
+)
+
+ci.builder(
+    name = "chromeos-octopus-rel-skylab-fyi",
+    description_html = """\
+This builder builds public image and runs tests on octopus DUTs in the lab.<br/>\
+This is experimental.
+""",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "chromeos",
+                "checkout_lacros_sdk",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_arch = builder_config.target_arch.INTEL,
+            target_bits = 32,
+            target_platform = builder_config.target_platform.CHROMEOS,
+            target_cros_boards = [
+                "octopus",
+                "amd64-generic",
+            ],
+        ),
+        skylab_upload_location = builder_config.skylab_upload_location(
+            gs_bucket = "chrome-test-builds",
+            gs_extra = "ash",
+        ),
+    ),
+    os = os.LINUX_DEFAULT,
+    console_view_entry = consoles.console_view_entry(
+        category = "ash",
+        short_name = "oct",
+    ),
+    contact_team_email = "chromeos-velocity@google.com",
+    gn_args = gn_args.config(
+        configs = [
+            "also_build_lacros_chrome_for_architecture_amd64",
+            "chromeos_device",
+            "include_unwind_tables",
+            "is_skylab",
+            "octopus",
+            "ozone_headless",
+            "reclient",
+        ],
+    ),
 )
 
 ci.builder(
@@ -718,6 +771,25 @@ fyi_mac_builder(
 )
 
 ci.builder(
+    name = "linux-wpt-chromium-rel",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(config = "chromium"),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = ["mb"],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        build_gs_bucket = "chromium-fyi-archive",
+    ),
+    os = os.LINUX_DEFAULT,
+    console_view_entry = consoles.console_view_entry(
+        category = "linux",
+    ),
+    experimental = True,
+)
+
+ci.builder(
     name = "linux-wpt-content-shell-fyi-rel",
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
@@ -749,25 +821,6 @@ ci.builder(
             build_config = builder_config.build_config.RELEASE,
             target_bits = 64,
         ),
-    ),
-    os = os.LINUX_DEFAULT,
-    console_view_entry = consoles.console_view_entry(
-        category = "linux",
-    ),
-    experimental = True,
-)
-
-ci.builder(
-    name = "linux-wpt-fyi-rel",
-    builder_spec = builder_config.builder_spec(
-        gclient_config = builder_config.gclient_config(config = "chromium"),
-        chromium_config = builder_config.chromium_config(
-            config = "chromium",
-            apply_configs = ["mb"],
-            build_config = builder_config.build_config.RELEASE,
-            target_bits = 64,
-        ),
-        build_gs_bucket = "chromium-fyi-archive",
     ),
     os = os.LINUX_DEFAULT,
     console_view_entry = consoles.console_view_entry(
@@ -2003,6 +2056,35 @@ ci.builder(
     ),
     notifies = ["Win 10 Fast Ring"],
     reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CI,
+)
+
+ci.builder(
+    name = "win10-multiscreen-fyi-rel",
+    description_html = (
+        "This builder is intended to run tests related to multiscreen " +
+        "functionality on Windows. For more info, see " +
+        "<a href=\"http://shortn/_4L6uYvA1xU\">http://shortn/_4L6uYvA1xU</a>."
+    ),
+    schedule = "with 5h interval",
+    triggered_by = [],
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = ["mb"],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+    ),
+    builderless = True,
+    os = os.WINDOWS_10,
+    console_view_entry = consoles.console_view_entry(
+        category = "win10",
+    ),
+    contact_team_email = "web-windowing-team@google.com",
+    experimental = True,
 )
 
 ci.builder(

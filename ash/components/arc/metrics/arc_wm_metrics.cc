@@ -29,20 +29,20 @@ namespace {
 
 // Histogram of the delay for window maximizing operation.
 constexpr char kWindowMaximizedTimeHistogramPrefix[] =
-    "Arc.WM.WindowMaximizedDelayTime.";
+    "Arc.WM.WindowMaximizedDelayTimeV2.";
 // Histogram of the delay for window minimizing operation.
 constexpr char kWindowMinimizedTimeHistogramPrefix[] =
     "Arc.WM.WindowMinimizedDelayTime.";
 // Histogram of the delay for window closing operation.
 constexpr char kWindowClosedTimeHistogramPrefix[] =
-    "Arc.WM.WindowClosedDelayTime.";
+    "Arc.WM.WindowClosedDelayTimeV2.";
 // Histogram of the delay for window state transition when entering into tablet
 // mode.
 constexpr char kWindowEnterTabletModeTimeHistogramPrefix[] =
-    "Arc.WM.WindowEnterTabletModeDelayTime.";
+    "Arc.WM.WindowEnterTabletModeDelayTimeV2.";
 // Histogram of the delay for window state transition when exiting tablet mode.
 constexpr char kWindowExitTabletModeTimeHistogramPrefix[] =
-    "Arc.WM.WindowExitTabletModeDelayTime.";
+    "Arc.WM.WindowExitTabletModeDelayTimeV2.";
 
 constexpr char kArcHistogramName[] = "ArcApp";
 constexpr char kBrowserHistogramName[] = "Browser";

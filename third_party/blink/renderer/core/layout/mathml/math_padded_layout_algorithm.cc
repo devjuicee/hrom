@@ -9,7 +9,7 @@
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_out_of_flow_layout_part.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/mathml_names.h"
 
 namespace blink {
@@ -54,20 +54,20 @@ void MathPaddedLayoutAlgorithm::GetContentAsAnonymousMrow(
   }
 }
 
-const NGLayoutResult* MathPaddedLayoutAlgorithm::Layout() {
+const LayoutResult* MathPaddedLayoutAlgorithm::Layout() {
   DCHECK(!GetBreakToken());
 
   BlockNode content = nullptr;
   GetContentAsAnonymousMrow(&content);
   LayoutUnit content_ascent, content_descent;
   BoxStrut content_margins;
-  const NGLayoutResult* content_layout_result = nullptr;
+  const LayoutResult* content_layout_result = nullptr;
   if (content) {
     ConstraintSpace constraint_space = CreateConstraintSpaceForMathChild(
         Node(), ChildAvailableSize(), GetConstraintSpace(), content);
     content_layout_result = content.Layout(constraint_space);
     const auto& content_fragment =
-        To<NGPhysicalBoxFragment>(content_layout_result->PhysicalFragment());
+        To<PhysicalBoxFragment>(content_layout_result->GetPhysicalFragment());
     content_margins = ComputeMarginsFor(constraint_space, content.Style(),
                                         GetConstraintSpace());
     LogicalBoxFragment fragment(GetConstraintSpace().GetWritingDirection(),

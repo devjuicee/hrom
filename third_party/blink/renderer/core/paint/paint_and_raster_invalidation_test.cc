@@ -1183,6 +1183,28 @@ TEST_P(PaintAndRasterInvalidationTest,
   GetDocument().View()->SetTracksRasterInvalidations(false);
 }
 
+TEST_P(PaintAndRasterInvalidationTest, RepaintScrollbarThumbOnHover) {
+  USE_NON_OVERLAY_SCROLLBARS_OR_QUIT();
+  SetBodyInnerHTML(R"HTML(
+    <style>body {margin: 0}</style>
+    <div id="target" style="width: 100px; height: 100px; overflow-y: auto">
+      <div style="height: 200px"></div>
+    </div>
+  )HTML");
+
+  GetDocument().View()->SetTracksRasterInvalidations(true);
+  Scrollbar* scrollbar = GetLayoutBoxByElementId("target")
+                             ->GetScrollableArea()
+                             ->VerticalScrollbar();
+  scrollbar->SetHoveredPart(kThumbPart);
+  GetDocument().View()->UpdateAllLifecyclePhasesForTest();
+  EXPECT_THAT(
+      GetRasterInvalidationTracking()->Invalidations(),
+      UnorderedElementsAre(RasterInvalidationInfo{
+          scrollbar->Id(), scrollbar->DebugName(), scrollbar->FrameRect(),
+          PaintInvalidationReason::kScrollControl}));
+}
+
 class PaintInvalidatorTestClient : public RenderingTestChromeClient {
  public:
   void InvalidateContainer() override { invalidation_recorded_ = true; }

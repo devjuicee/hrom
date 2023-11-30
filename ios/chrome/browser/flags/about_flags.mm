@@ -76,10 +76,9 @@
 #import "ios/chrome/browser/find_in_page/model/util.h"
 #import "ios/chrome/browser/flags/chrome_switches.h"
 #import "ios/chrome/browser/flags/ios_chrome_flag_descriptions.h"
-#import "ios/chrome/browser/follow/follow_features.h"
+#import "ios/chrome/browser/follow/model/follow_features.h"
 #import "ios/chrome/browser/iph_for_new_chrome_user/model/features.h"
 #import "ios/chrome/browser/parcel_tracking/features.h"
-#import "ios/chrome/browser/policy/cloud/user_policy_constants.h"
 #import "ios/chrome/browser/policy/policy_util.h"
 #import "ios/chrome/browser/promos_manager/features.h"
 #import "ios/chrome/browser/screen_time/model/screen_time_buildflags.h"
@@ -884,10 +883,6 @@ const flags_ui::FeatureEntry kFeatureEntries[] = {
      flag_descriptions::kForceStartupSigninPromoName,
      flag_descriptions::kForceStartupSigninPromoDescription, flags_ui::kOsIos,
      FEATURE_VALUE_TYPE(switches::kForceStartupSigninPromo)},
-    {"restore-session-from-cache",
-     flag_descriptions::kRestoreSessionFromCacheName,
-     flag_descriptions::kRestoreSessionFromCacheDescription, flags_ui::kOsIos,
-     FEATURE_VALUE_TYPE(web::kRestoreSessionFromCache)},
     {"shared-highlighting-ios", flag_descriptions::kSharedHighlightingIOSName,
      flag_descriptions::kSharedHighlightingIOSDescription, flags_ui::kOsIos,
      FEATURE_VALUE_TYPE(kSharedHighlightingIOS)},
@@ -1110,9 +1105,6 @@ const flags_ui::FeatureEntry kFeatureEntries[] = {
      flag_descriptions::kDefaultBrowserIntentsShowSettingsName,
      flag_descriptions::kDefaultBrowserIntentsShowSettingsDescription,
      flags_ui::kOsIos, FEATURE_VALUE_TYPE(kDefaultBrowserIntentsShowSettings)},
-    {"ios-password-ui-split", flag_descriptions::kIOSPasswordUISplitName,
-     flag_descriptions::kIOSPasswordUISplitDescription, flags_ui::kOsIos,
-     FEATURE_VALUE_TYPE(password_manager::features::kIOSPasswordUISplit)},
     {"ios-password-bottom-sheet",
      flag_descriptions::kIOSPasswordBottomSheetName,
      flag_descriptions::kIOSPasswordBottomSheetDescription, flags_ui::kOsIos,
@@ -1148,17 +1140,6 @@ const flags_ui::FeatureEntry kFeatureEntries[] = {
      flag_descriptions::kEnableUIButtonConfigurationName,
      flag_descriptions::kEnableUIButtonConfigurationDescription,
      flags_ui::kOsIos, FEATURE_VALUE_TYPE(kEnableUIButtonConfiguration)},
-    {"enable-user-policy-for-signin-and-nosync-consent-level",
-     flag_descriptions::kEnableUserPolicyForSigninAndNoSyncConsentLevelName,
-     flag_descriptions::
-         kEnableUserPolicyForSigninAndNoSyncConsentLevelDescription,
-     flags_ui::kOsIos,
-     FEATURE_VALUE_TYPE(policy::kUserPolicyForSigninAndNoSyncConsentLevel)},
-    {"enable-user-policy-for-signin-or-sync-consent-level",
-     flag_descriptions::kEnableUserPolicyForSigninOrSyncConsentLevelName,
-     flag_descriptions::kEnableUserPolicyForSigninOrSyncConsentLevelDescription,
-     flags_ui::kOsIos,
-     FEATURE_VALUE_TYPE(policy::kUserPolicyForSigninOrSyncConsentLevel)},
     {"omnibox-max-url-matches", flag_descriptions::kOmniboxMaxURLMatchesName,
      flag_descriptions::kOmniboxMaxURLMatchesDescription, flags_ui::kOsIos,
      FEATURE_WITH_PARAMS_VALUE_TYPE(omnibox::kOmniboxMaxURLMatches,
@@ -1373,11 +1354,6 @@ const flags_ui::FeatureEntry kFeatureEntries[] = {
      flags_ui::kOsIos,
      FEATURE_VALUE_TYPE(password_manager::features::
                             kIOSPasswordSettingsBulkUploadLocalPasswords)},
-    {"enable-reading-list-account-storage",
-     flag_descriptions::kEnableReadingListAccountStorageName,
-     flag_descriptions::kEnableReadingListAccountStorageDescription,
-     flags_ui::kOsIos,
-     FEATURE_VALUE_TYPE(syncer::kReadingListEnableDualReadingListModel)},
     {"enable-reading-list-sign-in-promo",
      flag_descriptions::kEnableReadingListSignInPromoName,
      flag_descriptions::kEnableReadingListSignInPromoDescription,
@@ -1657,11 +1633,6 @@ const flags_ui::FeatureEntry kFeatureEntries[] = {
      flag_descriptions::kIOSPasswordSignInUffName,
      flag_descriptions::kIOSPasswordSignInUffDescription, flags_ui::kOsIos,
      FEATURE_VALUE_TYPE(password_manager::features::kIOSPasswordSignInUff)},
-    {"enable-user-policy-notif",
-     flag_descriptions::kShowUserPolicyNotificationAtStartupIfNeededName,
-     flag_descriptions::kShowUserPolicyNotificationAtStartupIfNeededDescription,
-     flags_ui::kOsIos,
-     FEATURE_VALUE_TYPE(policy::kShowUserPolicyNotificationAtStartupIfNeeded)},
     {"tab-grid-compositional-layout",
      flag_descriptions::kTabGridCompositionalLayoutName,
      flag_descriptions::kTabGridCompositionalLayoutDescription,

@@ -7,13 +7,13 @@
 
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/renderer/core/core_export.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_input_node.h"
+#include "third_party/blink/renderer/core/layout/layout_input_node.h"
 
 namespace blink {
 
 class InlineBreakToken;
-class NGBreakToken;
-class NGBlockBreakToken;
+class BreakToken;
+class BlockBreakToken;
 
 // A utility class for block-flow layout which given the first child and a
 // break token will iterate through unfinished children.
@@ -28,13 +28,13 @@ class NGBlockBreakToken;
 //
 // This class does not handle modifications to its arguments after it has been
 // constructed.
-class CORE_EXPORT NGBlockChildIterator {
+class CORE_EXPORT BlockChildIterator {
   STACK_ALLOCATED();
 
  public:
-  NGBlockChildIterator(LayoutInputNode first_child,
-                       const NGBlockBreakToken* break_token,
-                       bool calculate_child_idx = false);
+  BlockChildIterator(LayoutInputNode first_child,
+                     const BlockBreakToken* break_token,
+                     bool calculate_child_idx = false);
 
   // Returns the next input node which should be laid out, along with its
   // respective break token.
@@ -50,7 +50,7 @@ class CORE_EXPORT NGBlockChildIterator {
 
   LayoutInputNode next_unstarted_child_;
   LayoutInputNode tracked_child_ = nullptr;
-  const NGBlockBreakToken* break_token_;
+  const BlockBreakToken* break_token_;
 
   // An index into break_token_'s ChildBreakTokens() vector. Used for keeping
   // track of the next child break token to inspect.
@@ -61,21 +61,21 @@ class CORE_EXPORT NGBlockChildIterator {
   bool did_handle_first_child_ = false;
 };
 
-struct NGBlockChildIterator::Entry {
+struct BlockChildIterator::Entry {
   STACK_ALLOCATED();
 
  public:
   Entry() : node(nullptr), token(nullptr) {}
   Entry(LayoutInputNode node,
-        const NGBreakToken* token,
+        const BreakToken* token,
         absl::optional<wtf_size_t> index = absl::nullopt)
       : node(node), token(token), index(index) {}
 
   LayoutInputNode node;
-  const NGBreakToken* token;
+  const BreakToken* token;
   absl::optional<wtf_size_t> index;
 
-  bool operator==(const NGBlockChildIterator::Entry& other) const {
+  bool operator==(const BlockChildIterator::Entry& other) const {
     return node == other.node && token == other.token;
   }
 };

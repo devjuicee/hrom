@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 use crate::config;
-use crate::crates;
+use crate::crates::{self, Epoch};
 use crate::inherit::{
     find_inherited_privilege_group, find_inherited_security_critical_flag,
     find_inherited_shipped_flag,
@@ -12,14 +12,15 @@ use crate::paths;
 use crate::readme;
 use crate::util::{
     create_dirs_if_needed, init_handlebars, remove_checksums_from_lock, run_cargo_metadata,
-    without_cargo_config_toml,
+    run_command, without_cargo_config_toml,
 };
+use crate::VendorCommandArgs;
 use anyhow::{format_err, Context, Result};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 pub fn vendor(
-    args: &clap::ArgMatches,
+    args: VendorCommandArgs,
     tools: &paths::ToolPaths,
     paths: &paths::ChromiumPaths,
 ) -> Result<()> {
@@ -31,7 +32,7 @@ pub fn vendor(
 }
 
 fn vendor_impl(
-    args: &clap::ArgMatches,
+    args: VendorCommandArgs,
     tools: &paths::ToolPaths,
     paths: &paths::ChromiumPaths,
 ) -> Result<()> {
@@ -124,12 +125,22 @@ fn vendor_impl(
         })
         .collect();
     for (_, p) in &packages {
+        let crate_dir = format!("{}-{}", p.name, p.version);
         if config.resolve.remove_crates.contains(&p.name) {
             println!("Generating placeholder for removed crate {}-{}", p.name, p.version);
-            placeholder_crate(p, &nodes, paths, &config)?
-        } else if !dirs.contains(&format!("{}-{}", p.name, p.version)) {
+            placeholder_crate(p, &nodes, paths, &config)?;
+        } else if !dirs.contains(&crate_dir) {
             println!("Downloading {}-{}", p.name, p.version);
-            download_crate(&p.name, &p.version, paths)?
+            download_crate(&p.name, &p.version, paths)?;
+            let skip_patches = match &args.no_patches {
+                Some(v) => v.len() == 0 || v.contains(&&p.name),
+                None => false,
+            };
+            if skip_patches {
+                log::warn!("Skipped applying patches for {}-{}", p.name, p.version);
+            } else {
+                apply_patches(&p.name, &p.version, paths)?
+            }
         }
         dirs.remove(&format!("{}-{}", p.name, p.version));
     }
@@ -159,11 +170,39 @@ fn vendor_impl(
             find_shipped,
         )?;
 
+    // Find any epoch dirs which don't correspond to vendored sources anymore,
+    // i.e. that are not present in `all_readme_files`.
+    for crate_dir in std::fs::read_dir(paths.third_party)? {
+        let crate_dir = crate_dir.context("crate_dir")?;
+        if !crate_dir.metadata().context("crate_dir metadata")?.is_dir() {
+            continue;
+        }
+
+        for epoch_dir in std::fs::read_dir(crate_dir.path()).context("read_dir")? {
+            let epoch_dir = epoch_dir.context("epoch_dir")?;
+
+            // There are vendored sources for the epoch dir, go to the next.
+            if all_readme_files.contains_key(&epoch_dir.path()) {
+                continue;
+            }
+
+            let is_epoch_name = |n: &str| <Epoch as std::str::FromStr>::from_str(n).is_ok();
+
+            let metadata = epoch_dir.metadata()?;
+            if metadata.is_dir() && is_epoch_name(&epoch_dir.file_name().to_string_lossy()) {
+                log::warn!(
+                    "No vendored sources for '{}', it should be removed.",
+                    epoch_dir.path().display()
+                );
+            }
+        }
+    }
+
     for dir in all_readme_files.keys() {
         create_dirs_if_needed(&dir).context(format!("dir: {}", dir.display()))?;
     }
 
-    if args.get_flag("dump-template-input") {
+    if args.dump_template_input {
         for (dir, readme_file) in &all_readme_files {
             serde_json::to_writer_pretty(
                 std::fs::File::create(dir.join("gnrt-template-input.json"))
@@ -215,18 +254,63 @@ fn download_crate(
     let mut archive = tar::Archive::new(unzipped);
 
     let vendor_dir = paths.third_party_cargo_root.join("vendor");
-    let crate_dir = vendor_dir.join(format!("{}-{}", name, version));
+    let crate_dir = vendor_dir.join(format!("{name}-{version}"));
 
     if let Err(e) = archive.unpack(vendor_dir) {
         std::fs::remove_dir_all(crate_dir)
-            .with_context(|| format!("Deleting failed unpack of crate {}-{}", name, version))?;
-        return Err(e)
-            .with_context(|| format!("Failed to unpack crate {}-{}", name, version))
-            .into();
+            .with_context(|| format!("Deleting failed unpack of crate {name}-{version}"))?;
+        return Err(e).with_context(|| format!("Failed to unpack crate {name}-{version}")).into();
     }
 
     std::fs::write(crate_dir.join(".cargo-checksum.json"), "{\"files\":{}}\n")
         .with_context(|| format!("writing .cargo-checksum.json for crate {}", name))?;
+
+    Ok(())
+}
+
+fn apply_patches(
+    name: &str,
+    version: &semver::Version,
+    paths: &paths::ChromiumPaths,
+) -> Result<()> {
+    let vendor_dir = paths.third_party_cargo_root.join("vendor");
+    let crate_dir = vendor_dir.join(format!("{name}-{version}"));
+
+    let mut patches = Vec::new();
+    let Ok(patch_dir) = std::fs::read_dir(paths.third_party_cargo_root.join("patches").join(name))
+    else {
+        // No patches for this crate.
+        return Ok(());
+    };
+    for d in patch_dir {
+        patches.push(d?.path());
+    }
+    patches.sort_unstable();
+
+    let mut patches_contents = Vec::with_capacity(patches.len());
+    for path in patches {
+        let contents = std::fs::read(&path)?;
+        patches_contents.push((path, contents));
+    }
+
+    for (path, contents) in patches_contents {
+        let mut c = std::process::Command::new("git");
+        c.arg("apply");
+
+        // We need to rebase from the old versioned directory to the new one.
+        c.arg(format!("-p{}", crate_dir.ancestors().count()));
+        c.arg(format!("--directory={}", crate_dir.display()));
+
+        println!("Applying patch {}", path.to_string_lossy());
+        if let Err(e) = run_command(c, "patch", Some(&contents)) {
+            log::error!("Applying patches failed! Removing the {} directory.", crate_dir.display());
+            if let Err(rm_err) = std::fs::remove_dir_all(&crate_dir) {
+                Err(rm_err).context(e)?
+            } else {
+                Err(e)?
+            }
+        }
+    }
 
     Ok(())
 }

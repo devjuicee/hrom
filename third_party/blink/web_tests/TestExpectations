@@ -709,8 +709,6 @@ crbug.com/1223377 external/wpt/css/css-images/object-fit-none-svg-004p.html [ Fa
 crbug.com/1042783 external/wpt/css/css-backgrounds/background-size/background-size-near-zero-png.html [ Failure ]
 crbug.com/1042783 external/wpt/css/css-backgrounds/background-size/background-size-near-zero-svg.html [ Failure ]
 
-
-
 # Failures due to pointerMove building synthetic events without button information (main thread only).
 crbug.com/1056778 fast/scrolling/scrollbars/scrollbar-thumb-snapping.html [ Failure ]
 
@@ -1539,54 +1537,26 @@ crbug.com/1045672 fast/forms/select/listbox-tap.html [ Failure ]
 crbug.com/1488371 virtual/deprecate-unload/http/tests/history/history-replace-updates-current-item.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/http/tests/navigation/image-load-in-subframe-unload-handler.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/http/tests/navigation/image-load-in-unload-handler.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/navigation/navigate-to-about-blank-from-subframe-unload-handler-cross-origin.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/navigation/navigate-to-about-blank-from-subframe-unload-handler-same-origin.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/notifications/close-on-document-unload.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/notifications/notification-creation-detached-context.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/notifications/request-permission-detached-context.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/xmlhttprequest/frame-load-cancelled-abort.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/xmlhttprequest/frame-unload-abort-crash.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/xmlhttprequest/xhr-onunload.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/xmlhttprequest/xmlhttprequest-unload-sync-handler-attached-from-parent.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/http/tests/xmlhttprequest/xmlhttprequest-unload-sync.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/document-picture-in-picture/clears-session-on-close.https.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/back-forward-cache/events.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/navigating-across-documents/navigate-to-unparseable-url.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/001.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/002.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/003.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/004.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/005.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/unload/004.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/unload/007.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/unload/009.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/unload/unload-main-frame-cross-origin.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/browsing-the-web/unloading-documents/unload/unload-main-frame-same-origin.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/history/the-history-interface/traverse_the_history_unload_1.html [ Failure Skip Timeout ]
+crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/history/the-history-interface/traverse_the_history_unload_1.html [ Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/the-window-object/BarProp.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/the-window-object/close-method.window.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/the-window-object/open-close/close_unload.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/browsers/the-window-object/self-et-al.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/infrastructure/urls/base-url/document-base-url-window-initiator-is-not-opener.https.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/bailout-exception-vs-return-origin.sub.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/bailout-exception-vs-return-xml.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/bailout-side-effects-ignore-opens-during-unload.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/ignore-opens-during-unload.window.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/scripting/events/event-handler-attributes-body-window.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/scripting/events/event-handler-attributes-frameset-window.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/scripting/events/event-handler-attributes-windowless-body.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/navigation-api/navigate-event/replaceState-in-unload-then-remove-iframe.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/navigation-api/navigation-methods/return-value/navigate-rejection-order-invalidurl-unload.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/navigation-api/navigation-methods/return-value/navigate-rejection-order-unload-unserializablestate.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/navigation-api/navigation-methods/return-value/navigate-unload.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/navigation-api/navigation-methods/return-value/reload-rejection-order-unload-unserializablestate.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/navigation-api/navigation-methods/return-value/reload-unload.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/navigation-timing/nested-unload-timing.html [ Failure Skip Timeout ]
+crbug.com/1488371 virtual/deprecate-unload/external/wpt/navigation-api/navigate-event/replaceState-in-unload-then-remove-iframe.html [ Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/permissions-policy/experimental-features/unload-allowed-by-default.tentative.window.html [ Failure Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/permissions-policy/experimental-features/unload-disallowed-subframe.tentative.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/external/wpt/screen-details/getScreenDetails.tentative.https.window.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/wpt_internal/geolocation-api/disconnected-frame-permission-denied.https.html [ Failure Skip Timeout ]
-crbug.com/1488371 virtual/deprecate-unload/wpt_internal/geolocation-api/disconnected-frame.https.html [ Failure Skip Timeout ]
+crbug.com/1488371 virtual/deprecate-unload/external/wpt/screen-details/getScreenDetails.tentative.https.window.html [ Timeout ]
 
 # ========== End of Unload deprecation pending
 
@@ -1597,8 +1567,17 @@ crbug.com/1488371 virtual/deprecate-unload/external/wpt/fetch/api/basic/keepaliv
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/fetch/api/cors/cors-keepalive.any.html [ Skip Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/fetch/api/redirect/redirect-keepalive.any.html [ Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/external/wpt/fetch/metadata/unload.https.sub.html [ Timeout ]
+# Also tests timing, so cannot be moved to pagehide.
+crbug.com/1488371 virtual/deprecate-unload/external/wpt/navigation-timing/nested-unload-timing.html [ Failure ]
 crbug.com/1488371 virtual/deprecate-unload/http/tests/navigation/targeted-navigation-in-unload-handler.html [ Timeout ]
 crbug.com/1488371 virtual/deprecate-unload/http/tests/devtools/sources/debugger/skip-pause-during-navigation.js [ Skip Timeout ]
+crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/bailout-exception-vs-return-origin.sub.window.html [ Timeout ]
+crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/bailout-exception-vs-return-xml.window.html [ Timeout ]
+crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/bailout-side-effects-ignore-opens-during-unload.window.html [ Timeout ]
+crbug.com/1488371 virtual/deprecate-unload/external/wpt/html/webappapis/dynamic-markup-insertion/opening-the-input-stream/ignore-opens-during-unload.window.html [ Timeout ]
+
+# Pagehide is not appropriate as the test checks if PiP window is functional until the very end of the page's lifecycle:
+crbug.com/1488371 virtual/deprecate-unload/external/wpt/document-picture-in-picture/clears-session-on-close.https.html [ Timeout ]
 
 ######## End Unload Deprecation
 
@@ -1681,9 +1660,6 @@ crbug.com/1107923 inspector-protocol/debugger/wasm-streaming-url.js [ Failure Pa
 
 # Will be re-enabled and rebaselined once we remove the '--enable-file-cookies' flag.
 crbug.com/470482 fast/cookies/local-file-can-set-cookies.html [ Crash Failure Pass Timeout ]
-
-# Text::inDocument() returns false but should not.
-crbug.com/264138 dom/legacy_dom_conformance/xhtml/level3/core/nodecomparedocumentposition38.xhtml [ Failure ]
 
 crbug.com/411164 [ Win ] http/tests/security/powerfulFeatureRestrictions/serviceworker-on-insecure-origin.html [ Pass ]
 
@@ -2044,8 +2020,6 @@ crbug.com/613659 external/wpt/quirks/percentage-height-calculation.html [ Failur
 # Note: this test was previously marked as slow on Debug builds. Skipping until crash is fixed
 crbug.com/619978 fast/css/giant-stylesheet-crash.html [ Crash Failure Pass Timeout ]
 
-
-crbug.com/399507 virtual/threaded/http/tests/devtools/tracing/timeline-paint/layer-tree.js [ Failure Pass Timeout ]
 
 # Working on getting the CSP tests going:
 
@@ -2671,6 +2645,7 @@ crbug.com/1446038 [ Debug Mac13-arm64 ] external/wpt/webaudio/the-audio-api/the-
 crbug.com/1446038 [ Debug Mac13-arm64 ] external/wpt/webaudio/the-audio-api/the-mediaelementaudiosourcenode-interface/no-cors.https.html [ Crash ]
 
 # ====== Test expectations added to unblock wpt-importer ======
+crbug.com/626703 external/wpt/css/css-values/signs-abs-computed.html [ Crash ]
 crbug.com/626703 external/wpt/css/css-ui/outline-auto-width-001.html [ Failure ]
 crbug.com/626703 virtual/fedcm-login-status/external/wpt/credential-management/fedcm-login-status/confirm-idp-login.https.html [ Failure ]
 crbug.com/626703 external/wpt/css/css-text/text-align/text-align-justify-tabs-001.html [ Failure ]
@@ -2704,6 +2679,17 @@ crbug.com/626703 [ Mac ] virtual/webcodecs-without-task-runner-with-custom-delet
 crbug.com/626703 [ Mac ] virtual/webcodecs-without-task-runner-with-custom-deleter/external/wpt/webcodecs/videoDecoder-codec-specific.https.any.worker.html?h265_hevc [ Failure ]
 
 # ====== New tests from wpt-importer added here ======
+crbug.com/626703 external/wpt/css/css-color-adjust/rendering/dark-color-scheme/color-scheme-iframe-background-about-blank.tentative.html [ Failure ]
+crbug.com/626703 external/wpt/css/css-transforms/transform-box/svgbox-stroke-box-003.html [ Failure ]
+crbug.com/626703 external/wpt/css/css-transforms/transform-box/svgbox-stroke-box-004.html [ Failure ]
+crbug.com/626703 virtual/backface-visibility-interop/external/wpt/css/css-transforms/transform-box/svgbox-stroke-box-003.html [ Failure ]
+crbug.com/626703 virtual/backface-visibility-interop/external/wpt/css/css-transforms/transform-box/svgbox-stroke-box-004.html [ Failure ]
+crbug.com/626703 virtual/dark-color-scheme/external/wpt/css/css-color-adjust/rendering/dark-color-scheme/color-scheme-iframe-background-about-blank.tentative.html [ Failure ]
+crbug.com/626703 [ Mac11 ] external/wpt/infrastructure/expected-fail/window-onload-test.html [ Failure Timeout ]
+crbug.com/626703 external/wpt/webnn/elementwise_logical.https.any.worker.html [ Skip Timeout ]
+crbug.com/626703 virtual/webnn-service-enabled/external/wpt/webnn/gpu/elementwise_logical.https.any.worker.html [ Skip Timeout ]
+crbug.com/626703 [ Win10.20h2 ] external/wpt/pointerevents/pointerevent_after_target_appended.html?mouse [ Timeout ]
+crbug.com/626703 [ Mac ] external/wpt/pointerevents/pointerevent_after_target_appended.html?mouse [ Timeout ]
 crbug.com/626703 external/wpt/css/css-nesting/has-nesting.html [ Failure ]
 crbug.com/626703 external/wpt/png/apng/acTL-plays-one.html [ Failure ]
 crbug.com/626703 external/wpt/png/apng/fcTL-blend-source-nearly-transparent.html [ Timeout ]
@@ -2829,7 +2815,6 @@ crbug.com/626703 [ Mac12 ] virtual/threaded/external/wpt/css/css-backgrounds/bor
 crbug.com/626703 [ Win ] virtual/threaded/external/wpt/css/css-backgrounds/border-image-image-type-005.htm [ Failure ]
 crbug.com/626703 [ Mac10.15 ] virtual/threaded/external/wpt/css/css-backgrounds/border-image-image-type-005.htm [ Failure Timeout ]
 crbug.com/626703 external/wpt/css/css-contain/content-visibility/content-visibility-on-g.html [ Failure ]
-crbug.com/626703 external/wpt/css/css-grid/subgrid/orthogonal-writing-mode-005.html [ Failure ]
 crbug.com/626703 external/wpt/css/css-text/hyphens/i18n/hyphens-i18n-auto-006.html [ Failure ]
 crbug.com/626703 external/wpt/css/css-color/light-dark-currentcolor.html [ Failure ]
 crbug.com/626703 external/wpt/css/css-color/light-dark-inheritance.html [ Failure ]
@@ -3536,7 +3521,6 @@ crbug.com/1191124 external/wpt/css/css-multicol/spanner-fragmentation-012.html [
 crbug.com/1224888 external/wpt/css/css-multicol/spanner-in-opacity.html [ Failure ]
 crbug.com/1494847 external/wpt/css/css-page/layers-002-print.html [ Failure ]
 crbug.com/1494847 external/wpt/css/css-page/layers-003-print.html [ Failure ]
-crbug.com/1494847 external/wpt/css/css-page/layers-004-print.html [ Failure ]
 crbug.com/1494858 external/wpt/css/css-page/page-name-abspos-002-print.html [ Failure ]
 crbug.com/1494838 external/wpt/css/css-page/page-name-canvas-003-print.html [ Failure ]
 crbug.com/1494838 external/wpt/css/css-page/page-name-canvas-004-print.html [ Failure ]
@@ -3546,7 +3530,6 @@ crbug.com/1494858 external/wpt/css/css-page/page-name-flex-004-print.html [ Fail
 crbug.com/1494838 external/wpt/css/css-page/page-name-img-003-print.html [ Failure ]
 crbug.com/1494838 external/wpt/css/css-page/page-name-img-004-print.html [ Failure ]
 crbug.com/1494847 external/wpt/css/css-page/page-name-margin-001-print.html [ Failure ]
-crbug.com/1494847 external/wpt/css/css-page/page-name-margin-002-print.html [ Failure ]
 crbug.com/1494863 external/wpt/css/css-page/page-name-zero-height-001-print.html [ Failure ]
 crbug.com/1494847 external/wpt/css/css-page/pseudo-first-margin-001-print.html [ Failure ]
 crbug.com/1494847 external/wpt/css/css-page/pseudo-first-margin-002-print.html [ Failure ]
@@ -3652,7 +3635,6 @@ crbug.com/1045599 external/wpt/css/css-grid/abspos/grid-abspos-staticpos-align-s
 crbug.com/1335889 external/wpt/css/css-grid/grid-model/grid-areas-overflowing-grid-container-009.html [ Failure ]
 
 # Simple to fix - but blocked on performance regression requiring cache logic change.
-crbug.com/1272533 external/wpt/css/css-grid/layout-algorithm/grid-intrinsic-size-dynamic-block-size.html [ Failure ]
 crbug.com/1272533 external/wpt/css/css-flexbox/intrinsic-size/col-wrap-009.html [ Failure ]
 
 # Baseline Content-Alignment is not implemented yet for CSS Grid Layout
@@ -3874,9 +3856,6 @@ crbug.com/757165 [ Win ] paint/invalidation/filters/filter-repaint-on-accelerate
 
 # Antialiasing error
 crbug.com/845973 virtual/display-compositor-pixel-dump/fast/canvas/display-compositor-pixel-dump/OffscreenCanvas-opaque-background-compositing.html [ Failure Pass ]
-
-# Tests occasionaly timing out (flaky) on WebKit Win7 dbg builder
-crbug.com/757955 http/tests/devtools/tracing/timeline-paint/layer-tree.js [ Failure Pass Timeout ]
 
 # This test has a fixed number of time which can depend on performance.
 
@@ -4112,7 +4091,6 @@ crbug.com/922951 http/tests/cache/subresource-fragment-identifier.html [ Crash F
 crbug.com/922951 http/tests/history/back-to-post.html [ Crash Failure Pass Timeout ]
 crbug.com/922951 http/tests/webaudio/autoplay-crossorigin.html [ Crash Failure Pass Timeout ]
 crbug.com/922951 [ Release Win ] media/controls/overflow-menu-hide-on-click-outside-stoppropagation.html [ Crash Failure Pass Timeout ]
-crbug.com/922951 virtual/threaded/http/tests/devtools/tracing/frame-model-instrumentation.js [ Crash Failure Pass Timeout ]
 crbug.com/922951 virtual/threaded/http/tests/devtools/tracing/timeline-layout/timeline-layout-with-invalidations.js [ Crash Failure Pass Timeout ]
 
 crbug.com/910979 http/tests/html/validation-bubble-oopif-clip.html [ Crash Failure Pass Timeout ]
@@ -5150,9 +5128,6 @@ crbug.com/1341689 [ Linux ] media/controls/overflow-menu-focus.html [ Failure Pa
 
 crbug.com/1345752 [ Win ] media/controls/overflow-menu-focus.html [ Failure Pass ]
 
-# Following tests timeout on mac11-arm64
-crbug.com/1249176 [ Mac11-arm64 ] http/tests/devtools/tracing/timeline-paint/paint-profiler-update.js [ Failure Timeout ]
-
 # http/tests/intersection-observer/cross-origin-iframe-with-nesting.html tests
 crbug.com/1450030 [ Mac11-arm64 ] http/tests/intersection-observer/cross-origin-iframe-with-nesting.html [ Failure Pass Timeout ]
 crbug.com/1450030 [ Mac12-arm64 ] http/tests/intersection-observer/cross-origin-iframe-with-nesting.html [ Failure Pass Timeout ]
@@ -5169,8 +5144,6 @@ crbug.com/1249176 [ Mac11-arm64 ] paint/markers/document-markers-font-8px.html [
 crbug.com/1249176 [ Mac12-arm64 ] paint/markers/document-markers-font-8px.html [ Failure Pass ]
 crbug.com/1249176 [ Mac11-arm64 ] paint/markers/document-markers-zoom-2000.html [ Failure Pass ]
 crbug.com/1249176 [ Mac12-arm64 ] paint/markers/document-markers-zoom-2000.html [ Failure Pass ]
-crbug.com/1249176 [ Mac11-arm64 ] http/tests/devtools/tracing/frame-model-instrumentation.js [ Failure Pass ]
-crbug.com/1249176 [ Mac12-arm64 ] http/tests/devtools/tracing/frame-model-instrumentation.js [ Failure Pass ]
 crbug.com/1249176 [ Mac11-arm64 ] inspector-protocol/layout-fonts/lang-fallback.js [ Failure Pass ]
 crbug.com/1249176 [ Mac11-arm64 ] external/wpt/layout-instability/recent-input.html [ Failure Pass ]
 crbug.com/1249176 [ Mac12-arm64 ] external/wpt/layout-instability/recent-input.html [ Failure Pass ]
@@ -5184,9 +5157,6 @@ crbug.com/1249176 [ Mac12-arm64 ] virtual/scalefactor200/external/wpt/largest-co
 crbug.com/1249176 [ Mac11-arm64 ] external/wpt/largest-contentful-paint/multiple-redirects-TAO.html [ Failure Pass ]
 crbug.com/1249176 [ Mac12-arm64 ] external/wpt/largest-contentful-paint/multiple-redirects-TAO.html [ Failure Pass ]
 crbug.com/1249176 [ Mac11-arm64 ] http/tests/devtools/elements/styles-2/nested-pseudo-elements.js [ Failure Pass ]
-crbug.com/1463944 [ Mac11-arm64 ] virtual/threaded/http/tests/devtools/tracing/timeline-paint/paint-profiler-update.js [ Failure ]
-crbug.com/1463944 [ Mac12-arm64 ] virtual/threaded/http/tests/devtools/tracing/timeline-paint/paint-profiler-update.js [ Failure Pass ]
-crbug.com/1463944 [ Mac13-arm64 ] virtual/threaded/http/tests/devtools/tracing/timeline-paint/paint-profiler-update.js [ Failure Pass ]
 
 # mac-arm CI 10-05-2021
 crbug.com/1249176 [ Mac11-arm64 ] virtual/gpu-rasterization/images/directly-composited-image-orientation.html [ Failure Pass ]
@@ -5250,8 +5220,8 @@ crbug.com/1256763 [ Linux ] virtual/gpu-rasterization/images/color-profile-image
 crbug.com/1256763 [ Linux ] images/color-profile-background-clip-text.html [ Failure Pass ]
 crbug.com/1259277 fast/events/message-port-multi.html [ Crash Failure Pass Timeout ]
 
-# Sheriff 2021-10-29
-crbug.com/1264670 [ Linux ] http/tests/devtools/resource-tree/resource-tree-frame-add.js [ Failure Pass ]
+# Temporarily disable to roll DevTools into Chromium
+crbug.com/1264670 http/tests/devtools/resource-tree/resource-tree-frame-add.js [ Failure Pass ]
 
 # TODO(https://crbug.com/1265311): Make the test behave the same way on all platforms
 crbug.com/1265311 http/tests/navigation/location-change-repeated-from-blank.html [ Failure Pass ]
@@ -5707,7 +5677,6 @@ crbug.com/1090628 external/wpt/html/browsers/windows/iframe-cross-origin-print.s
 crbug.com/1090628 external/wpt/html/browsers/windows/iframe-cross-origin-scaled-print.sub.html [ Failure ]
 crbug.com/1090628 external/wpt/infrastructure/reftest/reftest_match_fail-print.html [ Failure ]
 crbug.com/1090628 external/wpt/infrastructure/reftest/reftest_mismatch_fail-print.html [ Failure ]
-crbug.com/1090628 external/wpt/infrastructure/reftest/reftest_mismatch_page_margins-print.html [ Failure ]
 crbug.com/1090628 external/wpt/css/printing/fragmented-inline-block-002-print.html [ Failure ]
 crbug.com/1487479 external/wpt/css/printing/remote-origin-iframe-print.html [ Failure ]
 
@@ -6509,7 +6478,7 @@ crbug.com/1446039 [ Debug Mac13 ] external/wpt/webtransport/streams-close.https.
 [ Debug Mac13 ] virtual/threaded-no-composited-antialiasing/animations/interpolation/webkit-background-size-interpolation.html [ Skip Timeout ]
 [ Debug Mac13 ] http/tests/devtools/resource-tree/resource-tree-non-unique-url.js [ Skip Timeout ]
 [ Debug Mac13 ] virtual/keepalive-in-browser-migration/external/wpt/fetch/metadata/generated/element-meta-refresh.optional.sub.html [ Skip Timeout ]
-[ Debug Mac13 ] external/wpt/html/webappapis/dynamic-markup-insertion/html-unsafe-methods/Document-parseHTMLUnsafe-url.tentative.html [ Failure ]
+[ Debug Mac13 ] external/wpt/html/webappapis/dynamic-markup-insertion/html-unsafe-methods/Document-parseHTMLUnsafe-url.html [ Failure ]
 [ Debug Mac13 ] http/tests/devtools/network/network-not-modified-images-mime-type.js [ Skip Timeout ]
 [ Debug Mac13 ] external/wpt/scroll-to-text-fragment/percent-encoding.html [ Skip Timeout ]
 [ Debug Mac13 ] virtual/fenced-frame-mparch/external/wpt/fenced-frame/disallowed-navigations-dangling-markup-urn.https.html [ Failure ]
@@ -6541,7 +6510,7 @@ crbug.com/1446039 [ Debug Mac13 ] external/wpt/webtransport/streams-close.https.
 [ Debug Mac13 ] virtual/threaded/animations/stability/pause-set-current-time.html [ Skip Timeout ]
 [ Debug Mac13 ] external/wpt/css/css-color/parsing/color-computed-hsl.html [ Skip Timeout ]
 [ Debug Mac13 ] virtual/controls-refresh-hc/fast/forms/color-scheme/button/button-pressed-state.html [ Skip Timeout ]
-[ Debug Mac13 ] external/wpt/html/webappapis/dynamic-markup-insertion/html-unsafe-methods/Document-parseHTMLUnsafe-url-base.tentative.html [ Failure ]
+[ Debug Mac13 ] external/wpt/html/webappapis/dynamic-markup-insertion/html-unsafe-methods/Document-parseHTMLUnsafe-url-base.html [ Failure ]
 [ Debug Mac13 ] http/tests/devtools/profiler/heap-snapshot-comparison-sorting.js [ Skip Timeout ]
 [ Debug Mac13 ] virtual/compositor_threaded_scrollbar_scrolling/fast/scrolling/scrollbars/thumb-drag-mousemove-no-button.html [ Skip Timeout ]
 [ Debug Mac13 ] external/wpt/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/same-document-traversal-cross-document-nav.html [ Failure ]
@@ -6708,6 +6677,9 @@ crbug.com/1453398 [ Linux ] images/image-hover-display-alt.html [ Failure Pass ]
 
 # Since HTTPS upgrades run in the //chrome layer, these will fail when ran in content shell.
 external/wpt/https-upgrades/tentative/upgrade.https.sub.html [ Timeout ]
+external/wpt/https-upgrades/tentative/http-redirecting-to-http.https.sub.html [ Timeout ]
+external/wpt/https-upgrades/tentative/http-redirecting-to-http-redirecting-to-http.https.sub.html [ Timeout ]
+external/wpt/https-upgrades/tentative/http-redirecting-to-https.https.sub.html [ Timeout ]
 
 # Sherrif 2023-06-09
 crbug.com/1358175 [ Mac12 ] media/controls/closed-captions-single-track.html [ Failure Pass ]
@@ -6930,7 +6902,6 @@ crbug.com/1475824 [ Mac10.15 ] virtual/keepalive-in-browser-migration/external/w
 # Gardener 2023-08-31
 crbug.com/1477701 [ Mac ] http/tests/devtools/tracing/timeline-layout/timeline-layout-with-invalidations.js [ Failure Pass ]
 crbug.com/1477701 [ Mac ] http/tests/inspector-protocol/timeline/auction-worklet-network.js [ Failure Pass ]
-crbug.com/1477701 [ Mac13-arm64 Release ] http/tests/devtools/tracing/frame-model-instrumentation.js [ Failure Pass ]
 
 # Gardener 2023-09-05
 # Flaky on Webkit Linux Leak
@@ -6951,6 +6922,10 @@ crbug.com/1479983 [ Mac ] external/wpt/mediacapture-record/MediaRecorder-mimetyp
 
 # Gardener 2023-09-14
 crbug.com/1481209 [ Mac ] http/tests/inspector-protocol/target/browser-auto-attach-tab.js [ Failure Pass Timeout ]
+#
+# Gardener 2023-11-23
+crbug.com/1481209 [ Win ] http/tests/inspector-protocol/target/browser-auto-attach-tab.js [ Failure Pass Timeout ]
+crbug.com/1481209 [ Linux ] http/tests/inspector-protocol/target/browser-auto-attach-tab.js [ Failure Pass Timeout ]
 
 # Gardener 2023-09-18
 crbug.com/1482345 fast/events/touch/touch-handler-count.html [ Failure Pass ]
@@ -7073,17 +7048,11 @@ crbug.com/1495422 [ Mac10.15 ] external/wpt/css/css-text/parsing/white-space-sho
 crbug.com/1495422 [ Mac10.15 ] external/wpt/html/semantics/popovers/popover-light-dismiss-flat-tree-nested.html [ Failure ]
 crbug.com/1495422 [ Mac10.15 ] external/wpt/css/css-typed-om/the-stylepropertymap/properties/white-space.html [ Failure ]
 
-# Gardener 2023-10-30
-crbug.com/1497325 [ Mac ] external/wpt/css/css-color/nested-color-mix-with-currentcolor.html [ Failure Pass ]
-
 # Gardener 2023-10-31
 crbug.com/1497825 [ Linux ] virtual/private-aggregation-developer-mode/wpt_internal/private-aggregation/shared-storage-aggregation-coordinator.https.html [ Pass Timeout ]
 
 # Gardener 2023-11-10
 crbug.com/1486131 [ Debug Linux ] external/wpt/html/browsers/history/the-history-interface/001.html [ Failure Pass ]
-
-# Gardener 2023-11-10
-crbug.com/1501324 [ Mac ] virtual/compute-pressure/external/wpt/compute-pressure/compute_pressure_rate_obfuscation_mitigation_triggered.tentative.https.window.html [ Failure Pass Timeout ]
 
 # Tentatively allowed to fail to roll changes in the DevTools frontend.
 crbug.com/1474670 http/tests/devtools/application-panel/resources-panel-on-navigation.js [ Failure Pass ]
@@ -7098,16 +7067,27 @@ crbug.com/1502336 [ Linux ] external/wpt/idle-detection/idle-detection-allowed-b
 # Gardener 2023-11-16
 crbug.com/1502794 external/wpt/html/semantics/invokers/invoketarget-on-video-behavior.tentative.html [ Failure Pass Timeout ]
 
-# Gerdener 2023-11-17
+# Gardener 2023-11-17
 crbug.com/1503108 [ Mac ] external/wpt/credential-management/fedcm-disconnect.sub.https.html [ Timeout ]
 crbug.com/1503051 [ Mac ] virtual/keepalive-in-browser-migration/external/wpt/fetch/metadata/generated/audioworklet.https.sub.html [ Failure Pass ]
 crbug.com/1503067 [ Linux ] virtual/plz-dedicated-worker-disabled/external/wpt/fetch/private-network-access/window-open.tentative.https.window.html [ Failure Pass ]
 crbug.com/1503067 [ Linux ] virtual/pna-iframes-warning/external/wpt/fetch/private-network-access/window-open.tentative.https.window.html [ Failure Pass ]
 crbug.com/1503067 [ Linux ] virtual/pna-iframes-enabled/external/wpt/fetch/private-network-access/iframe.tentative.https.window.html [ Failure Pass ]
-crbug.com/1503086 [ Linux ] external/wpt/html/semantics/invokers/invoketarget-on-audio-behavior.tentative.html [ Failure Pass ]
 crbug.com/1503119 [ Mac11 ] external/wpt/webtransport/echo-large-bidirectional-streams.https.any.html [ Timeout ]
 
-# Gerdener 2023-11-21
+# Gardener 2023-11-21
 crbug.com/1504071 [ Mac ] http/tests/navigation/ping-cross-origin-from-https.html [ Failure Pass ]
 crbug.com/1352545 [ Linux ] external/wpt/html/cross-origin-opener-policy/coop-sandbox-cuts-opener.https.html [ Failure Pass ]
 crbug.com/1501090 [ Linux ] external/wpt/preload/preload-strict-dynamic.sub.html [ Failure Pass ]
+
+# Gardener 2023-11-23
+crbug.com/1504651 [ Linux ] external/wpt/touch-events/single-touch.html [ Failure Pass ]
+crbug.com/1504244 [ Linux ] virtual/automatic-lazy-frame-loading-ads/http/tests/subresource_filter/frame-lazyload.html [ Failure Pass Timeout ]
+crbug.com/1495671 [ Win ] external/wpt/webmessaging/with-ports/020.html [ Failure Pass ]
+
+# Gardener 2023-11-24
+crbug.com/1504652 [ Mac ] external/wpt/long-animation-frame/tentative/loaf-iframe.html [ Pass Timeout ]
+crbug.com/1503086 external/wpt/html/semantics/invokers/invoketarget-on-audio-behavior.tentative.html [ Failure Pass Timeout ]
+
+# Tentative allow to fail to roll SwiftShader changes.
+crbug.com/726075 [ Linux ] virtual/gpu/fast/canvas/canvas-imageSmoothing-disabled-scaling-down.html [ Failure ]

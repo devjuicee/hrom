@@ -294,6 +294,7 @@ Tālāk ir norādīti daži ieteikumi darba sākšanai.</translation>
 <translation id="2224075387478458881">Ja ekrānā ir redzams aizsargāts saturs, ekrāna ierakstīšana ir liegta.</translation>
 <translation id="2227179592712503583">Noņemt ieteikumu</translation>
 <translation id="2248634276911611268">Atvērt saiti jaunā cilnē un pāriet uz jauno cilni</translation>
+<translation id="2253808149208613283">Instalējiet lietotni, lai pielāgotu šo ierīci.</translation>
 <translation id="225680501294068881">Notiek ierīču meklēšana...</translation>
 <translation id="2257486738914982088">Lejupielādējot failu “<ph name="FILENAME" />”, radās kļūda.</translation>
 <translation id="2258734398699965611">Ieteiktie faili</translation>
@@ -650,6 +651,7 @@ Tālāk ir norādīti daži ieteikumi darba sākšanai.</translation>
 <translation id="3659667652322717492">Vēlāk varēsiet jebkurā laikā mainīt mikrofona darbību.</translation>
 <translation id="3659814201068740063">Vēl apmēram <ph name="TIME_LEFT" /> (<ph name="PERCENTAGE" />%).
 Pievienojiet ierīci barošanas avotam.</translation>
+<translation id="3660860940251915011">Pārslēgt augstas redzamības režīmu funkcijai “<ph name="FEATURE_NAME" />”</translation>
 <translation id="366222428570480733">Pārvaldīts lietotājs <ph name="USER_EMAIL_ADDRESS" /></translation>
 <translation id="3666266999138159418">Velciet, lai paslēptu peldošo logu</translation>
 <translation id="367531336287639526">Atlasīt pirmo ikonu pa kreisi no adreses joslas</translation>
@@ -980,6 +982,7 @@ Dažas funkcijas ir ierobežotas, lai palielinātu akumulatora darbības ilgumu.
         <ph name="NOTIFICATION_1" />,
         <ph name="NOTIFICATION_2" />,
         <ph name="NUM_OTHER_NOTIFICATION" /></translation>
+<translation id="4981175556418720939">Pārveidots: <ph name="DATE_AND_TIME" /></translation>
 <translation id="4987738733603015246">16. darbvieta</translation>
 <translation id="4989163558385430922">Skatīt visu</translation>
 <translation id="5003993274120026347">Nākamais teikums</translation>
@@ -1440,6 +1443,7 @@ Jauna instalācija</translation>
 <translation id="6827049576281411231">Aizvērt pasākumu paneli</translation>
 <translation id="6831561626108366035">Pārejiet uz pogu <ph name="ACTIVE_STATE" /> <ph name="DESK_NAME" />.</translation>
 <translation id="6836499262298959512">Bīstams fails</translation>
+<translation id="6837621009301897464">Lai izveidotu ekrānuzņēmumu, nospiediet</translation>
 <translation id="6852052252232534364">Noklikšķiniet</translation>
 <translation id="6855029042976311970">Tikko rediģēts</translation>
 <translation id="6856708615407876657">Pārslēgt meklēšanas rezultātu kategorijas</translation>

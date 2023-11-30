@@ -5,14 +5,14 @@
 #include "third_party/blink/renderer/core/layout/ng/ng_base_layout_algorithm_test.h"
 
 #include "third_party/blink/renderer/bindings/core/v8/v8_binding_for_testing.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_break_token.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_cursor.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_node.h"
 #include "third_party/blink/renderer/core/layout/inline/line_breaker.h"
 #include "third_party/blink/renderer/core/layout/inline/line_info.h"
-#include "third_party/blink/renderer/core/layout/ng/layout_ng_block_flow.h"
+#include "third_party/blink/renderer/core/layout/layout_ng_block_flow.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment_builder.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_positioned_float.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_unpositioned_float.h"
 #include "third_party/blink/renderer/core/testing/mock_hyphenation.h"
@@ -72,7 +72,7 @@ class LineBreakerTest : public RenderingTest {
       if (line_info.Results().empty())
         break;
 
-      break_token = line_info.BreakToken();
+      break_token = line_info.GetBreakToken();
       if (fill_first_space_ && lines.empty()) {
         first_hang_width_ = line_info.HangWidth();
       }
@@ -106,7 +106,7 @@ class LineBreakerTest : public RenderingTest {
       CHECK_LT(line_index, line_info_list.size());
       LineInfo& line_info = line_info_list[line_index];
       line_breaker.NextLine(&line_info);
-      break_token = line_info.BreakToken();
+      break_token = line_info.GetBreakToken();
       ++line_index;
     } while (break_token);
     return line_index;
@@ -1100,10 +1100,10 @@ TEST_F(LineBreakerTest, BreakAt) {
   const wtf_size_t num_lines =
       BreakLinesAt(target, LayoutUnit(800), break_points, line_info_list);
   EXPECT_EQ(num_lines, 4u);
-  EXPECT_EQ(line_info_list[0].BreakToken()->Start(), break_points[0].offset);
-  EXPECT_EQ(line_info_list[1].BreakToken()->Start(), break_points[1].offset);
-  EXPECT_EQ(line_info_list[2].BreakToken()->Start(), break_points[2].offset);
-  EXPECT_EQ(line_info_list[3].BreakToken(), nullptr);
+  EXPECT_EQ(line_info_list[0].GetBreakToken()->Start(), break_points[0].offset);
+  EXPECT_EQ(line_info_list[1].GetBreakToken()->Start(), break_points[1].offset);
+  EXPECT_EQ(line_info_list[2].GetBreakToken()->Start(), break_points[2].offset);
+  EXPECT_EQ(line_info_list[3].GetBreakToken(), nullptr);
   EXPECT_FALSE(line_info_list[0].IsLastLine());
   EXPECT_FALSE(line_info_list[1].IsLastLine());
   EXPECT_FALSE(line_info_list[2].IsLastLine());
@@ -1138,8 +1138,8 @@ TEST_F(LineBreakerTest, BreakAtTrailingSpaces) {
   const wtf_size_t num_lines =
       BreakLinesAt(target, LayoutUnit(800), break_points, line_info_list);
   EXPECT_EQ(num_lines, 2u);
-  EXPECT_EQ(line_info_list[0].BreakToken()->Start(), break_points[0].offset);
-  EXPECT_EQ(line_info_list[1].BreakToken(), nullptr);
+  EXPECT_EQ(line_info_list[0].GetBreakToken()->Start(), break_points[0].offset);
+  EXPECT_EQ(line_info_list[1].GetBreakToken(), nullptr);
   EXPECT_FALSE(line_info_list[0].IsLastLine());
   EXPECT_TRUE(line_info_list[1].IsLastLine());
   EXPECT_EQ(line_info_list[0].Width(), LayoutUnit(40));
@@ -1173,8 +1173,8 @@ TEST_F(LineBreakerTest, BreakAtTrailingSpacesAfterAtomicInline) {
   const wtf_size_t num_lines =
       BreakLinesAt(target, LayoutUnit(800), break_points, line_info_list);
   EXPECT_EQ(num_lines, 2u);
-  EXPECT_EQ(line_info_list[0].BreakToken()->Start(), break_points[0].offset);
-  EXPECT_EQ(line_info_list[1].BreakToken(), nullptr);
+  EXPECT_EQ(line_info_list[0].GetBreakToken()->Start(), break_points[0].offset);
+  EXPECT_EQ(line_info_list[1].GetBreakToken(), nullptr);
   EXPECT_FALSE(line_info_list[0].IsLastLine());
   EXPECT_TRUE(line_info_list[1].IsLastLine());
   EXPECT_EQ(line_info_list[0].Width(), LayoutUnit(10));

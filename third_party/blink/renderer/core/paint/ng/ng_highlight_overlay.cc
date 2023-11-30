@@ -10,7 +10,7 @@
 #include "third_party/blink/renderer/core/highlight/highlight_registry.h"
 #include "third_party/blink/renderer/core/layout/layout_text.h"
 #include "third_party/blink/renderer/core/paint/ng/marker_range_mapping_context.h"
-#include "third_party/blink/renderer/platform/fonts/ng_text_fragment_paint_info.h"
+#include "third_party/blink/renderer/platform/fonts/text_fragment_paint_info.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 
 namespace blink {
@@ -24,7 +24,7 @@ using HighlightEdge = NGHighlightOverlay::HighlightEdge;
 using HighlightDecoration = NGHighlightOverlay::HighlightDecoration;
 using HighlightPart = NGHighlightOverlay::HighlightPart;
 
-unsigned ClampOffset(unsigned offset, const NGTextFragmentPaintInfo& fragment) {
+unsigned ClampOffset(unsigned offset, const TextFragmentPaintInfo& fragment) {
   return std::min(std::max(offset, fragment.from), fragment.to);
 }
 
@@ -392,7 +392,7 @@ Vector<HighlightEdge> NGHighlightOverlay::ComputeEdges(
 }
 
 Vector<HighlightPart> NGHighlightOverlay::ComputeParts(
-    const NGTextFragmentPaintInfo& content_offsets,
+    const TextFragmentPaintInfo& content_offsets,
     const Vector<HighlightLayer>& layers,
     const Vector<HighlightEdge>& edges) {
   const HighlightLayer originating_layer{HighlightLayerType::kOriginating};

@@ -794,6 +794,22 @@ BUILD_ELEMENTWISE_UNARY_OP(reciprocal,
                            webnn::DataTypeConstraint::kFloat)
 BUILD_ELEMENTWISE_UNARY_OP(sqrt, kSqrt, webnn::DataTypeConstraint::kFloat)
 
+MLOperand* MLGraphBuilder::cast(const MLOperand* input,
+                                const V8MLOperandDataType output_data_type,
+                                ExceptionState& exception_state) {
+  auto* cast =
+      MakeGarbageCollected<MLOperator>(this, MLOperator::OperatorKind::kCast);
+  auto output = MLOperand::ValidateAndCreateOutput(
+      this, output_data_type.AsEnum(), input->Dimensions(), cast);
+  if (!output.has_value()) {
+    exception_state.ThrowDOMException(DOMExceptionCode::kDataError,
+                                      output.error());
+    return nullptr;
+  }
+  cast->Connect({input}, {output.value()});
+  return output.value();
+}
+
 #define BUILD_REDUCE_OP(op, op_kind)                                   \
   MLOperand* MLGraphBuilder::op(const MLOperand* input,                \
                                 const MLReduceOptions* options,        \
@@ -1430,6 +1446,35 @@ MLOperand* MLGraphBuilder::transpose(const MLOperand* input,
     return nullptr;
   }
   transpose->Connect({input}, {output.value()});
+  return output.value();
+}
+
+MLOperand* MLGraphBuilder::where(const MLOperand* condition,
+                                 const MLOperand* true_value,
+                                 const MLOperand* false_value,
+                                 ExceptionState& exception_state) {
+  const auto validated_output = webnn::ValidateWhereAndInferOutput(
+      ConvertToComponentOperand(condition),
+      ConvertToComponentOperand(true_value),
+      ConvertToComponentOperand(false_value));
+  if (!validated_output.has_value()) {
+    exception_state.ThrowDOMException(
+        DOMExceptionCode::kDataError,
+        String::FromUTF8(validated_output.error()));
+    return nullptr;
+  }
+
+  auto* where =
+      MakeGarbageCollected<MLOperator>(this, MLOperator::OperatorKind::kWhere);
+  const auto output = MLOperand::ValidateAndCreateOutput(
+      this, ComponentOperandTypeToBlink(validated_output->data_type),
+      Vector<uint32_t>(validated_output->dimensions), where);
+  if (!output.has_value()) {
+    exception_state.ThrowDOMException(DOMExceptionCode::kDataError,
+                                      output.error());
+    return nullptr;
+  }
+  where->Connect({condition, true_value, false_value}, {output.value()});
   return output.value();
 }
 

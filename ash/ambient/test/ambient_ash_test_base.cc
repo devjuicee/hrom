@@ -6,6 +6,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -57,7 +58,6 @@
 #include "services/data_decoder/public/mojom/image_decoder.mojom-shared.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/test/test_url_loader_factory.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/codec/jpeg_codec.h"
 #include "ui/gfx/image/image_skia.h"
 #include "ui/views/controls/label.h"
@@ -69,11 +69,11 @@ namespace {
 constexpr base::TimeDelta kWaitForWidgetsTimeout = base::Seconds(10);
 
 std::map<int, ::ambient::PhotoCacheEntry> GetCachedFilesFromStore(
-    AmbientPhotoCache::Store store) {
+    ambient_photo_cache::Store store) {
   std::map<int, ::ambient::PhotoCacheEntry> cached_files;
   for (int i = 0; i < kMaxNumberOfCachedImages; ++i) {
     base::test::TestFuture<::ambient::PhotoCacheEntry> future;
-    AmbientPhotoCache::ReadPhotoCache(store, i, future.GetCallback());
+    ambient_photo_cache::ReadPhotoCache(store, i, future.GetCallback());
     ::ambient::PhotoCacheEntry entry = future.Get();
     if (!entry.primary_photo().image().empty()) {
       cached_files[i] = std::move(entry);
@@ -192,8 +192,8 @@ class AmbientAshTestBase::FakePhotoDownloadServer {
 
   // If not specified, the size is automatically generated using
   // `test_image_size_`.
-  absl::optional<gfx::Size> custom_image_size_;
-  absl::optional<SkColor> custom_image_color_;
+  std::optional<gfx::Size> custom_image_size_;
+  std::optional<SkColor> custom_image_color_;
 
   data_decoder::mojom::ImageCodec image_codec_ =
       data_decoder::mojom::ImageCodec::kDefault;
@@ -232,7 +232,6 @@ void AmbientAshTestBase::SetUp() {
 void AmbientAshTestBase::TearDown() {
   fake_photo_download_server_.reset();
   AshTestBase::TearDown();
-  AmbientPhotoCache::SetFactoryForTesting(base::NullCallback());
 }
 
 void AmbientAshTestBase::SetAmbientModeEnabled(bool enabled) {
@@ -506,11 +505,11 @@ void AmbientAshTestBase::FastForwardByPhotoRefreshInterval(float factor) {
       ambient_controller()->ambient_ui_model()->photo_refresh_interval());
 }
 
-absl::optional<float>
+std::optional<float>
 AmbientAshTestBase::GetRemainingLockScreenTimeoutFraction() {
   const auto& inactivity_timer = ambient_controller()->inactivity_timer_;
   if (!inactivity_timer.IsRunning()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   return (inactivity_timer.desired_run_time() - base::TimeTicks::Now()) /
@@ -615,12 +614,12 @@ base::TimeDelta AmbientAshTestBase::GetRefreshTokenDelay() {
 }
 
 std::map<int, ::ambient::PhotoCacheEntry> AmbientAshTestBase::GetCachedFiles() {
-  return GetCachedFilesFromStore(AmbientPhotoCache::Store::kPrimary);
+  return GetCachedFilesFromStore(ambient_photo_cache::Store::kPrimary);
 }
 
 std::map<int, ::ambient::PhotoCacheEntry>
 AmbientAshTestBase::GetBackupCachedFiles() {
-  return GetCachedFilesFromStore(AmbientPhotoCache::Store::kBackup);
+  return GetCachedFilesFromStore(ambient_photo_cache::Store::kBackup);
 }
 
 AmbientController* AmbientAshTestBase::ambient_controller() {
@@ -650,10 +649,6 @@ ScreensaverImagesPolicyHandler* AmbientAshTestBase::managed_policy_handler() {
   }
 
   return ambient_controller()->screensaver_images_policy_handler_.get();
-}
-
-AmbientPhotoCache* AmbientAshTestBase::photo_cache() {
-  return ambient_controller()->ambient_photo_cache();
 }
 
 AmbientWeatherController* AmbientAshTestBase::weather_controller() {

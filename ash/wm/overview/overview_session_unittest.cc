@@ -107,6 +107,7 @@
 #include "ui/compositor/test/test_utils.h"
 #include "ui/display/display_layout.h"
 #include "ui/display/manager/display_manager.h"
+#include "ui/display/screen.h"
 #include "ui/display/test/display_manager_test_api.h"
 #include "ui/events/event_utils.h"
 #include "ui/events/gesture_detection/gesture_configuration.h"
@@ -942,7 +943,8 @@ TEST_P(OverviewSessionTest, MaximizedWindow) {
 // maximized and fullscreen window.
 #if defined(NDEBUG) && !defined(ADDRESS_SANITIZER) && \
     !defined(LEAK_SANITIZER) && !defined(THREAD_SANITIZER)
-TEST_P(OverviewSessionTest, MaximizedFullscreenHistograms) {
+// TODO(crbug.com/1493835): Re-enable this test. Disabled because of flakiness.
+TEST_P(OverviewSessionTest, DISABLED_MaximizedFullscreenHistograms) {
   std::unique_ptr<aura::Window> maximized_window(CreateTestWindow());
   std::unique_ptr<aura::Window> fullscreen_window(CreateTestWindow());
 
@@ -982,7 +984,8 @@ TEST_P(OverviewSessionTest, MaximizedFullscreenHistograms) {
 }
 #endif
 
-TEST_P(OverviewSessionTest, TabletModeHistograms) {
+// TODO(crbug.com/1493835): Re-enable this test. Disabled because of flakiness.
+TEST_P(OverviewSessionTest, DISABLED_TabletModeHistograms) {
   ui::ScopedAnimationDurationScaleMode anmatin_scale(
       ui::ScopedAnimationDurationScaleMode::NON_ZERO_DURATION);
 
@@ -1524,7 +1527,7 @@ TEST_P(OverviewSessionTest, DropTargetOnCorrectDisplayForDraggingFromOverview) {
   EnterTabletMode();
   // DisplayConfigurationObserver enables mirror mode when tablet mode is
   // enabled. Disable mirror mode to test multiple displays.
-  display_manager()->SetMirrorMode(display::MirrorMode::kOff, absl::nullopt);
+  display_manager()->SetMirrorMode(display::MirrorMode::kOff, std::nullopt);
   base::RunLoop().RunUntilIdle();
 
   const aura::Window::Windows root_windows = Shell::Get()->GetAllRootWindows();
@@ -6396,7 +6399,7 @@ TEST_F(TabletModeOverviewSessionTest, FlingToClose) {
 
   ToggleOverview();
   ASSERT_TRUE(GetOverviewController()->InOverviewSession());
-  EXPECT_EQ(1u, GetOverviewSession()->grid_list()[0]->size());
+  EXPECT_EQ(1u, GetOverviewSession()->grid_list()[0]->GetNumWindows());
 
   auto* item = GetOverviewItemForWindow(widget->GetNativeWindow());
   const gfx::PointF start = item->target_bounds().CenterPoint();
@@ -8228,8 +8231,8 @@ TEST_F(SplitViewOverviewSessionTest,
   EXPECT_TRUE(InOverviewSession());
   EXPECT_TRUE(split_view_controller()->InSplitViewMode());
   ASSERT_TRUE(split_view_controller()->split_view_divider());
-  std::vector<aura::Window*> window_list =
-      GetOverviewController()->GetWindowsListInOverviewGridsForTest();
+  const std::vector<aura::Window*> window_list =
+      GetWindowsListInOverviewGrids();
   EXPECT_EQ(2u, window_list.size());
   EXPECT_FALSE(base::Contains(window_list, window1.get()));
   EXPECT_TRUE(wm::IsActiveWindow(window1.get()));
@@ -8246,9 +8249,10 @@ TEST_F(SplitViewOverviewSessionTest,
   // the overview list.
   EXPECT_TRUE(InOverviewSession());
   EXPECT_FALSE(split_view_controller()->InSplitViewMode());
-  window_list = GetOverviewController()->GetWindowsListInOverviewGridsForTest();
-  EXPECT_EQ(3u, window_list.size());
-  EXPECT_TRUE(base::Contains(window_list, window1.get()));
+  const std::vector<aura::Window*> new_window_list =
+      GetWindowsListInOverviewGrids();
+  EXPECT_EQ(3u, new_window_list.size());
+  EXPECT_TRUE(base::Contains(new_window_list, window1.get()));
   EXPECT_FALSE(wm::IsActiveWindow(window1.get()));
 }
 
@@ -8287,8 +8291,7 @@ TEST_F(
   EXPECT_EQ(
       expected_mru_list,
       Shell::Get()->mru_window_tracker()->BuildMruWindowList(kActiveDesk));
-  EXPECT_EQ(expected_overview_list,
-            GetOverviewController()->GetWindowsListInOverviewGridsForTest());
+  EXPECT_EQ(expected_overview_list, GetWindowsListInOverviewGrids());
 
   // Verify the stacking order.
   aura::Window* parent = window1->parent();
@@ -8337,8 +8340,7 @@ TEST_F(
   EXPECT_EQ(
       expected_mru_list,
       Shell::Get()->mru_window_tracker()->BuildMruWindowList(kActiveDesk));
-  EXPECT_EQ(expected_overview_list,
-            GetOverviewController()->GetWindowsListInOverviewGridsForTest());
+  EXPECT_EQ(expected_overview_list, GetWindowsListInOverviewGrids());
 
   // Verify the stacking order.
   aura::Window* parent = window1->parent();
@@ -8755,8 +8757,8 @@ TEST_F(SplitViewOverviewSessionTest,
   ToggleOverview();
   split_view_controller()->SnapWindow(
       window.get(), SplitViewController::SnapPosition::kPrimary);
-  display_manager()->SetMirrorMode(display::MirrorMode::kOff, absl::nullopt);
-  display_manager()->SetMirrorMode(display::MirrorMode::kNormal, absl::nullopt);
+  display_manager()->SetMirrorMode(display::MirrorMode::kOff, std::nullopt);
+  display_manager()->SetMirrorMode(display::MirrorMode::kNormal, std::nullopt);
 }
 
 // Tests that there is no crash when dragging the divider in portrait mode.
@@ -8856,7 +8858,7 @@ class SplitViewOverviewSessionInClamshellTest
 // Test some basic functionalities in clamshell splitview mode.
 TEST_F(SplitViewOverviewSessionInClamshellTest, BasicFunctionalitiesTest) {
   UpdateDisplay("600x400");
-  EXPECT_FALSE(Shell::Get()->tablet_mode_controller()->InTabletMode());
+  EXPECT_FALSE(display::Screen::GetScreen()->InTabletMode());
 
   // 1. Test the 1 window scenario.
   const gfx::Rect bounds(400, 400);
@@ -10210,8 +10212,7 @@ TEST_F(SplitViewOverviewSessionInClamshellTestMultiDisplayOnly,
   // Verify that the right grid is in MRU order.
   const std::vector<aura::Window*> expected_order = {
       window1.get(), window2.get(), window3.get()};
-  EXPECT_EQ(expected_order,
-            GetOverviewController()->GetWindowsListInOverviewGridsForTest());
+  EXPECT_EQ(expected_order, GetWindowsListInOverviewGrids());
 }
 
 // Test dragging from one display to another and then snapping.

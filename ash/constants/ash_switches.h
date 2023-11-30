@@ -5,8 +5,9 @@
 #ifndef ASH_CONSTANTS_ASH_SWITCHES_H_
 #define ASH_CONSTANTS_ASH_SWITCHES_H_
 
+#include <optional>
+
 #include "base/component_export.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
 class TimeDelta;
@@ -375,6 +376,10 @@ extern const char kForceRefreshRateThrottle[];
 // cryptohomed instead of explicitly authorizing each operation.
 COMPONENT_EXPORT(ASH_CONSTANTS) bool IsAuthSessionCryptohomeEnabled();
 
+// Returns true if the cryptohome filesystem keyset is evicted and needs to be
+// restored on lock screen.
+COMPONENT_EXPORT(ASH_CONSTANTS) bool ShouldRestoreKeyOnLockScreen();
+
 // Returns true if this is a Cellular First device.
 COMPONENT_EXPORT(ASH_CONSTANTS) bool IsCellularFirstDevice();
 
@@ -459,7 +464,7 @@ bool IsDeviceRequisitionConfigurable();
 COMPONENT_EXPORT(ASH_CONSTANTS) bool IsOsInstallAllowed();
 
 COMPONENT_EXPORT(ASH_CONSTANTS)
-absl::optional<base::TimeDelta> ContextualNudgesInterval();
+std::optional<base::TimeDelta> ContextualNudgesInterval();
 COMPONENT_EXPORT(ASH_CONSTANTS) bool ContextualNudgesResetShownCount();
 COMPONENT_EXPORT(ASH_CONSTANTS) bool IsUsingShelfAutoDim();
 COMPONENT_EXPORT(ASH_CONSTANTS) bool ShouldClearFastInkBuffer();

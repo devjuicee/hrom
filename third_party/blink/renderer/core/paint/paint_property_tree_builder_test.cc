@@ -16,7 +16,7 @@
 #include "third_party/blink/renderer/core/layout/layout_image.h"
 #include "third_party/blink/renderer/core/layout/layout_multi_column_flow_thread.h"
 #include "third_party/blink/renderer/core/layout/layout_tree_as_text.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_root.h"
 #include "third_party/blink/renderer/core/paint/fragment_data_iterator.h"
 #include "third_party/blink/renderer/core/paint/object_paint_properties.h"
@@ -7292,6 +7292,25 @@ TEST_P(PaintPropertyTreeBuilderTest, OverlayScrollbarEffects) {
   EXPECT_FALSE(properties->HorizontalScrollbarEffect());
   ASSERT_TRUE(properties->VerticalScrollbarEffect());
   EXPECT_EQ(properties->OverflowClip()->Parent(),
+            properties->VerticalScrollbarEffect()->OutputClip());
+}
+
+TEST_P(PaintPropertyTreeBuilderTest, OverlayScrollbarEffectsWithRadius) {
+  SetBodyInnerHTML(R"HTML(
+    <div id="target" style="width: 100px; height: 100px; border-radius: 10px;
+                            overflow: scroll">
+      <div style="height: 300px"></div>
+    </div>
+  )HTML");
+  CHECK(GetDocument().GetPage()->GetScrollbarTheme().UsesOverlayScrollbars());
+
+  auto* properties = PaintPropertiesForElement("target");
+  ASSERT_TRUE(properties);
+  ASSERT_TRUE(properties->OverflowClip());
+  ASSERT_TRUE(properties->InnerBorderRadiusClip());
+  EXPECT_FALSE(properties->HorizontalScrollbarEffect());
+  ASSERT_TRUE(properties->VerticalScrollbarEffect());
+  EXPECT_EQ(properties->InnerBorderRadiusClip()->Parent(),
             properties->VerticalScrollbarEffect()->OutputClip());
 }
 

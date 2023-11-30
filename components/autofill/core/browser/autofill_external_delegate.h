@@ -49,6 +49,10 @@ class AutofillExternalDelegate : public AutofillPopupDelegate,
 
   ~AutofillExternalDelegate() override;
 
+  // Returns true if `item_id` identifies a suggestion which can appear on the
+  // first layer of the Autofill popup and can fill form fields.
+  static bool IsAutofillAndFirstLayerSuggestionId(PopupItemId item_id);
+
   // AutofillPopupDelegate implementation.
   void OnPopupShown() override;
   void OnPopupHidden() override;
@@ -172,12 +176,37 @@ class AutofillExternalDelegate : public AutofillPopupDelegate,
                             bool is_preview,
                             const AutofillTriggerDetails& trigger_details);
 
-  // Used by `PopupItemId::kFieldByFieldFilling` suggestions. Fills the `field`
-  // with the info stored in the `AutofillProfile` for the field type
-  // `suggestion.field_by_field_filling_type_used`. `is_preview` has the same
-  // meaning as the one in `FillAutofillFormData()`.
-  void FillOrPreviewFieldByFieldFillingSuggestion(const Suggestion& suggestion,
-                                                  bool is_preview);
+  // Determines the correct data type (`AutofillProfile` or `CreditCard`) to be
+  // previewed and previews the corresponding
+  // `PopupItemId::kFieldByFieldFilling` suggestion.
+  void PreviewFieldByFieldFillingSuggestion(const Suggestion& suggestion);
+
+  // Determines the correct data type (`AutofillProfile` or `CreditCard`) to be
+  // filled and fills the corresponding `PopupItemId::kFieldByFieldFilling`
+  // suggestion.
+  void FillFieldByFieldFillingSuggestion(const Suggestion& suggestion,
+                                         const SuggestionPosition& position);
+
+  // Previews the value from `profile` specified in the `suggestion`.
+  void PreviewAddressFieldByFieldFillingSuggestion(
+      const AutofillProfile& profile,
+      const Suggestion& suggestion);
+
+  // Previews the main text from the `suggestion`.
+  void PreviewCreditCardFieldByFieldFillingSuggestion(
+      const Suggestion& suggestion);
+
+  // Fills the value from `profile` specified in the `suggestion`. Emits
+  // necessary metrics based on the
+  // `suggestion.field_by_field_filling_type_used`.
+  void FillAddressFieldByFieldFillingSuggestion(
+      const AutofillProfile& profile,
+      const Suggestion& suggestion,
+      const SuggestionPosition& position);
+
+  // Fills the main text from the `suggestion`.
+  void FillCreditCardFieldByFieldFillingSuggestion(
+      const Suggestion& suggestion);
 
   // Will remove Autofill warnings from |suggestions| if there are also
   // autocomplete entries in the vector. Note: at this point, it is assumed that
@@ -218,13 +247,12 @@ class AutofillExternalDelegate : public AutofillPopupDelegate,
   // The bounds of the form field that user is interacting with.
   gfx::RectF element_bounds_;
 
-  // Does the popup include any Autofill profile or credit card suggestions?
-  bool has_autofill_suggestions_ = false;
-
   bool should_show_scan_credit_card_ = false;
   PopupType popup_type_ = PopupType::kUnspecified;
 
   bool should_show_cards_from_account_option_ = false;
+
+  std::vector<PopupItemId> shown_suggestions_types_;
 
   // The current data list values.
   std::vector<SelectOption> datalist_;

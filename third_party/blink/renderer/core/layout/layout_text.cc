@@ -53,11 +53,11 @@
 #include "third_party/blink/renderer/core/layout/inline/inline_node.h"
 #include "third_party/blink/renderer/core/layout/inline/offset_mapping.h"
 #include "third_party/blink/renderer/core/layout/layout_block.h"
+#include "third_party/blink/renderer/core/layout/layout_ng_block_flow.h"
 #include "third_party/blink/renderer/core/layout/layout_object_inlines.h"
 #include "third_party/blink/renderer/core/layout/layout_text_combine.h"
 #include "third_party/blink/renderer/core/layout/layout_view.h"
-#include "third_party/blink/renderer/core/layout/ng/layout_ng_block_flow.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_inline_text.h"
 #include "third_party/blink/renderer/core/layout/text_autosizer.h"
 #include "third_party/blink/renderer/core/paint/object_paint_invalidator.h"
@@ -647,16 +647,9 @@ void LayoutText::AbsoluteQuadsForRange(Vector<gfx::QuadF>& quads,
 gfx::RectF LayoutText::LocalBoundingBoxRectForAccessibility() const {
   NOT_DESTROYED();
   gfx::RectF result;
-  const LayoutBlock* block_for_flipping =
-      UNLIKELY(HasFlippedBlocksWritingMode()) ? ContainingBlock() : nullptr;
   CollectLineBoxRects(
-      [this, &result, block_for_flipping](const PhysicalRect& r) {
-        DeprecatedLayoutRect rect = FlipForWritingMode(r, block_for_flipping);
-        result.Union(gfx::RectF(rect));
-      },
+      [&result](const PhysicalRect& rect) { result.Union(gfx::RectF(rect)); },
       kClipToEllipsis);
-  // TODO(wangxianzhu): This is one of a few cases that a gfx::RectF is required
-  // to be in flipped blocks direction. Should eliminite them.
   return result;
 }
 
@@ -683,7 +676,7 @@ PositionWithAffinity LayoutText::PositionForPoint(
           containing_block_flow->PixelSnappedScrolledContentOffset());
     }
     const auto* const text_combine = DynamicTo<LayoutTextCombine>(Parent());
-    const NGPhysicalBoxFragment* container_fragment = nullptr;
+    const PhysicalBoxFragment* container_fragment = nullptr;
     PhysicalOffset point_in_container_fragment;
     DCHECK(!IsSVGInlineText());
     for (; cursor; cursor.MoveToNextForSameLayoutObject()) {
@@ -1088,13 +1081,7 @@ PhysicalRect LayoutText::LocalSelectionVisualRect() const {
     return rect;
   }
 
-  const LayoutTextSelectionStatus& selection_status =
-      frame_selection.ComputeLayoutSelectionStatus(*this);
-  const unsigned start_pos = selection_status.start;
-  const unsigned end_pos = selection_status.end;
-  DCHECK_LE(start_pos, end_pos);
-  DeprecatedLayoutRect rect;
-  return FlipForWritingMode(rect);
+  return PhysicalRect();
 }
 
 void LayoutText::InvalidateVisualOverflow() {

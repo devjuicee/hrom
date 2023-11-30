@@ -6,6 +6,7 @@
 
 #include "base/check_deref.h"
 #include "base/command_line.h"
+#include "base/metrics/field_trial_params.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
 #include "components/country_codes/country_codes.h"
@@ -13,7 +14,6 @@
 #include "components/policy/core/common/policy_namespace.h"
 #include "components/policy/core/common/policy_types.h"
 #include "components/policy/policy_constants.h"
-#include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/testing_pref_service.h"
 #include "components/search_engines/prepopulated_engines.h"
 #include "components/search_engines/search_engine_type.h"
@@ -21,6 +21,8 @@
 #include "components/search_engines/search_engines_switches.h"
 #include "components/search_engines/template_url_service.h"
 #include "components/signin/public/base/signin_switches.h"
+#include "components/sync_preferences/testing_pref_service_syncable.h"
+#include "components/version_info/version_info.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 using ::testing::NiceMock;
@@ -31,9 +33,10 @@ class SearchEngineChoiceUtilsTest : public ::testing::Test {
       : template_url_service_(/*initializers=*/nullptr, /*count=*/0) {
     feature_list_.InitAndEnableFeature(switches::kSearchEngineChoice);
     country_codes::RegisterProfilePrefs(pref_service_.registry());
-    pref_service_.registry()->RegisterInt64Pref(
-        prefs::kDefaultSearchProviderChoiceScreenCompletionTimestamp, 0);
+    TemplateURLService::RegisterProfilePrefs(pref_service_.registry());
     pref_service_.registry()->RegisterListPref(prefs::kSearchProviderOverrides);
+    pref_service_.registry()->RegisterBooleanPref(
+        prefs::kDefaultSearchProviderChoicePending, false);
 
     // Override the country checks to simulate being in Belgium.
     base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
@@ -77,7 +80,7 @@ class SearchEngineChoiceUtilsTest : public ::testing::Test {
 
   policy::MockPolicyService& policy_service() { return policy_service_; }
   policy::PolicyMap& policy_map() { return policy_map_; }
-  TestingPrefServiceSimple* pref_service() { return &pref_service_; }
+  PrefService* pref_service() { return &pref_service_; }
   base::test::ScopedFeatureList* feature_list() { return &feature_list_; }
   TemplateURLService& template_url_service() { return template_url_service_; }
   base::HistogramTester histogram_tester_;
@@ -107,7 +110,7 @@ class SearchEngineChoiceUtilsTest : public ::testing::Test {
 
   NiceMock<policy::MockPolicyService> policy_service_;
   policy::PolicyMap policy_map_;
-  TestingPrefServiceSimple pref_service_;
+  sync_preferences::TestingPrefServiceSyncable pref_service_;
   base::test::ScopedFeatureList feature_list_;
   TemplateURLService template_url_service_;
 };
@@ -277,6 +280,40 @@ TEST_F(SearchEngineChoiceUtilsTest, DoNotShowChoiceScreenIfFlagIsDisabled) {
       template_url_service());
 }
 
+TEST_F(SearchEngineChoiceUtilsTest, ShowChoiceScreenWithTriggerFeature) {
+  // SearchEngineChoiceTrigger is enabled and not set to trigger only for
+  // tagged profiles: the dialog should trigger, regardless of the state of
+  // the other feature flags.
+  feature_list()->Reset();
+  feature_list()->InitWithFeatures(
+      {switches::kSearchEngineChoiceTrigger},
+      {switches::kSearchEngineChoice, switches::kSearchEngineChoiceFre});
+  VerifyWillShowChoiceScreen(
+      policy_service(), /*profile_properties=*/
+      {.is_regular_profile = true, .pref_service = pref_service()},
+      template_url_service());
+
+  // When the param is set and the profile untagged, the dialog will not be
+  // displayed.
+  base::FieldTrialParams tagged_only_params{
+      {switches::kSearchEngineChoiceTriggerForTaggedProfilesOnly.name, "true"}};
+  feature_list()->Reset();
+  feature_list()->InitWithFeaturesAndParameters(
+      {{switches::kSearchEngineChoiceTrigger, tagged_only_params}},
+      {switches::kSearchEngineChoice, switches::kSearchEngineChoiceFre});
+  VerifyEligibleButWillNotShowChoiceScreen(
+      policy_service(), /*profile_properties=*/
+      {.is_regular_profile = true, .pref_service = pref_service()},
+      template_url_service());
+
+  // When the profile is tagged, the dialog can also be displayed.
+  pref_service()->SetBoolean(prefs::kDefaultSearchProviderChoicePending, true);
+  VerifyWillShowChoiceScreen(
+      policy_service(), /*profile_properties=*/
+      {.is_regular_profile = true, .pref_service = pref_service()},
+      template_url_service());
+}
+
 // Test that the choice screen does not get displayed if the command line
 // argument for disabling it is set.
 TEST_F(SearchEngineChoiceUtilsTest,
@@ -387,10 +424,8 @@ TEST_F(SearchEngineChoiceUtilsTest, RecordChoiceMade) {
       SearchEngineType::SEARCH_ENGINE_GOOGLE, 0);
   EXPECT_FALSE(pref_service()->HasPrefPath(
       prefs::kDefaultSearchProviderChoiceScreenCompletionTimestamp));
-
-  histogram_tester_.ExpectUniqueSample(
-      search_engines::kDefaultSearchEngineChoiceLocationHistogram,
-      search_engines::ChoiceMadeLocation::kChoiceScreen, 1);
+  EXPECT_FALSE(pref_service()->HasPrefPath(
+      prefs::kDefaultSearchProviderChoiceScreenCompletionVersion));
 
   // Revert to an EEA region country.
   const int kBelgiumCountryId =
@@ -410,10 +445,9 @@ TEST_F(SearchEngineChoiceUtilsTest, RecordChoiceMade) {
                   prefs::kDefaultSearchProviderChoiceScreenCompletionTimestamp),
               base::Time::Now().ToDeltaSinceWindowsEpoch().InSeconds(),
               /*abs_error=*/2);
-
-  histogram_tester_.ExpectUniqueSample(
-      search_engines::kDefaultSearchEngineChoiceLocationHistogram,
-      search_engines::ChoiceMadeLocation::kChoiceScreen, 2);
+  EXPECT_EQ(pref_service()->GetString(
+                prefs::kDefaultSearchProviderChoiceScreenCompletionVersion),
+            version_info::GetVersionNumber());
 
   // Set the pref to 5 so that we can know if it gets modified.
   const int kModifiedTimestamp = 5;
@@ -429,9 +463,6 @@ TEST_F(SearchEngineChoiceUtilsTest, RecordChoiceMade) {
                 prefs::kDefaultSearchProviderChoiceScreenCompletionTimestamp),
             kModifiedTimestamp);
 
-  histogram_tester_.ExpectUniqueSample(
-      search_engines::kDefaultSearchEngineChoiceLocationHistogram,
-      search_engines::ChoiceMadeLocation::kChoiceScreen, 3);
   histogram_tester_.ExpectUniqueSample(
       search_engines::kSearchEngineChoiceScreenDefaultSearchEngineTypeHistogram,
       SearchEngineType::SEARCH_ENGINE_GOOGLE, 1);

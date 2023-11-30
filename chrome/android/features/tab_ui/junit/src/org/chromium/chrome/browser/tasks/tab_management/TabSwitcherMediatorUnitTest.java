@@ -85,9 +85,7 @@ import java.util.List;
 @RunWith(BaseRobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 @LooperMode(LooperMode.Mode.LEGACY)
-@DisableFeatures({
-    ChromeFeatureList.START_SURFACE_ANDROID
-})
+@DisableFeatures({ChromeFeatureList.START_SURFACE_ANDROID})
 @EnableFeatures(ChromeFeatureList.TAB_TO_GTS_ANIMATION)
 public class TabSwitcherMediatorUnitTest {
     @Rule public TestRule mProcessor = new Features.JUnitProcessor();
@@ -148,7 +146,7 @@ public class TabSwitcherMediatorUnitTest {
     private ArgumentCaptor<IncognitoReauthManager.IncognitoReauthCallback>
             mIncognitoReauthCallbackArgumentCaptor;
 
-    @Mock private TabSelectionEditorCoordinator.TabSelectionEditorController mEditorController;
+    @Mock private TabListEditorCoordinator.TabListEditorController mEditorController;
 
     private Tab mTab1;
     private Tab mTab2;
@@ -239,7 +237,7 @@ public class TabSwitcherMediatorUnitTest {
                         null);
 
         mMediator.initWithNative(null);
-        mMediator.setTabSelectionEditorController(mEditorController);
+        mMediator.setTabListEditorController(mEditorController);
         mMediator.addTabSwitcherViewObserver(mTabSwitcherViewObserver);
         mMediator.setOnTabSelectingListener(mOnTabSelectingListener);
         verify(mIncognitoReauthController, times(1))
@@ -370,7 +368,7 @@ public class TabSwitcherMediatorUnitTest {
                         mTabSwitcherVisibilityDelegate,
                         null);
         mMediator.initWithNative(null);
-        mMediator.setTabSelectionEditorController(mEditorController);
+        mMediator.setTabListEditorController(mEditorController);
         mMediator.addTabSwitcherViewObserver(mTabSwitcherViewObserver);
         mMediator.setOnTabSelectingListener(mOnTabSelectingListener);
 
@@ -459,7 +457,7 @@ public class TabSwitcherMediatorUnitTest {
                         mTabSwitcherVisibilityDelegate,
                         null);
         mMediator.initWithNative(null);
-        mMediator.setTabSelectionEditorController(mEditorController);
+        mMediator.setTabListEditorController(mEditorController);
         mMediator.addTabSwitcherViewObserver(mTabSwitcherViewObserver);
         mMediator.setOnTabSelectingListener(mOnTabSelectingListener);
 

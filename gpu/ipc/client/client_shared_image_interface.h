@@ -120,12 +120,6 @@ class GPU_EXPORT ClientSharedImageInterface : public SharedImageInterface {
                                  const Mailbox& mailbox,
                                  uint32_t usage) override;
 
-  std::unique_ptr<SharedImageInterface::ScopedMapping> MapSharedImage(
-      const Mailbox& mailbox) override;
-  std::unique_ptr<gpu::SharedImageInterface::ScopedMapping> MapSharedImage(
-      const scoped_refptr<gpu::ClientSharedImage>& client_shared_image)
-      override;
-
   const SharedImageCapabilities& GetCapabilities() override;
 
  private:
@@ -135,8 +129,6 @@ class GPU_EXPORT ClientSharedImageInterface : public SharedImageInterface {
 
   base::Lock lock_;
   std::multiset<Mailbox> mailboxes_ GUARDED_BY(lock_);
-  base::flat_map<gpu::Mailbox, std::unique_ptr<gfx::GpuMemoryBuffer>>
-      mailbox_to_gmb_map_ GUARDED_BY(lock_);
 };
 
 }  // namespace gpu

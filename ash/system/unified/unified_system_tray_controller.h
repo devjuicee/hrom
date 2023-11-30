@@ -15,6 +15,7 @@
 #include "ash/system/unified/quick_settings_view.h"
 #include "ash/system/unified/unified_system_tray_model.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/safety_checks.h"
 #include "base/memory/scoped_refptr.h"
 #include "components/global_media_controls/public/constants.h"
 
@@ -38,6 +39,10 @@ class UnifiedSystemTrayModel;
 class ASH_EXPORT UnifiedSystemTrayController
     : public UnifiedVolumeSliderController::Delegate,
       public UnifiedMediaControlsController::Delegate {
+  // Do not remove this macro!
+  // The macro is maintained by the memory safety team.
+  ADVANCED_MEMORY_SAFETY_CHECKS();
+
  public:
   class Observer : public base::CheckedObserver {
    public:
@@ -125,10 +130,6 @@ class ASH_EXPORT UnifiedSystemTrayController
 
   // Close the bubble. Called from a detailed view controller.
   void CloseBubble();
-
-  // Inform `UnifiedSystemTrayBubble` that `QuickSettingsView` is requesting to
-  // relinquish focus.
-  bool FocusOut(bool reverse);
 
   // Return whether a detailed view is currently being shown.
   bool IsDetailedViewShown() const;

@@ -308,17 +308,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="SBClientDownload.SevenZipEntryResult" enum="SevenZipResult"
-    expires_after="2023-12-04">
-  <owner>drubery@chromium.org</owner>
-  <owner>chrome-counter-abuse-alerts@google.com</owner>
-  <summary>
-    Records the result of unpacking a single entry from a 7z archive. The result
-    includes either success or a coarse-grained error. This is logged for each
-    entry of each download of a 7z archive.
-  </summary>
-</histogram>
-
 <histogram name="SBClientDownload.TailoredWarning.HasVaidEmailForAccountInfo"
     enum="BooleanValid" expires_after="2024-03-02">
   <owner>xinghuilu@chromium.org</owner>
@@ -428,7 +417,10 @@ chromium-metrics-reviews@google.com.
     cancelation or completion. This is logged for consumer scans of
     {Encryption}.
 
-    Note: Logging of PromptAccepted was lost in M118.
+    Note: Logging of PromptAccepted was lost in M118. &quot;Scan canceled&quot;
+    and &quot;Scan deleted&quot; were added in M121. &quot;Prompt accepted&quot;
+    was split into &quot;Prompt accepted&quot; and &quot;Prompt accepted from
+    chrome://downloads&quot; in M121.
   </summary>
   <token key="Encryption">
     <variant name="" summary="a file"/>

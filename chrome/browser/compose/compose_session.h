@@ -50,6 +50,7 @@ class ComposeSession : public compose::mojom::ComposeSessionPageHandler {
       content::WebContents* web_contents,
       optimization_guide::OptimizationGuideModelExecutor* executor,
       optimization_guide::ModelQualityLogsUploader* model_quality_logs_uploader,
+      base::Token session_id,
       ComposeCallback callback = base::NullCallback());
   ~ComposeSession() override;
 
@@ -63,9 +64,12 @@ class ComposeSession : public compose::mojom::ComposeSessionPageHandler {
   // Requests a compose response for `input`. The result will be sent through
   // the ComposeDialog interface rather than through a callback, as it might
   // complete after the originating WebUI has been destroyed.
-  void Compose(compose::mojom::StyleModifiersPtr style,
-               const std::string& input,
-               bool rewrite) override;
+  void Compose(const std::string& input) override;
+
+  // Requests a rewrite the last response. `style` specifies how the response
+  // should be changed. An empty `style` without a tone or length requests a
+  // rewrite without changes to the tone or length.
+  void Rewrite(compose::mojom::StyleModifiersPtr style) override;
 
   // Retrieves and returns (through `callback`) state information for the last
   // field the user selected compose on.
@@ -86,6 +90,10 @@ class ComposeSession : public compose::mojom::ComposeSessionPageHandler {
   // Opens the Compose bug reporting page in a new tab when the dialog Thumbs
   // Down button is clicked. This implementation is designed for Fishfood only.
   void OpenBugReportingLink() override;
+
+  // Opens the Compose feedback survey page in a new tab. This implementation is
+  // designed for Dogfood only.
+  void OpenFeedbackSurveyLink() override;
 
   // Opens the Compose-related Chrome settings page in a new tab when the
   // "settings" link is clicked in the consent dialog.
@@ -114,6 +122,17 @@ class ComposeSession : public compose::mojom::ComposeSessionPageHandler {
     skip_inner_text_ = skip_inner_text;
   }
 
+  void set_initial_consent_state(compose::mojom::ConsentState consent_state) {
+    initial_consent_state_ = consent_state;
+  }
+
+  // Set the first time the user progresses through the consent/disclaimer
+  // dialog to the main dialog. This can only be set one way as it corresponds
+  // to completion of the user's FRE.
+  void set_consent_given_or_acknowledged() {
+    consent_given_or_acknowledged_ = true;
+  }
+
   // Refresh the inner text on session resumption.
   void RefreshInnerText();
 
@@ -129,9 +148,13 @@ class ComposeSession : public compose::mojom::ComposeSessionPageHandler {
   // Adds page content to the session context.
   void AddPageContentToSession(const std::string& inner_text);
 
-  // ComposeWithSession can either be called synchronously or on a later event
+  // Makes compose or rewrite request.
+  void MakeRequest(optimization_guide::proto::ComposeRequest request);
+
+  // RequestWithSession can either be called synchronously or on a later event
   // loop
-  void ComposeWithSession(const std::string& input, bool rewrite);
+  void RequestWithSession(
+      const optimization_guide::proto::ComposeRequest& request);
 
   void UpdateInnerTextAndContinueComposeIfNecessary(
       const std::string& inner_text);
@@ -154,6 +177,13 @@ class ComposeSession : public compose::mojom::ComposeSessionPageHandler {
 
   // Renderer provided text selection.
   std::string initial_input_;
+
+  // The state of consent-related prefs when the session is first created.
+  compose::mojom::ConsentState initial_consent_state_ =
+      compose::mojom::ConsentState::kUnset;
+  // True if the user either gave consent or acknowledged given consent in this
+  // session.
+  bool consent_given_or_acknowledged_ = false;
 
   // Reason that a compose session was exited, used for metrics.
   compose::ComposeSessionCloseReason close_reason_;
@@ -190,6 +220,9 @@ class ComposeSession : public compose::mojom::ComposeSessionPageHandler {
 
   std::optional<optimization_guide::ModelQualityLogsUploader*>
       model_quality_logs_uploader_;
+
+  base::Token session_id_;
+
   base::WeakPtrFactory<ComposeSession> weak_ptr_factory_;
 };
 

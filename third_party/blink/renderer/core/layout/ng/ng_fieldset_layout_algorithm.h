@@ -12,18 +12,16 @@
 
 namespace blink {
 
+class BlockBreakToken;
 class ConstraintSpace;
-class NGBlockBreakToken;
-enum class NGBreakStatus;
+enum class BreakStatus;
 
 class CORE_EXPORT FieldsetLayoutAlgorithm
-    : public LayoutAlgorithm<BlockNode,
-                             NGBoxFragmentBuilder,
-                             NGBlockBreakToken> {
+    : public LayoutAlgorithm<BlockNode, BoxFragmentBuilder, BlockBreakToken> {
  public:
   explicit FieldsetLayoutAlgorithm(const LayoutAlgorithmParams& params);
 
-  const NGLayoutResult* Layout() override;
+  const LayoutResult* Layout() override;
 
   MinMaxSizesResult ComputeMinMaxSizes(const MinMaxSizesFloatInput&) override;
 
@@ -36,13 +34,12 @@ class CORE_EXPORT FieldsetLayoutAlgorithm
       LayoutUnit fieldset_content_inline_size);
 
  private:
-  NGBreakStatus LayoutChildren();
+  BreakStatus LayoutChildren();
   void LayoutLegend(BlockNode& legend);
-  NGBreakStatus LayoutFieldsetContent(
-      BlockNode& fieldset_content,
-      const NGBlockBreakToken* content_break_token,
-      LogicalSize adjusted_padding_box_size,
-      bool has_legend);
+  BreakStatus LayoutFieldsetContent(BlockNode& fieldset_content,
+                                    const BlockBreakToken* content_break_token,
+                                    LogicalSize adjusted_padding_box_size,
+                                    bool has_legend);
 
   const ConstraintSpace CreateConstraintSpaceForLegend(
       BlockNode legend,

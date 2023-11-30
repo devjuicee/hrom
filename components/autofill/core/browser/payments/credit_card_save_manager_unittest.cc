@@ -836,8 +836,8 @@ TEST_F(CreditCardSaveManagerTest,
       autofill_client_.get_offer_to_save_credit_card_bubble_was_shown());
 }
 
-// Tests that a CVC without required delay does not offer save even strike limit
-// not reach.
+// Tests that if the required delay has not passed, CVC save will not be offered
+// even if the strike limit has not yet been reached.
 TEST_F(CreditCardSaveManagerTest,
        AttemptToOfferCvcUploadSave_NotOfferSaveWithoutRequiredDelay) {
   CreditCard server_card = test::WithCvc(test::GetMaskedServerCard());
@@ -919,6 +919,91 @@ TEST_F(
               UpdateServerCvc(credit_card.instrument_id(), kNewCvc));
   UserHasAcceptedCvcUpload({});
 }
+
+class CvcStorageMetricTest
+    : public CreditCardSaveManagerTest,
+      public testing::WithParamInterface<CreditCard::RecordType> {
+ public:
+  CreditCard GetCreditCardAndAddStrikeAndTriggerSave(
+      CreditCard::RecordType record_type,
+      int strike) {
+    CvcStorageStrikeDatabase cvc_storage_strike_database =
+        CvcStorageStrikeDatabase(&strike_database());
+    CreditCard card;
+    if (record_type == CreditCard::RecordType::kLocalCard) {
+      card = test::GetCreditCard();
+      cvc_storage_strike_database.AddStrikes(strike, card.guid());
+      credit_card_save_manager_->AttemptToOfferCvcLocalSave(card);
+    } else if (record_type == CreditCard::RecordType::kMaskedServerCard) {
+      card = test::GetMaskedServerCard();
+      cvc_storage_strike_database.AddStrikes(
+          strike, base::NumberToString(card.instrument_id()));
+      credit_card_save_manager_->AttemptToOfferCvcUploadSave(card);
+    }
+    return card;
+  }
+};
+
+// Tests that CVC save is not offered if the max strikes limit is reached.
+TEST_P(CvcStorageMetricTest, AttemptToOfferCvcSave_NotOfferSaveWithMaxStrikes) {
+  base::HistogramTester histogram_tester;
+
+  CvcStorageStrikeDatabase cvc_storage_strike_database =
+      CvcStorageStrikeDatabase(&strike_database());
+  CreditCard::RecordType record_type = GetParam();
+  CreditCard card = GetCreditCardAndAddStrikeAndTriggerSave(
+      record_type, cvc_storage_strike_database.GetMaxStrikesLimit());
+
+  std::string save_destination =
+      record_type == CreditCard::RecordType::kLocalCard ? ".Local" : ".Upload";
+  histogram_tester.ExpectUniqueSample(
+      base::StrCat(
+          {"Autofill.SaveCvcPromptOffer", save_destination, ".FirstShow"}),
+      autofill_metrics::SaveCardPromptOffer::kNotShownMaxStrikesReached, 1);
+}
+
+// Tests that if the required delay has not passed, CVC save will not be offered
+// even if the strike limit has not yet been reached.
+TEST_P(CvcStorageMetricTest,
+       AttemptToOfferCvcSave_NotOfferSaveWithoutRequiredDelay) {
+  TestAutofillClock test_autofill_clock(AutofillClock::Now());
+  base::HistogramTester histogram_tester;
+
+  CvcStorageStrikeDatabase cvc_storage_strike_database =
+      CvcStorageStrikeDatabase(&strike_database());
+  CreditCard::RecordType record_type = GetParam();
+  CreditCard card = GetCreditCardAndAddStrikeAndTriggerSave(record_type, 1);
+
+  // Verify that adding a count to SaveCvcPromptOffer histogram with
+  // kNotShownRequiredDelay.
+  std::string save_destination =
+      record_type == CreditCard::RecordType::kLocalCard ? ".Local" : ".Upload";
+  histogram_tester.ExpectUniqueSample(
+      base::StrCat(
+          {"Autofill.SaveCvcPromptOffer", save_destination, ".FirstShow"}),
+      autofill_metrics::SaveCardPromptOffer::kNotShownRequiredDelay, 1);
+
+  // Advance the clock by the required delay time and check that CVC save is
+  // offered.
+  test_autofill_clock.Advance(
+      cvc_storage_strike_database.GetRequiredDelaySinceLastStrike().value());
+  if (record_type == CreditCard::RecordType::kLocalCard) {
+    credit_card_save_manager_->AttemptToOfferCvcLocalSave(card);
+  } else if (record_type == CreditCard::RecordType::kMaskedServerCard) {
+    credit_card_save_manager_->AttemptToOfferCvcUploadSave(card);
+  }
+
+  histogram_tester.ExpectUniqueSample(
+      base::StrCat(
+          {"Autofill.SaveCvcPromptOffer", save_destination, ".FirstShow"}),
+      autofill_metrics::SaveCardPromptOffer::kNotShownRequiredDelay, 1);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    CreditCardSaveManagerTest,
+    CvcStorageMetricTest,
+    testing::Values(CreditCard::RecordType::kLocalCard,
+                    CreditCard::RecordType::kMaskedServerCard));
 
 TEST_F(CreditCardSaveManagerTest, UploadCreditCard_NotSavedLocally) {
   personal_data().ClearCreditCards();
@@ -1794,9 +1879,8 @@ TEST_F(CreditCardSaveManagerTest,
 #if !BUILDFLAG(IS_IOS)
 TEST_F(CreditCardSaveManagerTest, UploadCreditCard_ZipCodesConflict) {
   // Create, fill and submit two address forms with different zip codes.
-  FormData address_form1, address_form2;
-  test::CreateTestAddressFormData(&address_form1, "1");
-  test::CreateTestAddressFormData(&address_form2, "2");
+  FormData address_form1 = test::CreateTestAddressFormData("1");
+  FormData address_form2 = test::CreateTestAddressFormData("2");
 
   std::vector<FormData> address_forms;
   address_forms.push_back(address_form1);
@@ -1895,9 +1979,8 @@ TEST_F(CreditCardSaveManagerTest,
 #if !BUILDFLAG(IS_IOS)
 TEST_F(CreditCardSaveManagerTest, UploadCreditCard_ZipCodesHavePrefixMatch) {
   // Create, fill and submit two address forms with different zip codes.
-  FormData address_form1, address_form2;
-  test::CreateTestAddressFormData(&address_form1);
-  test::CreateTestAddressFormData(&address_form2);
+  FormData address_form1 = test::CreateTestAddressFormData("1");
+  FormData address_form2 = test::CreateTestAddressFormData("2");
 
   std::vector<FormData> address_forms;
   address_forms.push_back(address_form1);
@@ -1988,9 +2071,8 @@ TEST_F(CreditCardSaveManagerTest, UploadCreditCard_NoZipCodeAvailable) {
 #if !BUILDFLAG(IS_IOS)
 TEST_F(CreditCardSaveManagerTest, UploadCreditCard_CCFormHasMiddleInitial) {
   // Create, fill and submit two address forms with different names.
-  FormData address_form1, address_form2;
-  test::CreateTestAddressFormData(&address_form1);
-  test::CreateTestAddressFormData(&address_form2);
+  FormData address_form1 = test::CreateTestAddressFormData("1");
+  FormData address_form2 = test::CreateTestAddressFormData("2");
   FormsSeen({address_form1, address_form2});
 
   // Names can be different case.
@@ -2033,9 +2115,8 @@ TEST_F(CreditCardSaveManagerTest, UploadCreditCard_CCFormHasMiddleInitial) {
 #if !BUILDFLAG(IS_IOS)
 TEST_F(CreditCardSaveManagerTest, UploadCreditCard_NoMiddleInitialInCCForm) {
   // Create, fill and submit two address forms with different names.
-  FormData address_form1, address_form2;
-  test::CreateTestAddressFormData(&address_form1);
-  test::CreateTestAddressFormData(&address_form2);
+  FormData address_form1 = test::CreateTestAddressFormData("1");
+  FormData address_form2 = test::CreateTestAddressFormData("2");
   FormsSeen({address_form1, address_form2});
 
   // Names can have different variations of middle initials.
@@ -2164,9 +2245,8 @@ TEST_F(CreditCardSaveManagerTest, UploadCreditCard_CCFormHasAddressMiddleName) {
 #if !BUILDFLAG(IS_IOS)
 TEST_F(CreditCardSaveManagerTest, UploadCreditCard_NamesCanMismatch) {
   // Create, fill and submit two address forms with different names.
-  FormData address_form1, address_form2;
-  test::CreateTestAddressFormData(&address_form1);
-  test::CreateTestAddressFormData(&address_form2);
+  FormData address_form1 = test::CreateTestAddressFormData("1");
+  FormData address_form2 = test::CreateTestAddressFormData("2");
 
   std::vector<FormData> address_forms;
   address_forms.push_back(address_form1);
@@ -2222,9 +2302,8 @@ TEST_F(CreditCardSaveManagerTest, UploadCreditCard_IgnoreOldProfiles) {
   test_clock.SetNow(kArbitraryTime);
 
   // Create, fill and submit two address forms with different names.
-  FormData address_form1, address_form2;
-  test::CreateTestAddressFormData(&address_form1);
-  test::CreateTestAddressFormData(&address_form2);
+  FormData address_form1 = test::CreateTestAddressFormData("1");
+  FormData address_form2 = test::CreateTestAddressFormData("2");
   FormsSeen({address_form1, address_form2});
 
   ManuallyFillAddressForm("Jane", "Doe", "77401", "US", &address_form1);

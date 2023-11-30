@@ -209,11 +209,14 @@ bool IsAlwaysAllowedSignoutSources(
         kUserDeclinedHistorySyncAfterDedicatedSignIn:
     case signin_metrics::ProfileSignout::kDeviceLockRemovedOnAutomotive:
     case signin_metrics::ProfileSignout::kRevokeSyncFromSettings:
+    case signin_metrics::ProfileSignout::kIdleTimeoutPolicyTriggeredSignOut:
       return false;
 
     case signin_metrics::ProfileSignout::kAccountRemovedFromDevice:
     // Allow signout because data has not been synced yet.
     case signin_metrics::ProfileSignout::kAbortSignin:
+    case signin_metrics::ProfileSignout::
+        kCancelSyncConfirmationOnWebOnlySignedIn:
     // Allow signout for tests that want to force it.
     case signin_metrics::ProfileSignout::kForceSignoutAlwaysAllowedForTest:
     case signin_metrics::ProfileSignout::kUserClickedRevokeSyncConsentSettings:
@@ -361,6 +364,8 @@ const signin_metrics::ProfileSignout kSignoutSources[] = {
         kUserDeclinedHistorySyncAfterDedicatedSignIn,
     signin_metrics::ProfileSignout::kDeviceLockRemovedOnAutomotive,
     signin_metrics::ProfileSignout::kRevokeSyncFromSettings,
+    signin_metrics::ProfileSignout::kCancelSyncConfirmationOnWebOnlySignedIn,
+    signin_metrics::ProfileSignout::kIdleTimeoutPolicyTriggeredSignOut,
 };
 // kNumberOfObsoleteSignoutSources should be updated when a ProfileSignout
 // value is deprecated.

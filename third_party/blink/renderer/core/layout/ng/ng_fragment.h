@@ -6,7 +6,7 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_LAYOUT_NG_NG_FRAGMENT_H_
 
 #include "third_party/blink/renderer/core/core_export.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_fragment.h"
 #include "third_party/blink/renderer/platform/geometry/layout_unit.h"
 #include "third_party/blink/renderer/platform/text/writing_direction_mode.h"
 
@@ -19,7 +19,7 @@ class CORE_EXPORT LogicalFragment {
 
  public:
   LogicalFragment(WritingDirectionMode writing_direction,
-                  const NGPhysicalFragment& physical_fragment)
+                  const PhysicalFragment& physical_fragment)
       : physical_fragment_(physical_fragment),
         writing_direction_(writing_direction) {}
 
@@ -41,7 +41,7 @@ class CORE_EXPORT LogicalFragment {
   }
 
  protected:
-  const NGPhysicalFragment& physical_fragment_;
+  const PhysicalFragment& physical_fragment_;
   const WritingDirectionMode writing_direction_;
 };
 

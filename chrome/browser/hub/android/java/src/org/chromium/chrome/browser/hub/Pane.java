@@ -11,15 +11,14 @@ import androidx.annotation.NonNull;
 import org.chromium.base.supplier.ObservableSupplier;
 import org.chromium.components.browser_ui.widget.gesture.BackPressHandler;
 
-/**
- * A base interface representing a UI that will be displayed as a Pane in the Hub.
- */
+/** A base interface representing a UI that will be displayed as a Pane in the Hub. */
 public interface Pane extends BackPressHandler {
     /** Returns the {@link PaneId} corresponding to this Pane. */
     @PaneId
     int getPaneId();
 
     /** Returns the {@link View} containing the contents of the Pane. */
+    @NonNull
     View getRootView();
 
     /**

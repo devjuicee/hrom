@@ -47,7 +47,7 @@ bool AutofillClient::IsOffTheRecord() {
   return false;
 }
 
-AutofillDownloadManager* AutofillClient::GetDownloadManager() {
+AutofillCrowdsourcingManager* AutofillClient::GetCrowdsourcingManager() {
   return nullptr;
 }
 
@@ -105,6 +105,10 @@ CreditCardOtpAuthenticator* AutofillClient::GetOtpAuthenticator() {
 }
 
 CreditCardRiskBasedAuthenticator* AutofillClient::GetRiskBasedAuthenticator() {
+  return nullptr;
+}
+
+payments::PaymentsAutofillClient* AutofillClient::GetPaymentsAutofillClient() {
   return nullptr;
 }
 

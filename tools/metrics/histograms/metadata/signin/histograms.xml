@@ -95,10 +95,8 @@ chromium-metrics-reviews@google.com.
     are tracking the time and the type of fetch (synchronous or asynchronous)
     from the user's perspective.
 
-    Recorded in two situations. 1. When an extended account info is updated and
-    the account info has Capabilities. 2. When the following conditions hold: an
-    Activity is resumed, the user is signed in and not syncing, and the primary
-    account info has Capabilities.
+    Recorded when the following conditions hold: an Activity is resumed, and the
+    user is signed in and not syncing.
 
     Android only.
   </summary>
@@ -263,7 +261,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Signin.AccountFetcher.AccountAvatarFetchTime" units="ms"
-    expires_after="2024-03-22">
+    expires_after="2024-05-26">
   <owner>triploblastic@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>
@@ -531,7 +529,7 @@ prefs when the profile is loaded.  -->
 </histogram>
 
 <histogram name="Signin.BoundSessionCredentials.CookieRotationTotalDuration"
-    units="ms" expires_after="2024-01-14">
+    units="ms" expires_after="2024-05-26">
   <owner>alexilin@chromium.org</owner>
   <owner>msalama@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
@@ -543,7 +541,7 @@ prefs when the profile is loaded.  -->
   </summary>
 </histogram>
 
-<histogram name="Signin.BoundSessionCredentials.DeferredRequestDelay"
+<histogram name="Signin.BoundSessionCredentials.Deferred{Type}RequestDelay"
     units="ms" expires_after="2024-04-28">
   <owner>alexilin@chromium.org</owner>
   <owner>msalama@chromium.org</owner>
@@ -552,11 +550,18 @@ prefs when the profile is loaded.  -->
     Records for how long a request was delayed due to a missing bound cookie.
     Recorded every time a request was deferred by the bound session credentials
     throttle, right before the request is resumed or canceled.
+
+    {Type}
   </summary>
+  <token key="Type">
+    <variant name="" summary="Includes all requests."/>
+    <variant name="Navigation"
+        summary="Includes only main frame navigation requests."/>
+  </token>
 </histogram>
 
 <histogram name="Signin.BoundSessionCredentials.ResumeThrottledRequestsTrigger"
-    enum="ResumeBlockedRequestsTrigger" expires_after="2024-01-14">
+    enum="ResumeBlockedRequestsTrigger" expires_after="2024-05-26">
   <owner>alexilin@chromium.org</owner>
   <owner>msalama@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
@@ -583,7 +588,7 @@ prefs when the profile is loaded.  -->
 </histogram>
 
 <histogram name="Signin.BoundSessionCredentials.SessionTerminationTrigger"
-    enum="SessionTerminationTrigger" expires_after="2024-01-14">
+    enum="SessionTerminationTrigger" expires_after="2024-05-26">
   <owner>alexilin@chromium.org</owner>
   <owner>msalama@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
@@ -1737,7 +1742,7 @@ kept as long as profile signout is possible -->
 </histogram>
 
 <histogram name="Signin.SyncErrorMessage{SyncErrorReason}"
-    enum="SyncErrorPromptUIAction" expires_after="2024-03-22">
+    enum="SyncErrorPromptUIAction" expires_after="2024-05-26">
   <owner>triploblastic@chromium.org</owner>
   <owner>bsazonov@chromium.org</owner>
   <summary>
@@ -1761,7 +1766,7 @@ kept as long as profile signout is possible -->
 </histogram>
 
 <histogram name="Signin.SyncFirstSetupCompleteSource"
-    enum="SyncFirstSetupCompleteSource" expires_after="2024-03-22">
+    enum="SyncFirstSetupCompleteSource" expires_after="2024-05-26">
   <owner>triploblastic@chromium.org</owner>
   <owner>bsazonov@chromium.org</owner>
   <summary>Tracks where FirstSetupComplete bit is set from.</summary>
@@ -1822,7 +1827,7 @@ kept as long as profile signout is possible -->
 </histogram>
 
 <histogram name="Signin.SyncPromo.{Action}.Count.{AccessPoint}"
-    units="bookmarks" expires_after="2024-03-22">
+    units="bookmarks" expires_after="2024-05-26">
   <owner>triploblastic@chromium.org</owner>
   <owner>chrome-signin-team@google.com</owner>
   <summary>

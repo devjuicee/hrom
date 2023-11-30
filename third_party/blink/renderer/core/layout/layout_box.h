@@ -45,16 +45,17 @@
 
 namespace blink {
 
+class BlockBreakToken;
+class ColumnSpannerPath;
 class ConstraintSpace;
 class CustomLayoutChild;
+class EarlyBreak;
 class LayoutMultiColumnSpannerPlaceholder;
-class NGBlockBreakToken;
-class NGColumnSpannerPath;
-class NGEarlyBreak;
-class NGLayoutResult;
+class LayoutResult;
+class MeasureCache;
 class ShapeOutsideInfo;
 class WritingModeConverter;
-enum class NGLayoutCacheStatus;
+enum class LayoutCacheStatus;
 struct FragmentGeometry;
 struct NonOverflowingScrollRange;
 struct PaintInfo;
@@ -337,7 +338,7 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
   void AddOutlineRects(OutlineRectCollector&,
                        OutlineInfo*,
                        const PhysicalOffset& additional_offset,
-                       NGOutlineType) const override;
+                       OutlineType) const override;
 
   // Use this with caution! No type checking is done!
   LayoutBox* PreviousSiblingBox() const;
@@ -620,9 +621,10 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
   void ClearFirstInlineFragmentItemIndex() final;
   void SetFirstInlineFragmentItemIndex(wtf_size_t) final;
 
-  void InvalidateItems(const NGLayoutResult&);
+  static void InvalidateItems(const LayoutResult&);
 
-  void SetCachedLayoutResult(const NGLayoutResult*, wtf_size_t index);
+  void AddMeasureLayoutResult(const LayoutResult*);
+  void SetCachedLayoutResult(const LayoutResult*, wtf_size_t index);
 
   // Store one layout result (with its physical fragment) at the specified
   // index.
@@ -642,17 +644,17 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
   // until we're done, as deleting entries will trigger unnecessary paint
   // invalidation. With any luck, we'll end up with the same number of results
   // as the last time, so that paint invalidation might not be necessary.
-  void SetLayoutResult(const NGLayoutResult*, wtf_size_t index);
+  void SetLayoutResult(const LayoutResult*, wtf_size_t index);
 
   // Append one layout result at the end.
-  void AppendLayoutResult(const NGLayoutResult*);
+  void AppendLayoutResult(const LayoutResult*);
 
   // Replace a specific layout result. Also perform finalization if it's the
   // last result (see FinalizeLayoutResults()), but this function does not
   // delete any (old) results following this one. Callers should generally use
   // SetLayoutResult() instead of this one, unless they have good reasons not
   // to.
-  void ReplaceLayoutResult(const NGLayoutResult*, wtf_size_t index);
+  void ReplaceLayoutResult(const LayoutResult*, wtf_size_t index);
 
   void ShrinkLayoutResults(wtf_size_t results_to_keep);
 
@@ -671,12 +673,18 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
     SetShouldDoFullPaintInvalidation();
   }
 
-  const NGLayoutResult* GetCachedLayoutResult(const NGBlockBreakToken*) const;
-  const NGLayoutResult* GetCachedMeasureResult() const;
+  const LayoutResult* GetCachedLayoutResult(const BlockBreakToken*) const;
+  const LayoutResult* GetCachedMeasureResult(
+      const ConstraintSpace&,
+      absl::optional<FragmentGeometry>* fragment_geometry) const;
 
   // Call in situations where we know that there's at most one fragment. A
   // DCHECK will fail if there are multiple fragments.
-  const NGLayoutResult* GetSingleCachedLayoutResult() const;
+  const LayoutResult* GetSingleCachedLayoutResult() const;
+
+  // Retrieves the last (retrieved or set) measure LayoutResult, for
+  // unit-testing purposes only.
+  const LayoutResult* GetSingleCachedMeasureResultForTesting() const;
 
   // Returns the last layout result for this block flow with the given
   // constraint space and break token, or null if it is not up-to-date or
@@ -688,20 +696,20 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
   // |out_cache_status| indicates what type of layout pass is required.
   //
   // TODO(ikilpatrick): Move this function into BlockNode.
-  const NGLayoutResult* CachedLayoutResult(
+  const LayoutResult* CachedLayoutResult(
       const ConstraintSpace&,
-      const NGBlockBreakToken*,
-      const NGEarlyBreak*,
-      const NGColumnSpannerPath*,
+      const BlockBreakToken*,
+      const EarlyBreak*,
+      const ColumnSpannerPath*,
       absl::optional<FragmentGeometry>* initial_fragment_geometry,
-      NGLayoutCacheStatus* out_cache_status);
+      LayoutCacheStatus* out_cache_status);
 
-  using NGLayoutResultList = HeapVector<Member<const NGLayoutResult>, 1>;
-  class NGPhysicalFragmentList {
+  using LayoutResultList = HeapVector<Member<const LayoutResult>, 1>;
+  class PhysicalFragmentList {
     STACK_ALLOCATED();
 
    public:
-    explicit NGPhysicalFragmentList(const NGLayoutResultList& layout_results)
+    explicit PhysicalFragmentList(const LayoutResultList& layout_results)
         : layout_results_(layout_results) {}
 
     wtf_size_t Size() const { return layout_results_.size(); }
@@ -713,21 +721,21 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
     }
     bool SlowHasFragmentItems() const;
 
-    wtf_size_t IndexOf(const NGPhysicalBoxFragment& fragment) const;
-    bool Contains(const NGPhysicalBoxFragment& fragment) const;
+    wtf_size_t IndexOf(const PhysicalBoxFragment& fragment) const;
+    bool Contains(const PhysicalBoxFragment& fragment) const;
 
     class CORE_EXPORT Iterator {
      public:
       using iterator_category = std::forward_iterator_tag;
-      using value_type = NGPhysicalBoxFragment;
+      using value_type = PhysicalBoxFragment;
       using difference_type = std::ptrdiff_t;
-      using pointer = NGPhysicalBoxFragment*;
-      using reference = NGPhysicalBoxFragment&;
+      using pointer = PhysicalBoxFragment*;
+      using reference = PhysicalBoxFragment&;
 
-      explicit Iterator(const NGLayoutResultList::const_iterator& iterator)
+      explicit Iterator(const LayoutResultList::const_iterator& iterator)
           : iterator_(iterator) {}
 
-      const NGPhysicalBoxFragment& operator*() const;
+      const PhysicalBoxFragment& operator*() const;
 
       Iterator& operator++() {
         ++iterator_;
@@ -747,31 +755,31 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
       }
 
      private:
-      NGLayoutResultList::const_iterator iterator_;
+      LayoutResultList::const_iterator iterator_;
     };
 
     Iterator begin() const { return Iterator(layout_results_.begin()); }
     Iterator end() const { return Iterator(layout_results_.end()); }
 
-    const NGPhysicalBoxFragment& front() const;
-    const NGPhysicalBoxFragment& back() const;
+    const PhysicalBoxFragment& front() const;
+    const PhysicalBoxFragment& back() const;
 
    private:
-    const NGLayoutResultList& layout_results_;
+    const LayoutResultList& layout_results_;
   };
 
-  NGPhysicalFragmentList PhysicalFragments() const {
+  PhysicalFragmentList PhysicalFragments() const {
     NOT_DESTROYED();
-    return NGPhysicalFragmentList(layout_results_);
+    return PhysicalFragmentList(layout_results_);
   }
-  const NGLayoutResult* GetLayoutResult(wtf_size_t i) const;
-  const NGLayoutResultList& GetLayoutResults() const {
+  const LayoutResult* GetLayoutResult(wtf_size_t i) const;
+  const LayoutResultList& GetLayoutResults() const {
     NOT_DESTROYED();
     return layout_results_;
   }
-  const NGPhysicalBoxFragment* GetPhysicalFragment(wtf_size_t i) const;
+  const PhysicalBoxFragment* GetPhysicalFragment(wtf_size_t i) const;
   const FragmentData* FragmentDataFromPhysicalFragment(
-      const NGPhysicalBoxFragment&) const;
+      const PhysicalBoxFragment&) const;
   wtf_size_t PhysicalFragmentCount() const {
     NOT_DESTROYED();
     return layout_results_.size();
@@ -971,13 +979,6 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
   }
   // Inherit other flipping methods from LayoutObject.
   using LayoutObject::FlipForWritingMode;
-
-  void DeprecatedFlipForWritingMode(DeprecatedLayoutRect& rect) const {
-    NOT_DESTROYED();
-    if (LIKELY(!HasFlippedBlocksWritingMode()))
-      return;
-    rect = FlipForWritingMode(rect).ToLayoutRect();
-  }
 
   // Passing |flipped_blocks_container| causes flipped-block flipping w.r.t.
   // that container, or LocationContainer() otherwise.
@@ -1501,8 +1502,9 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
   LayoutUnit intrinsic_logical_widths_initial_block_size_;
   Member<MinMaxSizesCache> min_max_sizes_cache_;
 
-  Member<const NGLayoutResult> measure_result_;
-  NGLayoutResultList layout_results_;
+  Member<const LayoutResult> measure_result_;
+  Member<MeasureCache> measure_cache_;
+  LayoutResultList layout_results_;
 
   // LayoutBoxUtils is used for the LayoutNG code querying protected methods on
   // this class, e.g. determining the static-position of OOF elements.

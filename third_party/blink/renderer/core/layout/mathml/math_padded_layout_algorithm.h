@@ -12,13 +12,11 @@
 namespace blink {
 
 class CORE_EXPORT MathPaddedLayoutAlgorithm
-    : public LayoutAlgorithm<BlockNode,
-                             NGBoxFragmentBuilder,
-                             NGBlockBreakToken> {
+    : public LayoutAlgorithm<BlockNode, BoxFragmentBuilder, BlockBreakToken> {
  public:
   explicit MathPaddedLayoutAlgorithm(const LayoutAlgorithmParams& params);
 
-  const NGLayoutResult* Layout() final;
+  const LayoutResult* Layout() final;
 
   MinMaxSizesResult ComputeMinMaxSizes(const MinMaxSizesFloatInput&) final;
 

@@ -2715,6 +2715,7 @@ RenderFrameHostImpl::GetRemoteAssociatedInterfaces() {
       GetAgentSchedulingGroup().GetRemoteRouteProvider()->GetRoute(
           GetRoutingID(), remote_interfaces.BindNewEndpointAndPassReceiver());
     } else {
+      LOG(WARNING) << "Creating unbound remote associated interface provider";
       // The channel may not be initialized in some tests environments. In this
       // case we set up a dummy interface provider.
       std::ignore = remote_interfaces.BindNewEndpointAndPassDedicatedReceiver();
@@ -6879,13 +6880,14 @@ void RenderFrameHostImpl::SetUnloadACKCallbackForTesting(
   unload_ack_callback_ = callback;
 }
 
-const net::HttpResponseHeaders* RenderFrameHostImpl::GetLastResponseHeaders() {
+const network::mojom::URLResponseHead*
+RenderFrameHostImpl::GetLastResponseHead() {
   // This shouldn't be called before committing the document as this value is
   // set during call to RenderFrameHostImpl::DidNavigate which happens after
   // commit.
-  DCHECK_NE(lifecycle_state(), LifecycleStateImpl::kSpeculative);
-  DCHECK_NE(lifecycle_state(), LifecycleStateImpl::kPendingCommit);
-  return last_response_head_ ? last_response_head_->headers.get() : nullptr;
+  CHECK_NE(lifecycle_state(), LifecycleStateImpl::kSpeculative);
+  CHECK_NE(lifecycle_state(), LifecycleStateImpl::kPendingCommit);
+  return last_response_head_.get();
 }
 
 void RenderFrameHostImpl::DidBlockNavigation(
@@ -9262,13 +9264,6 @@ void RenderFrameHostImpl::HandleAXLocationChanges(
     details.push_back(detail);
   }
   delegate_->AccessibilityLocationChangesReceived(details);
-}
-
-media::MediaMetricsProvider::RecordAggregateWatchTimeCallback
-RenderFrameHostImpl::GetRecordAggregateWatchTimeCallback() {
-  // The URL used for UKM must always be the top level frame.
-  return delegate_->GetRecordAggregateWatchTimeCallback(
-      GetOutermostMainFrame()->GetLastCommittedURL());
 }
 
 void RenderFrameHostImpl::ResetWaitingState() {
@@ -11719,9 +11714,6 @@ void RenderFrameHostImpl::BindMediaMetricsProviderReceiver(
                 ->GetLearningSession();
           },
           weak_ptr_factory_.GetWeakPtr()),
-      base::BindRepeating(
-          &RenderFrameHostImpl::GetRecordAggregateWatchTimeCallback,
-          base::Unretained(this)),
       std::move(is_shutting_down_cb), std::move(receiver));
 }
 
@@ -11805,8 +11797,7 @@ void RenderFrameHostImpl::CreateDedicatedWorkerHostFactory(
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<DedicatedWorkerHostFactoryImpl>(
           worker_process_id,
-          /*creator_render_frame_host_id=*/GetGlobalId(),
-          /*creator_worker_token=*/absl::nullopt,
+          /*creator=*/GetGlobalId(),
           /*ancestor_render_frame_host_id=*/GetGlobalId(), GetStorageKey(),
           isolation_info_, BuildClientSecurityState(),
           /*creator_coep_reporter=*/coep_reporter,

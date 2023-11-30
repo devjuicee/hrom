@@ -9,7 +9,7 @@
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_out_of_flow_layout_part.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/mathml/mathml_operator_element.h"
 #include "third_party/blink/renderer/core/mathml/mathml_under_over_element.h"
 
@@ -182,7 +182,7 @@ void MathUnderOverLayoutAlgorithm::GatherChildren(BlockNode* base,
   }
 }
 
-const NGLayoutResult* MathUnderOverLayoutAlgorithm::Layout() {
+const LayoutResult* MathUnderOverLayoutAlgorithm::Layout() {
   DCHECK(!GetBreakToken());
   DCHECK(IsValidMathMLScript(Node()));
 
@@ -216,10 +216,10 @@ const NGLayoutResult* MathUnderOverLayoutAlgorithm::Layout() {
 
   // https://w3c.github.io/mathml-core/#dfn-algorithm-for-stretching-operators-along-the-inline-axis
   LayoutUnit inline_stretch_size;
-  auto UpdateInlineStretchSize = [&](const NGLayoutResult* result) {
+  auto UpdateInlineStretchSize = [&](const LayoutResult* result) {
     LogicalFragment fragment(
         constraint_space.GetWritingDirection(),
-        To<NGPhysicalBoxFragment>(result->PhysicalFragment()));
+        To<PhysicalBoxFragment>(result->GetPhysicalFragment()));
     inline_stretch_size = std::max(inline_stretch_size, fragment.InlineSize());
   };
 
@@ -299,7 +299,7 @@ const NGLayoutResult* MathUnderOverLayoutAlgorithm::Layout() {
 
   LogicalBoxFragment base_fragment(
       constraint_space.GetWritingDirection(),
-      To<NGPhysicalBoxFragment>(base_layout_result->PhysicalFragment()));
+      To<PhysicalBoxFragment>(base_layout_result->GetPhysicalFragment()));
   LayoutUnit base_ascent =
       base_fragment.FirstBaselineOrSynthesize(baseline_type);
 
@@ -307,12 +307,12 @@ const NGLayoutResult* MathUnderOverLayoutAlgorithm::Layout() {
   // therefore centered relative to themselves).
   if (over) {
     const auto over_space = CreateConstraintSpaceForUnderOverChild(over);
-    const NGLayoutResult* over_layout_result = over.Layout(over_space);
+    const LayoutResult* over_layout_result = over.Layout(over_space);
     BoxStrut over_margins =
         ComputeMarginsFor(over_space, over.Style(), constraint_space);
     LogicalBoxFragment over_fragment(
         constraint_space.GetWritingDirection(),
-        To<NGPhysicalBoxFragment>(over_layout_result->PhysicalFragment()));
+        To<PhysicalBoxFragment>(over_layout_result->GetPhysicalFragment()));
     ascent += parameters.over_extra_ascender + over_margins.block_start;
     LogicalOffset over_offset = {
         content_start_offset.inline_offset + over_margins.inline_start +
@@ -354,12 +354,12 @@ const NGLayoutResult* MathUnderOverLayoutAlgorithm::Layout() {
 
   if (under) {
     const auto under_space = CreateConstraintSpaceForUnderOverChild(under);
-    const NGLayoutResult* under_layout_result = under.Layout(under_space);
+    const LayoutResult* under_layout_result = under.Layout(under_space);
     BoxStrut under_margins =
         ComputeMarginsFor(under_space, under.Style(), constraint_space);
     LogicalBoxFragment under_fragment(
         constraint_space.GetWritingDirection(),
-        To<NGPhysicalBoxFragment>(under_layout_result->PhysicalFragment()));
+        To<PhysicalBoxFragment>(under_layout_result->GetPhysicalFragment()));
     descent += under_margins.block_start;
     if (parameters.use_under_over_bar_fallback) {
       if (!HasAccent(Node(), true))

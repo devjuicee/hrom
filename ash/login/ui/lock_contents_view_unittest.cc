@@ -51,6 +51,7 @@
 #include "ash/system/status_area_widget.h"
 #include "ash/tray_action/test_tray_action_client.h"
 #include "ash/tray_action/tray_action.h"
+#include "ash/wm/tablet_mode/tablet_mode_controller.h"
 #include "base/memory/raw_ptr.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/metrics/histogram_tester.h"
@@ -1115,7 +1116,7 @@ TEST_F(LockContentsViewUnitTest, AuthErrorLoginScreenRecoverUserButton) {
   // The error bubble should be hidden because of the button press.
   EXPECT_FALSE(test_api.auth_error_bubble()->GetVisible());
 
-  absl::optional<int> reauth_reason =
+  std::optional<int> reauth_reason =
       user_manager::KnownUser(Shell::Get()->local_state())
           .FindReauthReason(users()[0].basic_user_info.account_id);
   EXPECT_EQ(reauth_reason, static_cast<int>(ReauthReason::kForgotPassword));
@@ -2644,7 +2645,7 @@ TEST_F(LockContentsViewUnitTest, RemoveUserFocusMovesBackToPrimaryUser) {
 TEST_F(LockContentsViewUnitTest,
        BacklightRemainsForcedOffAfterFingerprintStateChange) {
   // Enter tablet mode so the power button events force the backlight off.
-  Shell::Get()->power_button_controller()->OnTabletModeStarted();
+  Shell::Get()->tablet_mode_controller()->SetEnabledForTest(true);
 
   // Show lock screen with one normal user.
   auto* lock = new LockContentsView(
@@ -2667,7 +2668,7 @@ TEST_F(LockContentsViewUnitTest,
   EXPECT_TRUE(
       Shell::Get()->backlights_forced_off_setter()->backlights_forced_off());
 
-  Shell::Get()->power_button_controller()->OnTabletModeEnded();
+  Shell::Get()->tablet_mode_controller()->SetEnabledForTest(false);
 }
 
 // Verifies that a fingerprint authentication attempt makes sure the backlights
@@ -2675,7 +2676,7 @@ TEST_F(LockContentsViewUnitTest,
 TEST_F(LockContentsViewUnitTest,
        BacklightIsNotForcedOffAfterFingerprintAuthenticationAttempt) {
   // Enter tablet mode so the power button events force the backlight off.
-  Shell::Get()->power_button_controller()->OnTabletModeStarted();
+  Shell::Get()->tablet_mode_controller()->SetEnabledForTest(true);
 
   // Show lock screen with one normal user.
   auto* lock = new LockContentsView(
@@ -2697,8 +2698,7 @@ TEST_F(LockContentsViewUnitTest,
   base::RunLoop().RunUntilIdle();
   EXPECT_FALSE(
       Shell::Get()->backlights_forced_off_setter()->backlights_forced_off());
-
-  Shell::Get()->power_button_controller()->OnTabletModeEnded();
+  Shell::Get()->tablet_mode_controller()->SetEnabledForTest(false);
 }
 
 TEST_F(LockContentsViewUnitTest, RightAndLeftAcceleratorsWithNoUser) {
@@ -2843,7 +2843,7 @@ TEST_F(LockContentsViewUnitTest, LockScreenMediaControlsHiddenAfterDelay) {
       media_session::mojom::MediaPlaybackState::kPlaying);
 
   // Simulate media session stopping and delay.
-  lock_contents.media_controls_view()->MediaSessionChanged(absl::nullopt);
+  lock_contents.media_controls_view()->MediaSessionChanged(std::nullopt);
   mock_timer->Fire();
   base::RunLoop().RunUntilIdle();
 
@@ -2892,7 +2892,7 @@ TEST_F(LockContentsViewUnitTest, KeepMediaControlsShownWithinDelay) {
       media_session::mojom::MediaPlaybackState::kPlaying);
 
   // Simulate media session stopping.
-  lock_contents.media_controls_view()->MediaSessionChanged(absl::nullopt);
+  lock_contents.media_controls_view()->MediaSessionChanged(std::nullopt);
 
   // Simulate new media session starting within timer delay.
   SimulateMediaSessionChanged(

@@ -370,6 +370,9 @@ const messageHandlers = {
       this.maybeCompleteAuth_();
     }
   },
+  'getDeviceId'(msg) {
+    this.dispatchEvent(new Event('getDeviceId'));
+  },
 };
 
 /**
@@ -779,6 +782,14 @@ export class Authenticator extends EventTarget {
     this.sendMessageToWebview('accountsListed', accounts);
   }
 
+  /**
+   * Called in response to 'getDeviceId' event.
+   * @param {string} deviceId Device ID.
+   */
+  getDeviceIdResponse(deviceId) {
+    this.sendMessageToWebview('deviceIdFetched', deviceId);
+  }
+
   constructInitialFrameUrl_(data) {
     assert(this.idpOrigin_ !== undefined, "this.idpOrigin_ must be defined");
     assert(data.gaiaPath !== undefined, "data.gaiaPath must be defined");
@@ -1066,7 +1077,7 @@ export class Authenticator extends EventTarget {
    * Invoked to send a HTML5 message with attached data to the webview
    * element.
    * @param {string} messageType Type of the HTML5 message.
-   * @param {Object=} messageData Data to be attached to the message.
+   * @param {string|Object=} messageData Data to be attached to the message.
    */
   sendMessageToWebview(messageType, messageData = null) {
     const currentUrl = this.webview_.src;
@@ -1464,7 +1475,7 @@ export class Authenticator extends EventTarget {
    */
   onGaiaDoneTimeout_() {
     if (!this.services_) {
-      console.error('Gaia done timeout: Forcing empty services.');
+      console.warn('Gaia done timeout: Forcing empty services.');
       this.services_ = [];
       const metric = this.authFlow === AuthFlow.SAML ?
           GAIA_MESSAGE_SAML_USER_INFO :
@@ -1473,7 +1484,7 @@ export class Authenticator extends EventTarget {
     }
 
     if (!this.closeViewReceived_) {
-      console.error('Gaia done timeout: closeView was not called.');
+      console.warn('Gaia done timeout: closeView was not called.');
       this.closeViewReceived_ = true;
 
       const metric = this.authFlow === AuthFlow.SAML ?
@@ -1485,7 +1496,8 @@ export class Authenticator extends EventTarget {
     if (this.waitApiPasswordConfirm_) {
       // Log duplicates the log from the saml handler. The message is used by
       // the tast test to catch failures.
-      console.error('SamlHandler.onAPICall_: API password was not confirmed');
+      console.warn('SamlHandler.onAPICall_: API password was not confirmed');
+      this.samlHandler_.recordPasswordNotConfirmedError();
       this.waitApiPasswordConfirm_ = false;
     }
 

@@ -39,9 +39,9 @@
 #include "ui/gfx/geometry/skia_conversions.h"
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/image/image_skia_rep.h"
+#include "ui/gfx/x/atom_cache.h"
 #include "ui/gfx/x/visual_manager.h"
 #include "ui/gfx/x/window_event_manager.h"
-#include "ui/gfx/x/x11_atom_cache.h"
 #include "ui/gfx/x/x11_path.h"
 #include "ui/gfx/x/xproto.h"
 #include "ui/ozone/platform/x11/hit_test_x11.h"
@@ -788,7 +788,7 @@ void X11Window::Activate() {
   // https://code.google.com/p/wmii/issues/detail?id=266
   static bool wm_supports_active_window =
       GuessWindowManager() != WM_WMII &&
-      WmSupportsHint(x11::GetAtom("_NET_ACTIVE_WINDOW"));
+      connection_->WmSupportsHint(x11::GetAtom("_NET_ACTIVE_WINDOW"));
 
   x11::Time timestamp = X11EventSource::GetInstance()->GetTimestamp();
 
@@ -1112,7 +1112,7 @@ bool X11Window::CanSetDecorationInsets() const {
       return false;
     }
   }
-  return ui::WmSupportsHint(x11::GetAtom("_GTK_FRAME_EXTENTS"));
+  return connection_->WmSupportsHint(x11::GetAtom("_GTK_FRAME_EXTENTS"));
 }
 
 void X11Window::SetDecorationInsets(const gfx::Insets* insets_px) {
@@ -1838,7 +1838,8 @@ void X11Window::CreateXWindow(const PlatformWindowInitProperties& properties) {
     std::string atom_name =
         "_NET_SYSTEM_TRAY_S" +
         base::NumberToString(connection_->DefaultScreenId());
-    auto selection = connection_->GetSelectionOwner({x11::GetAtom(atom_name)});
+    auto selection =
+        connection_->GetSelectionOwner({x11::GetAtom(atom_name.c_str())});
     if (auto reply = selection.Sync()) {
       connection_->GetPropertyAs(
           reply->owner, x11::GetAtom("_NET_SYSTEM_TRAY_VISUAL"), &visual_id_);
@@ -2658,7 +2659,8 @@ void X11Window::NotifyBoundsChanged(bool origin_changed) {
 bool X11Window::InitializeAsStatusIcon() {
   std::string atom_name = "_NET_SYSTEM_TRAY_S" +
                           base::NumberToString(connection_->DefaultScreenId());
-  auto reply = connection_->GetSelectionOwner({x11::GetAtom(atom_name)}).Sync();
+  auto reply =
+      connection_->GetSelectionOwner({x11::GetAtom(atom_name.c_str())}).Sync();
   if (!reply || reply->owner == x11::Window::None) {
     return false;
   }

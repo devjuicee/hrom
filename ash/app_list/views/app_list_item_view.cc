@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -47,7 +48,6 @@
 #include "base/time/time.h"
 #include "cc/paint/paint_flags.h"
 #include "chromeos/constants/chromeos_features.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/accessibility/ax_node_data.h"
@@ -313,11 +313,11 @@ class AppListItemView::FolderIconView : public views::View,
   // The count shows on the item counter is the number of items that aren't
   // drawn on the folder icon. Returns nullopt if the counter should not be
   // drawn.
-  absl::optional<size_t> GetItemCounterCount() const {
+  std::optional<size_t> GetItemCounterCount() const {
     size_t item_count = folder_item_->item_list()->item_count();
     size_t icons_in_folder = GetDraggedItem() ? item_count - 1 : item_count;
     if (icons_in_folder <= FolderImage::kNumFolderTopItems) {
-      return absl::nullopt;
+      return std::nullopt;
     }
 
     size_t count = icons_in_folder - (FolderImage::kNumFolderTopItems - 1);
@@ -662,7 +662,7 @@ AppListItemView::AppListItemView(const AppListConfig* app_list_config,
   preview_circle_radius_ = 0;
 
   if (features::IsUserEducationEnabled() && context == Context::kAppsGridView) {
-    if (absl::optional<ui::ElementIdentifier> element_identifier =
+    if (std::optional<ui::ElementIdentifier> element_identifier =
             UserEducationController::Get()->GetElementIdentifierForAppId(
                 item->id())) {
       // NOTE: Set `kHelpBubbleContextKey` before `views::kElementIdentifierKey`
@@ -729,7 +729,7 @@ void AppListItemView::UpdateIconView(bool update_item_icon) {
   gfx::ImageSkia image_icon;
   if (image_model.IsImage()) {
     image_icon = image_model.GetImage().AsImageSkia();
-  } else if (image_model.IsVectorIcon()) {
+  } else if (image_model.IsVectorIcon() && GetColorProvider()) {
     image_icon = ui::ThemedVectorIcon(image_model.GetVectorIcon())
                      .GetImageSkia(GetColorProvider());
   }
@@ -1917,7 +1917,7 @@ void AppListItemView::OnAnimatedInFromPromiseApp(
   title_->DestroyLayer();
   new_install_dot_->DestroyLayer();
   forced_progress_indicator_value_.reset();
-  if (progress_indicator_) {
+  if (progress_indicator_ && layer()) {
     layer()->Remove(progress_indicator_->layer());
   }
   progress_indicator_.reset();
@@ -1936,7 +1936,7 @@ void AppListItemView::OnAnimatedInFromPromiseApp(
   callback.Run();
 }
 
-absl::optional<size_t> AppListItemView::item_counter_count_for_test() const {
+std::optional<size_t> AppListItemView::item_counter_count_for_test() const {
   DCHECK(!use_item_icon_);
   return folder_icon_->GetItemCounterCount();
 }
@@ -2163,7 +2163,7 @@ void AppListItemView::UpdateProgressIndicatorState() {
   if (!progress_indicator_) {
     progress_indicator_ =
         ProgressIndicator::CreateDefaultInstance(base::BindRepeating(
-            [](AppListItemView* view) -> absl::optional<float> {
+            [](AppListItemView* view) -> std::optional<float> {
               if (view->forced_progress_indicator_value_) {
                 return *view->forced_progress_indicator_value_;
               }
@@ -2194,14 +2194,11 @@ void AppListItemView::UpdateProgressIndicatorState() {
   EnsureLayer();
 
   if (item()->app_status() == AppStatus::kPending) {
-    // TODO(b/311460259): Set rounded caps by default after improving the
-    // drawing algorithm for the progress indicator.
-    progress_indicator_->SetHasRoundCap(false);
     progress_indicator_->SetColorId(cros_tokens::kCrosSysHighlightShape);
     progress_indicator_->SetOuterRingTrackVisible(true);
   } else {
-    progress_indicator_->SetHasRoundCap(true);
-    progress_indicator_->SetColorId(cros_tokens::kCrosSysPrimary);
+    progress_indicator_->SetColorId(
+        cros_tokens::kCrosSysSystemPrimaryContainer);
     progress_indicator_->SetOuterRingTrackVisible(false);
   }
 
@@ -2336,7 +2333,7 @@ ui::Layer* AppListItemView::GetIconBackgroundLayer() {
 }
 
 bool AppListItemView::AlwaysPaintsToLayer() {
-  return is_promise_app_;
+  return is_promise_app_ || progress_indicator_;
 }
 
 BEGIN_METADATA(AppListItemView, views::Button)

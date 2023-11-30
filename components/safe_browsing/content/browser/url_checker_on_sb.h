@@ -10,7 +10,6 @@
 #include "base/functional/callback.h"
 #include "base/memory/ref_counted.h"
 #include "base/time/time.h"
-#include "components/safe_browsing/content/browser/browser_url_loader_throttle.h"
 #include "components/safe_browsing/core/browser/hashprefix_realtime/hash_realtime_utils.h"
 #include "components/safe_browsing/core/browser/safe_browsing_url_checker_impl.h"
 #include "services/network/public/mojom/fetch_api.mojom-shared.h"
@@ -40,11 +39,30 @@ class PingManager;
 // UI thread.
 class UrlCheckerOnSB : public base::SupportsWeakPtr<UrlCheckerOnSB> {
  public:
+  using OnCompleteCheckCallback = base::RepeatingCallback<void(
+      bool /* slow_check */,
+      bool /* proceed */,
+      bool /* showed_interstitial */,
+      SafeBrowsingUrlCheckerImpl::PerformedCheck /* performed_check */,
+      bool /* did_check_url_real_time_allowlist */)>;
+
+  using OnNotifySlowCheckCallback = base::RepeatingCallback<void()>;
+
+  using GetDelegateCallback =
+      base::RepeatingCallback<scoped_refptr<UrlCheckerDelegate>()>;
+
+  using NativeUrlCheckNotifier = base::OnceCallback<void(
+      bool /* proceed */,
+      bool /* showed_interstitial */,
+      SafeBrowsingUrlCheckerImpl::PerformedCheck /* performed_check */,
+      bool /* did_check_url_real_time_allowlist */)>;
+
   UrlCheckerOnSB(
-      BrowserURLLoaderThrottle::GetDelegateCallback delegate_getter,
+      GetDelegateCallback delegate_getter,
       int frame_tree_node_id,
       base::RepeatingCallback<content::WebContents*()> web_contents_getter,
-      base::WeakPtr<BrowserURLLoaderThrottle> throttle,
+      OnCompleteCheckCallback complete_callback,
+      OnNotifySlowCheckCallback slow_check_callback,
       bool url_real_time_lookup_enabled,
       bool can_urt_check_subresource_url,
       bool can_check_db,
@@ -58,13 +76,11 @@ class UrlCheckerOnSB : public base::SupportsWeakPtr<UrlCheckerOnSB> {
 
   ~UrlCheckerOnSB();
 
-  // Starts the initial safe browsing check. This check and future checks may
-  // be skipped after checking with the UrlCheckerDelegate.
+  // Starts the initial safe browsing check.
   void Start(const net::HttpRequestHeaders& headers,
              int load_flags,
              network::mojom::RequestDestination request_destination,
              bool has_user_gesture,
-             bool originated_from_service_worker,
              const GURL& url,
              const std::string& method);
 
@@ -83,7 +99,7 @@ class UrlCheckerOnSB : public base::SupportsWeakPtr<UrlCheckerOnSB> {
   // arguments should be ignored. This method sets the |slow_check_notifier|
   // output parameter to a callback to receive the final result.
   void OnCheckUrlResult(
-      BrowserURLLoaderThrottle::NativeUrlCheckNotifier* slow_check_notifier,
+      NativeUrlCheckNotifier* slow_check_notifier,
       bool proceed,
       bool showed_interstitial,
       SafeBrowsingUrlCheckerImpl::PerformedCheck performed_check,
@@ -99,7 +115,7 @@ class UrlCheckerOnSB : public base::SupportsWeakPtr<UrlCheckerOnSB> {
       bool did_check_url_real_time_allowlist);
 
   // The following member stays valid until |url_checker_| is created.
-  BrowserURLLoaderThrottle::GetDelegateCallback delegate_getter_;
+  GetDelegateCallback delegate_getter_;
 
   std::unique_ptr<SafeBrowsingUrlCheckerImpl> url_checker_;
   std::unique_ptr<SafeBrowsingUrlCheckerImpl> url_checker_for_testing_;
@@ -107,10 +123,8 @@ class UrlCheckerOnSB : public base::SupportsWeakPtr<UrlCheckerOnSB> {
   scoped_refptr<SafeBrowsingLookupMechanismExperimenter>
       mechanism_experimenter_;
   base::RepeatingCallback<content::WebContents*()> web_contents_getter_;
-  bool skip_checks_ = false;
-  // TODO(crbug.com/1501194): Remove dependency on BrowserURLLoaderThrottle and
-  // remove this member.
-  base::WeakPtr<BrowserURLLoaderThrottle> throttle_;
+  OnCompleteCheckCallback complete_callback_;
+  OnNotifySlowCheckCallback slow_check_callback_;
   bool url_real_time_lookup_enabled_ = false;
   bool can_urt_check_subresource_url_ = false;
   bool can_check_db_ = true;

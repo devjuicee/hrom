@@ -67,7 +67,7 @@ class GlanceablesPixelTest : public AshTestBase {
   }
 
   // AshTestBase:
-  absl::optional<pixel_test::InitParams> CreatePixelTestInitParams()
+  std::optional<pixel_test::InitParams> CreatePixelTestInitParams()
       const override {
     return pixel_test::InitParams();
   }
@@ -191,7 +191,7 @@ TEST_F(GlanceablesPixelTest, GlanceablesCalendarHeight) {
   ASSERT_TRUE(GetDateTray()->is_active());
 
   EXPECT_TRUE(GetPixelDiffer()->CompareUiComponentsOnPrimaryScreen(
-      "glanceables_calendar_height", /*revision_number=*/0,
+      "glanceables_calendar_height", /*revision_number=*/1,
       GetGlanceableTrayBubble()->GetBubbleView()));
 }
 

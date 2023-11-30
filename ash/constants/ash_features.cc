@@ -387,7 +387,7 @@ constexpr base::FeatureParam<CaptureModeEducationParam>::Option
     capture_mode_education_type_options[] = {
         {CaptureModeEducationParam::kShortcutNudge, "ShortcutNudge"},
         {CaptureModeEducationParam::kShortcutTutorial, "ShortcutTutorial"},
-        {CaptureModeEducationParam::kSettingsNudge, "SettingsNudge"}};
+        {CaptureModeEducationParam::kQuickSettingsNudge, "QuickSettingsNudge"}};
 const base::FeatureParam<CaptureModeEducationParam> kCaptureModeEducationParam{
     &kCaptureModeEducation, "CaptureModeEducationParam",
     CaptureModeEducationParam::kShortcutNudge,
@@ -476,7 +476,7 @@ BASE_FEATURE(kCrosPrivacyHubAppPermissions,
 // Enables Privacy Hub with only the camera and the microphone access control.
 BASE_FEATURE(kCrosPrivacyHubV0,
              "CrosPrivacyHubV0",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Enables syncing attestation certificates to cryptauth for use by Cross Device
 // features, including Eche and Phone Hub.
@@ -759,7 +759,7 @@ BASE_FEATURE(kEnableExternalKeyboardsInDiagnostics,
 // side wait time.
 BASE_FEATURE(kEnableGetDebugdLogsInParallel,
              "EnableGetDebugdLogsInParallel",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Enables setting the device hostname.
 BASE_FEATURE(kEnableHostnameSetting,
@@ -1198,7 +1198,7 @@ BASE_FEATURE(kFloatingWorkspaceV2,
 constexpr base::FeatureParam<base::TimeDelta>
     kFloatingWorkspaceV2MaxTimeAvailableForRestoreAfterLogin{
         &kFloatingWorkspaceV2, "MaxTimeAvailableForRestoreAfterLoginV2",
-        base::Seconds(15)};
+        base::Seconds(30)};
 
 // Time interval to capture current desk as desk template and upload template to
 // server.
@@ -1322,9 +1322,6 @@ BASE_FEATURE(kGesturePropertiesDBusService,
 // native screen capture tool.
 BASE_FEATURE(kGifRecording, "GifRecording", base::FEATURE_DISABLED_BY_DEFAULT);
 
-// Enables the displaying of animated gifs in ash.
-BASE_FEATURE(kGifRendering, "GifRendering", base::FEATURE_DISABLED_BY_DEFAULT);
-
 // Enables a Files banner about Google One offer.
 BASE_FEATURE(kGoogleOneOfferFilesBanner,
              "GoogleOneOfferFilesBanner",
@@ -1374,7 +1371,7 @@ BASE_FEATURE(kHelpAppAutoTriggerInstallDialog,
 // If enabled, the Help app will render with Cros components.
 BASE_FEATURE(kHelpAppCrosComponents,
              "HelpAppCrosComponents",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Enables or disables the Help App Discover tab notifications on non-stable
 // ChromeOS channels. Used for testing.
@@ -1486,7 +1483,7 @@ BASE_FEATURE(kHomeButtonWithText,
 
 // Control whether the hotspot tethering is enabled. When enabled, it will allow
 // the Chromebook to share its cellular internet connection to other devices.
-BASE_FEATURE(kHotspot, "Hotspot", base::FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE(kHotspot, "Hotspot", base::FEATURE_DISABLED_BY_DEFAULT);
 
 // If enabled, allows the user to cycle between windows of an app using Alt + `.
 BASE_FEATURE(kSameAppWindowCycle,
@@ -2475,7 +2472,7 @@ BASE_FEATURE(kShimlessRMAComplianceCheck,
 // Enables or disables SKU description in the Shimless RMA flow.
 BASE_FEATURE(kShimlessRMASkuDescription,
              "ShimlessRMASkuDescription",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Enables 3p diagnostics in the Shimless RMA flow.
 BASE_FEATURE(kShimlessRMA3pDiagnostics,
@@ -2775,7 +2772,7 @@ BASE_FEATURE(kVcPortraitRelight,
 // This is only used as a way to disable stopAllScreenShare.
 BASE_FEATURE(kVcStopAllScreenShare,
              "VcStopAllScreenShare",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 // Enable or disable the fake effects for ChromeOS video conferencing controls
 // UI. Only meaningful in the emulator.
@@ -2806,12 +2803,6 @@ BASE_FEATURE(kVirtualKeyboardRoundCorners,
 // Enable or disable Nacl for virtual keyboard on ChromeOS.
 BASE_FEATURE(kVirtualKeyboardRemoveNacl,
              "VirtualKeyboardRemoveNacl",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-
-// Enables a per-boot host GPU cache generation for VMs. On default, the cache
-// is generated per OS version.
-BASE_FEATURE(kVmPerBootShaderCache,
-             "VmPerBootShaderCache",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 // Controls whether to allow enabling wake on WiFi features in shill.
@@ -3498,10 +3489,6 @@ bool IsGalleryAppPdfEditNotificationEnabled() {
 
 bool IsGifRecordingEnabled() {
   return base::FeatureList::IsEnabled(kGifRecording);
-}
-
-bool IsGifRenderingEnabled() {
-  return base::FeatureList::IsEnabled(kGifRendering);
 }
 
 bool IsGrowthFrameworkEnabled() {

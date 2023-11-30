@@ -93,7 +93,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="ExtensionBlacklist.UnblacklistInstalled"
-    enum="ExtensionLocation" expires_after="2024-03-24">
+    enum="ExtensionLocation" expires_after="2024-05-26">
   <owner>anunoy@chromium.org</owner>
   <owner>chrome-counter-abuse-alerts@google.com</owner>
   <summary>
@@ -147,16 +147,6 @@ chromium-metrics-reviews@google.com.
     The number of times v1 apps are launched grouped by
     extension_misc::AppLaunchBuckets. See also Apps.AppLaunch for v2 apps. Note
     this was changed in 2023-02 to no longer count web app launches.
-  </summary>
-</histogram>
-
-<histogram name="Extensions.AppLaunchSource" enum="AppLaunchSource"
-    expires_after="2022-06-30">
-  <owner>benwells@chromium.org</owner>
-  <owner>cylee@chromium.org</owner>
-  <summary>
-    The number of times apps are launched grouped by
-    extensions::AppLaunchSource.
   </summary>
 </histogram>
 
@@ -308,6 +298,77 @@ chromium-metrics-reviews@google.com.
     prefix will be added, since content script Objects should have a prefix to
     their ids to indicate their source. Will be removed if this histogram is not
     emitted for an extended period of time.
+  </summary>
+</histogram>
+
+<histogram
+    name="Extensions.ContentSettings.PrimaryPatternUniqueSecondaryPatternDifferent"
+    enum="PermissionType" expires_after="2024-07-07">
+  <owner>erikchen@chromium.org</owner>
+  <owner>extensions-core@chromium.org</owner>
+  <summary>
+    An entry is emitted each time an extension sets a content setting whose
+    primary pattern is unique and secondary pattern is a different unique.
+
+    This happens on profile startup (for stored settings) and each time an
+    extension calls chrome.contentSettings[type].set(...).
+  </summary>
+</histogram>
+
+<histogram
+    name="Extensions.ContentSettings.PrimaryPatternUniqueSecondaryPatternIdentical"
+    enum="PermissionType" expires_after="2024-07-07">
+  <owner>erikchen@chromium.org</owner>
+  <owner>extensions-core@chromium.org</owner>
+  <summary>
+    An entry is emitted each time an extension sets a content setting whose
+    primary pattern is unique and secondary pattern is identical to the primary
+    pattern.
+
+    This happens on profile startup (for stored settings) and each time an
+    extension calls chrome.contentSettings[type].set(...).
+  </summary>
+</histogram>
+
+<histogram
+    name="Extensions.ContentSettings.PrimaryPatternUniqueSecondaryPatternWildcard"
+    enum="PermissionType" expires_after="2024-07-07">
+  <owner>erikchen@chromium.org</owner>
+  <owner>extensions-core@chromium.org</owner>
+  <summary>
+    An entry is emitted each time an extension sets a content setting whose
+    primary pattern is unique and secondary pattern is a wildcard.
+
+    This happens on profile startup (for stored settings) and each time an
+    extension calls chrome.contentSettings[type].set(...).
+  </summary>
+</histogram>
+
+<histogram
+    name="Extensions.ContentSettings.PrimaryPatternWildcardSecondaryPatternUnique"
+    enum="PermissionType" expires_after="2024-07-07">
+  <owner>erikchen@chromium.org</owner>
+  <owner>extensions-core@chromium.org</owner>
+  <summary>
+    An entry is emitted each time an extension sets a content setting whose
+    primary pattern is a wildcard and whose secondary pattern is unique.
+
+    This happens on profile startup (for stored settings) and each time an
+    extension calls chrome.contentSettings[type].set(...).
+  </summary>
+</histogram>
+
+<histogram
+    name="Extensions.ContentSettings.PrimaryPatternWildcardSecondaryPatternWildcard"
+    enum="PermissionType" expires_after="2024-07-07">
+  <owner>erikchen@chromium.org</owner>
+  <owner>extensions-core@chromium.org</owner>
+  <summary>
+    An entry is emitted each time an extension sets a content setting whose
+    primary and secondary pattern are both wildcard.
+
+    This happens on profile startup (for stored settings) and each time an
+    extension calls chrome.contentSettings[type].set(...).
   </summary>
 </histogram>
 
@@ -3374,16 +3435,6 @@ chromium-metrics-reviews@google.com.
     installed).
   </summary>
   <token key="ManifestLocation" variants="ManifestLocationGroup"/>
-</histogram>
-
-<histogram name="Extensions.MenuManager.MenuItemsCount" units="items"
-    expires_after="2024-03-31">
-  <owner>dbertoni@chromium.org</owner>
-  <owner>extensions-core@chromium.org</owner>
-  <summary>
-    The number of context menu items loaded from storage when an extension is
-    loaded.
-  </summary>
 </histogram>
 
 <histogram

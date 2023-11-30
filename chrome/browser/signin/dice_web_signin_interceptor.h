@@ -14,8 +14,8 @@
 #include "base/memory/raw_ptr.h"
 #include "base/scoped_observation.h"
 #include "base/time/time.h"
+#include "chrome/browser/search_engine_choice/search_engine_choice_service.h"
 #include "chrome/browser/signin/web_signin_interceptor.h"
-#include "chrome/browser/ui/webui/signin/enterprise_profile_welcome_ui.h"
 #include "chrome/browser/ui/webui/signin/signin_utils.h"
 #include "components/keyed_service/core/keyed_service.h"
 #include "components/policy/core/browser/signin/profile_separation_policies.h"
@@ -181,8 +181,7 @@ class DiceWebSigninInterceptor : public KeyedService,
     ProfilePresets& operator=(ProfilePresets&) = delete;
 
     SkColor profile_color = SK_ColorTRANSPARENT;
-    int64_t search_engine_choice_timestamp = 0;
-    TemplateURLData default_search_engine;
+    search_engines::ChoiceData search_engine_choice_data;
   };
 
   // Cancels any current signin interception and resets the interceptor to its
@@ -257,16 +256,16 @@ class DiceWebSigninInterceptor : public KeyedService,
   // Returns a 8-bit hash of the email that can be persisted.
   static std::string GetPersistentEmailHash(const std::string& email);
 
-  // Should be called when the user declines the intercept bubble for the
-  // interested interception types, in order to remember their decision. This
-  // information is stored in prefs. Only a hash of the email is saved, as
-  // Chrome does not need to store the actual email, but only need to compare
-  // emails. The hash has low entropy to ensure it cannot be reversed.
-  // There should be a pref for each group of Interception types that are of
-  // interest:
-  // - `kMultiUser`, `kEnterprise`: for profile creation bubble.
-  // - `kChromeSignin`: for Chrome Signin bubble.
-  void UpdateDiceWebSigninInterceptDeclinedPref(const std::string& email);
+  // Increments the current entry count corresponding to the `email` of the
+  // given pref. The given `pref_name` is expected to be a DictionaryPref with a
+  // key as a hash string computed from an email string. These prefs are used to
+  // remember the user choices/number of times the bubble is shown to them per
+  // account/email.
+  // Only a hash of the email is saved, as Chrome does not need to store the
+  // actual email, but only need to compare emails. The hash has low entropy to
+  // ensure it cannot be reversed.
+  void IncrementEmailToCountDictionaryPref(const char* pref_name,
+                                           const std::string& email);
 
   // Records the number of times the user previously declined the Chrome Signin
   // bubble when accepting it. Also resets the value in the prefs.
@@ -276,6 +275,10 @@ class DiceWebSigninInterceptor : public KeyedService,
   // Checks if the user previously declined 2 times creating a new profile for
   // this account.
   bool HasUserDeclinedProfileCreation(const std::string& email) const;
+
+  // Returns the number of times the Chrome Signin Bubble was shown per `email`.
+  // The value is stored in a profile pref.
+  size_t GetChromeSigninBubbleShownCount(const std::string& email) const;
 
   // Fetches the value of the cloud user level value of the
   // ManagedAccountsSigninRestriction policy for 'account_info' and runs

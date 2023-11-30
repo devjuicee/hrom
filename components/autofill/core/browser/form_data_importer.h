@@ -93,8 +93,8 @@ class FormDataImporter : public PersonalDataManagerObserver {
   ExtractCreditCardFromFormResult ExtractCreditCardFromForm(
       const FormStructure& form);
 
-  // Tries to initiate the saving of `iban_import_candidate` if applicable.
-  bool ProcessIbanImportCandidate(const Iban& iban_import_candidate);
+  // Tries to initiate the saving of `extracted_iban` if applicable.
+  bool ProcessIbanImportCandidate(const Iban& extracted_iban);
 
   // Cache the last four of the fetched virtual card so we don't offer saving
   // them.
@@ -196,7 +196,7 @@ class FormDataImporter : public PersonalDataManagerObserver {
     ~AddressProfileImportCandidate();
 
     // The profile that was extracted from the form.
-    AutofillProfile profile;
+    AutofillProfile profile{i18n_model_definition::kLegacyHierarchyCountryCode};
     // The URL the profile was extracted from.
     GURL url;
     // Indicates if all import requirements have been fulfilled.
@@ -226,7 +226,7 @@ class FormDataImporter : public PersonalDataManagerObserver {
         address_profile_import_candidates;
     // IBAN extracted from the form, which is a candidate for importing. Present
     // if an IBAN is found in the form.
-    absl::optional<Iban> iban_import_candidate;
+    absl::optional<Iban> extracted_iban;
   };
 
   // Scans the given `form` for extractable Autofill data.

@@ -32,7 +32,7 @@
 #include "third_party/blink/renderer/core/layout/layout_view.h"
 #include "third_party/blink/renderer/core/layout/multi_column_fragmentainer_group.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/view_fragmentation_context.h"
 
 namespace blink {
@@ -1171,10 +1171,10 @@ void LayoutMultiColumnFlowThread::UpdateGeometry() {
   const auto* first_fragment = container->GetPhysicalFragment(0);
   WritingModeConverter converter(first_fragment->Style().GetWritingDirection());
   bool has_processed_first_column_in_flow_thread = false;
-  const NGBlockBreakToken* break_token = nullptr;
+  const BlockBreakToken* break_token = nullptr;
   for (const auto& container_fragment : container->PhysicalFragments()) {
     for (const auto& link : container_fragment.Children()) {
-      const auto& child_fragment = To<NGPhysicalBoxFragment>(*link);
+      const auto& child_fragment = To<PhysicalBoxFragment>(*link);
       if (!child_fragment.IsFragmentainerBox()) {
         continue;
       }

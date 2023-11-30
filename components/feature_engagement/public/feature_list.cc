@@ -135,6 +135,7 @@ const base::Feature* const kAllFeatures[] = {
     &kIPHiOSPromoCredentialProviderExtensionFeature,
     &kIPHiOSPromoDefaultBrowserFeature,
     &kIPHiOSPromoDefaultBrowserReminderFeature,
+    &kIPHiOSPromoOmniboxPositionFeature,
     &kIPHiOSNewTabToolbarItemFeature,
     &kIPHiOSTabGridToolbarItemFeature,
     &kIPHiOSHistoryOnOverflowMenuFeature,
@@ -145,6 +146,7 @@ const base::Feature* const kAllFeatures[] = {
     &kIPHiOSChoiceScreenFeature,
     &kIPHiOSParcelTrackingFeature,
     &kIPHiOSPullToRefreshFeature,
+    &kIPHiOSReplaceSyncPromosWithSignInPromos,
 #endif  // BUILDFLAG(IS_IOS)
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
     BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
@@ -175,7 +177,6 @@ const base::Feature* const kAllFeatures[] = {
     &kIPHPasswordSharingFeature,
     &kIPHPowerBookmarksSidePanelFeature,
     &kIPHPriceInsightsPageActionIconLabelFeature,
-    &kIPHPriceTrackingChipFeature,
     &kIPHPriceTrackingEmailConsentFeature,
     &kIPHPriceTrackingPageActionIconLabelFeature,
     &kIPHReadingListDiscoveryFeature,

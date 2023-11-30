@@ -33,15 +33,15 @@
 #include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/frame/web_feature.h"
 #include "third_party/blink/renderer/core/html/html_body_element.h"
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
 #include "third_party/blink/renderer/core/layout/geometry/transform_state.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_cursor.h"
 #include "third_party/blink/renderer/core/layout/layout_block.h"
 #include "third_party/blink/renderer/core/layout/layout_inline.h"
 #include "third_party/blink/renderer/core/layout/layout_object_inlines.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/layout_view.h"
-#include "third_party/blink/renderer/core/layout/ng/legacy_layout_tree_walking.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
+#include "third_party/blink/renderer/core/layout/legacy_layout_tree_walking.h"
 #include "third_party/blink/renderer/core/layout/table/layout_table_section.h"
 #include "third_party/blink/renderer/core/page/scrolling/sticky_position_scrolling_constraints.h"
 #include "third_party/blink/renderer/core/paint/ng/ng_inline_paint_context.h"
@@ -349,7 +349,7 @@ PaintLayerScrollableArea* LayoutBoxModelObject::GetScrollableArea() const {
 void LayoutBoxModelObject::AddOutlineRectsForNormalChildren(
     OutlineRectCollector& collector,
     const PhysicalOffset& additional_offset,
-    NGOutlineType include_block_overflows) const {
+    OutlineType include_block_overflows) const {
   NOT_DESTROYED();
   for (LayoutObject* child = SlowFirstChild(); child;
        child = child->NextSibling()) {
@@ -367,7 +367,7 @@ void LayoutBoxModelObject::AddOutlineRectsForDescendant(
     const LayoutObject& descendant,
     OutlineRectCollector& collector,
     const PhysicalOffset& additional_offset,
-    NGOutlineType include_block_overflows) const {
+    OutlineType include_block_overflows) const {
   NOT_DESTROYED();
   if (descendant.IsText()) {
     return;
@@ -415,9 +415,9 @@ void LayoutBoxModelObject::RecalcVisualOverflow() {
   if (IsInline() && IsInLayoutNGInlineFormattingContext()) {
     DCHECK(HasSelfPaintingLayer());
     InlineCursor cursor;
-    NGInlinePaintContext inline_context;
+    InlinePaintContext inline_context;
     for (cursor.MoveTo(*this); cursor; cursor.MoveToNextForSameLayoutObject()) {
-      NGInlinePaintContext::ScopedInlineBoxAncestors scoped_items(
+      InlinePaintContext::ScopedInlineBoxAncestors scoped_items(
           cursor, &inline_context);
       cursor.Current().RecalcInkOverflow(cursor, &inline_context);
     }

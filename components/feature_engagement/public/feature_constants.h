@@ -54,7 +54,6 @@ BASE_DECLARE_FEATURE(kIPHPasswordManagerShortcutFeature);
 BASE_DECLARE_FEATURE(kIPHPasswordSharingFeature);
 BASE_DECLARE_FEATURE(kIPHPowerBookmarksSidePanelFeature);
 BASE_DECLARE_FEATURE(kIPHPriceInsightsPageActionIconLabelFeature);
-BASE_DECLARE_FEATURE(kIPHPriceTrackingChipFeature);
 BASE_DECLARE_FEATURE(kIPHPriceTrackingEmailConsentFeature);
 BASE_DECLARE_FEATURE(kIPHPriceTrackingPageActionIconLabelFeature);
 BASE_DECLARE_FEATURE(kIPHReadingListDiscoveryFeature);
@@ -216,6 +215,7 @@ BASE_DECLARE_FEATURE(kIPHiOSPromoPostRestoreFeature);
 BASE_DECLARE_FEATURE(kIPHiOSPromoCredentialProviderExtensionFeature);
 BASE_DECLARE_FEATURE(kIPHiOSPromoDefaultBrowserFeature);
 BASE_DECLARE_FEATURE(kIPHiOSPromoDefaultBrowserReminderFeature);
+BASE_DECLARE_FEATURE(kIPHiOSPromoOmniboxPositionFeature);
 BASE_DECLARE_FEATURE(kIPHiOSNewTabToolbarItemFeature);
 BASE_DECLARE_FEATURE(kIPHiOSTabGridToolbarItemFeature);
 BASE_DECLARE_FEATURE(kIPHiOSHistoryOnOverflowMenuFeature);
@@ -226,6 +226,7 @@ BASE_DECLARE_FEATURE(kIPHiOSPromoPasswordManagerWidgetFeature);
 BASE_DECLARE_FEATURE(kIPHiOSChoiceScreenFeature);
 BASE_DECLARE_FEATURE(kIPHiOSParcelTrackingFeature);
 BASE_DECLARE_FEATURE(kIPHiOSPullToRefreshFeature);
+BASE_DECLARE_FEATURE(kIPHiOSReplaceSyncPromosWithSignInPromos);
 
 // A feature flag to enable and parametrize the sliding window of time for a
 // user's eligibility to be shown a default browser promo. This is not an FET

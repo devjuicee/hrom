@@ -57,6 +57,13 @@ class ModelExecutionManager {
       proto::ModelExecutionFeature feature);
 
  private:
+  // Called from SessionImpl (via ExecuteRemoteFn) when model execution happens
+  // remotely.
+  void ExecuteModelWithStreaming(
+      proto::ModelExecutionFeature feature,
+      const google::protobuf::MessageLite& request_metadata,
+      OptimizationGuideModelExecutionResultStreamingCallback callback);
+
   // Invoked when the model execution result is available.
   void OnModelExecuteResponse(
       proto::ModelExecutionFeature feature,
@@ -81,9 +88,6 @@ class ModelExecutionManager {
   // Unowned IdentityManager for fetching access tokens. Could be null for
   // incognito profiles.
   const raw_ptr<signin::IdentityManager> identity_manager_;
-
-  // The set of OAuth scopes to use for requesting access token.
-  std::set<std::string> oauth_scopes_;
 
   // Controller for the on-device service.
   scoped_refptr<OnDeviceModelServiceController>

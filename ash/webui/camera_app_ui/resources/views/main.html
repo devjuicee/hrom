@@ -136,6 +136,14 @@
               data-svg="barcode_copy.svg"></button>
           </div>
         </div>
+        <div id="barcode-chip-wifi-container"
+            class="invisible barcode-chip-container">
+          <div id="barcode-chip-wifi" tabindex="0"
+              role="button">
+            <svg-wrapper name="wifi.svg"></svg-wrapper>
+            <div id="barcode-chip-wifi-content"></div>
+          </div>
+        </div>
       </div>
       <div class="top-stripe left-stripe buttons circle">
         <button id="open-settings" tabindex="0"
@@ -261,11 +269,8 @@
           <div class="two-bars" data-svg="camera_shutter_video_pause.svg"></div>
         </button>
       </div>
-      <div class="bottom-stripe left-stripe buttons circle">
-        <button id="switch-device" tabindex="0"
-                i18n-label="switch_camera_button"
-                data-svg="camera_button_switch_device.svg"></button>
-      </div>
+      <switch-device-button tabindex="0" class="bottom-stripe left-stripe">
+      </switch-device-button>
       <div id="mode-selector" class="bottom-stripe">
         <div id="modes-group" class="buttons" role="radiogroup"
              i18n-aria="aria_camera_mode_group">
@@ -529,7 +534,7 @@
     <div id="view-review" class="review-views">
       <div class="review-frame">
         <img class="review-image" hidden alt="">
-        <video class="review-video" hidden controls autoplay></video>
+        <video class="review-video" hidden autoplay></video>
       </div>
     </div>
     <div id="view-document-review" class="review-views">

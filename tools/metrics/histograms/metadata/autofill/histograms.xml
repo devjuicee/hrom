@@ -171,6 +171,7 @@ chromium-metrics-reviews@google.com.
 </variants>
 
 <variants name="Autofill.ServerCardUnmaskFlowType">
+  <variant name="DeviceUnlock" summary="Device unlock authentication"/>
   <variant name="Fido" summary="FIDO authentication only"/>
   <variant name="Otp" summary="OTP auth only"/>
   <variant name="OtpFallbackFromFido"
@@ -436,13 +437,14 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="Autocomplete.Events" enum="AutocompleteEvents"
+<histogram name="Autocomplete.Events2" enum="AutocompleteEvents"
     expires_after="2024-12-12">
   <owner>battre@chromium.org</owner>
   <owner>chrome-autofill-team@google.com</owner>
   <summary>
     Autocomplete events which are recorded when the user interacts with
-    suggestions served from Autocomplete.
+    suggestions served from Autocomplete. The histogram is recorded when an
+    autocomplete suggestion is shown, selected or deleted.
   </summary>
 </histogram>
 
@@ -2415,7 +2417,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Autofill.Leipzig.Duplication.NumberOfLocalSupersetProfilesOnStartup"
-    units="Profiles" expires_after="2024-03-24">
+    units="Profiles" expires_after="2024-05-26">
   <owner>koerber@google.com</owner>
   <owner>fleimgruber@google.com</owner>
   <owner>chrome-autofill-team@google.com</owner>
@@ -3371,7 +3373,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Autofill.ProfileImport.MigrateProfileDecision"
-    enum="AutofillProfileImportDecision" expires_after="2024-03-24">
+    enum="AutofillProfileImportDecision" expires_after="2024-05-26">
   <owner>koerber@google.com</owner>
   <owner>fleimgruber@google.com</owner>
   <owner>src/components/autofill/OWNERS</owner>
@@ -3539,7 +3541,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Autofill.ProfileImport.UpdateProfileEditedType"
-    enum="AutofillSettingsVisibleTypes" expires_after="2024-03-24">
+    enum="AutofillSettingsVisibleTypes" expires_after="2024-05-26">
   <owner>koerber@google.com</owner>
   <owner>src/components/autofill/OWNERS</owner>
   <summary>
@@ -3820,8 +3822,20 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Autofill.RiskBasedAuth.{CardType}.Attempt"
+    enum="BooleanAttempted" expires_after="2024-07-01">
+  <owner>junhuihe@google.com</owner>
+  <owner>payments-autofill-team@google.com</owner>
+  <summary>
+    Emits true when a risk-based authentication starts, and does not emit any
+    value otherwise. Currently, ServerCard and VirtualCard support risk-based
+    authentication.
+  </summary>
+  <token key="CardType" variants="Autofill.PaymentsRpcCardType"/>
+</histogram>
+
 <histogram name="Autofill.RiskBasedAuth.{CardType}.Result"
-    enum="AutofillRiskBasedAuthEvent" expires_after="2024-11-14">
+    enum="AutofillRiskBasedAuthEvent" expires_after="2024-07-01">
   <owner>junhuihe@google.com</owner>
   <owner>payments-autofill-team@google.com</owner>
   <summary>
@@ -5353,6 +5367,17 @@ chromium-metrics-reviews@google.com.
   <summary>Records the state of an autofill session.</summary>
 </histogram>
 
+<histogram name="Autofill.WebView.AutofillState.NoVirtualStructureProvided"
+    enum="BooleanEnabled" expires_after="2024-12-12">
+  <owner>jihadghanna@google.com</owner>
+  <owner>src/android_webview/OWNERS</owner>
+  <summary>
+    Records whether autofill was enabled or not when no virtual view structure
+    was provided during an autofill session. Emitted at form submission, or when
+    a new AutofillSession starts, or when the AutofillProvider is destroyed.
+  </summary>
+</histogram>
+
 <histogram name="Autofill.WebView.AwGIsCurrentService" enum="BooleanYesNo"
     expires_after="2024-12-12">
   <owner>battre@chromium.org</owner>
@@ -5551,6 +5576,18 @@ chromium-metrics-reviews@google.com.
     AutoillProviderAndroid::OnDidFillAutofillFormData. Recorded right before
     returning early from the function if this happens, and at every function
     call.
+  </summary>
+</histogram>
+
+<histogram name="Autofill.WebView.PrefillRequestState"
+    enum="AndroidAutofillPrefillRequestState" expires_after="2024-10-31">
+  <owner>jkeitel@google.com</owner>
+  <owner>jihadghanna@google.com</owner>
+  <owner>elabadysayed@chromium.org</owner>
+  <summary>
+    Records the state of a prefill request (was a request sent, was it answered,
+    was a bottom sheet shown) for a form that was deemed cacheable. Emitted
+    whenever OnAskForValuesToFill is triggered on a cacheable form.
   </summary>
 </histogram>
 

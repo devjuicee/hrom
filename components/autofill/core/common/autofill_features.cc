@@ -420,21 +420,13 @@ BASE_FEATURE(kAutofillLabelAffixRemoval,
 
 // When enabled, all behaviours related to the on-device machine learning
 // model for field type predictions will be guarded.
+// TODO(crbug.com/1465926): Remove when launched.
 BASE_FEATURE(kAutofillModelPredictions,
              "AutofillModelPredictions",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-// The dictionary will be used for creating a new `AutofillModelVectorizer`
-// for vectorizing the model input. The `AutofillModelExecutor` will use
-// that dictionary path to initialize the vectorizer.
-// TODO(crbug.com/1465926): Remove once model is replaced with bigger model
-// and store dictionary path in the metadata's additional files.
-const base::FeatureParam<std::string> kAutofillModelDictionaryFilePath{
-    &kAutofillModelPredictions, "dictionary_path", "default"};
-
 // When true, use the machine learning model as the active `HeuristicSource`,
 // else use the source provided by `kAutofillParsingPatternActiveSource`.
-// TODO(crbug.com/1465926): Remove when launched.
 const base::FeatureParam<bool> kAutofillModelPredictionsAreActive{
     &kAutofillModelPredictions, "model_active", false};
 
@@ -514,6 +506,15 @@ BASE_FEATURE(kAutofillPopupDoesNotOverlapWithContextMenu,
              "AutofillPopupDoesNotOverlapWithContextMenu",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// If the feature is enabled, then custom cursor exceeding the (24 dips)
+// dimension limit are disallowed in extension-hosted content. This feature is
+// dependent on `kAutofillPopupMultiWindowCursorSuppression` - if the latter is
+// disabled, so is this.
+COMPONENT_EXPORT(AUTOFILL)
+BASE_FEATURE(kAutofillPopupExtensionCursorSuppression,
+             "AutofillPopupExtensionCursorSuppression",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 // If the feature is enabled, custom cursors exceeding the (24 dips) dimension
 // limit are disallowed for all active tabs in all active windows.
 COMPONENT_EXPORT(AUTOFILL)
@@ -538,12 +539,6 @@ BASE_FEATURE(kAutofillProbableFormSubmissionInBrowser,
 // TODO(crbug.com/1300548): Cleanup when launched.
 BASE_FEATURE(kAutofillRemoveInaccessibleProfileValuesOnStartup,
              "AutofillRemoveInaccessibleProfileValuesOnStartup",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-
-// Requires a profile to have non-empty full name to import it from a form.
-// TODO(crbug.com/1413205): Cleanup when launched.
-BASE_FEATURE(kAutofillRequireNameForProfileImport,
-             "AutofillRequireNameForProfileImport",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 // Controls non-default Autofill API predictions. See crbug.com/1331322.

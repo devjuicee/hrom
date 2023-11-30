@@ -32,6 +32,7 @@ BASE_DECLARE_FEATURE(kAndroidNoVisibleHintForTablets);
 BASE_DECLARE_FEATURE(kAndroidVisibleUrlTruncation);
 BASE_DECLARE_FEATURE(kAnimatedImageDragShadow);
 BASE_DECLARE_FEATURE(kAppMenuMobileSiteOption);
+BASE_DECLARE_FEATURE(kArchiveTabService);
 BASE_DECLARE_FEATURE(kAuxiliarySearchDonation);
 BASE_DECLARE_FEATURE(kAvoidSelectedTabFocusOnLayoutDoneShowing);
 BASE_DECLARE_FEATURE(kBackGestureActivityTabProvider);
@@ -43,7 +44,6 @@ BASE_DECLARE_FEATURE(kBlockIntentsWhileLocked);
 BASE_DECLARE_FEATURE(kBoardingPassDetector);
 BASE_DECLARE_FEATURE(kCacheActivityTaskID);
 BASE_DECLARE_FEATURE(kClearOmniboxFocusAfterNavigation);
-BASE_DECLARE_FEATURE(kCloseTabSuggestions);
 BASE_DECLARE_FEATURE(kCloseTabSaveTabList);
 BASE_DECLARE_FEATURE(kCreateNewTabInitializeRenderer);
 BASE_DECLARE_FEATURE(kCriticalPersistedTabData);
@@ -136,6 +136,7 @@ BASE_DECLARE_FEATURE(kOptimizeGeolocationHeaderGeneration);
 BASE_DECLARE_FEATURE(kPageAnnotationsService);
 BASE_DECLARE_FEATURE(kPaintPreviewNewColdStartHeuristic);
 BASE_DECLARE_FEATURE(kPreconnectOnTabCreation);
+BASE_DECLARE_FEATURE(kPriceChangeModule);
 BASE_DECLARE_FEATURE(kPwaRestoreUi);
 BASE_DECLARE_FEATURE(kBookmarksImprovedSaveFlow);
 BASE_DECLARE_FEATURE(kBookmarksRefresh);
@@ -186,7 +187,6 @@ BASE_DECLARE_FEATURE(kTabDragDropAndroid);
 BASE_DECLARE_FEATURE(kTabAndLinkDragDropAndroid);
 BASE_DECLARE_FEATURE(kTabEngagementReportingAndroid);
 BASE_DECLARE_FEATURE(kTabStateFlatBuffer);
-BASE_DECLARE_FEATURE(kTabStripRedesign);
 BASE_DECLARE_FEATURE(kTabletToolbarReordering);
 BASE_DECLARE_FEATURE(kTabStripStartupRefactoring);
 BASE_DECLARE_FEATURE(kTabToGTSAnimation);
@@ -211,6 +211,7 @@ BASE_DECLARE_FEATURE(kUmaBackgroundSessions);
 BASE_DECLARE_FEATURE(kUpdateNotificationScheduleServiceImmediateShowOption);
 BASE_DECLARE_FEATURE(kUseLibunwindstackNativeUnwinderAndroid);
 BASE_DECLARE_FEATURE(kUserMediaScreenCapturing);
+BASE_DECLARE_FEATURE(kVerticalAutomotiveBackButtonToolbar);
 BASE_DECLARE_FEATURE(kVoiceSearchAudioCapturePolicy);
 BASE_DECLARE_FEATURE(kVoiceButtonInTopToolbar);
 BASE_DECLARE_FEATURE(kWebOtpCrossDeviceSimpleString);
@@ -229,6 +230,11 @@ constexpr base::FeatureParam<int> kAuxiliarySearchMaxTabsCountParam(
     &kAuxiliarySearchDonation,
     "auxiliary_search_max_donation_tab",
     100);
+
+constexpr base::FeatureParam<std::string> kBoardingPassDetectorUrlParam(
+    &kBoardingPassDetector,
+    "boarding_pass_detector_urls",
+    "");
 
 }  // namespace android
 }  // namespace chrome

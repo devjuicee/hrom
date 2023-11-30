@@ -6,6 +6,7 @@ package org.chromium.chrome.browser.compositor.overlays.strip;
 
 import android.app.Activity;
 import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -29,6 +30,7 @@ import org.chromium.base.supplier.Supplier;
 import org.chromium.chrome.R;
 import org.chromium.chrome.browser.browser_controls.BrowserControlsStateProvider;
 import org.chromium.chrome.browser.compositor.layouts.LayoutManagerImpl;
+import org.chromium.chrome.browser.dragdrop.ChromeDragAndDropBrowserDelegate;
 import org.chromium.chrome.browser.dragdrop.ChromeDropDataAndroid;
 import org.chromium.chrome.browser.dragdrop.DragDropGlobalState;
 import org.chromium.chrome.browser.multiwindow.MultiInstanceManager;
@@ -119,6 +121,10 @@ public class TabDragSource implements View.OnDragListener {
                         != MultiWindowUtils.INVALID_INSTANCE_ID) {
             return false;
         }
+        if (!MultiWindowUtils.getInstance()
+                .isMoveToOtherWindowSupported(getActivity(), mTabModelSelector)) {
+            return false;
+        }
 
         setGlobalState(tabBeingDragged);
 
@@ -140,7 +146,9 @@ public class TabDragSource implements View.OnDragListener {
         boolean res = false;
         switch (dragEvent.getAction()) {
             case DragEvent.ACTION_DRAG_STARTED:
-                res = onDragStart(dragEvent.getX(), dragEvent.getY());
+                res =
+                        onDragStart(
+                                dragEvent.getX(), dragEvent.getY(), dragEvent.getClipDescription());
                 break;
             case DragEvent.ACTION_DRAG_ENDED:
                 res =
@@ -193,8 +201,11 @@ public class TabDragSource implements View.OnDragListener {
         return yPx <= mTabStripHeightPx;
     }
 
-    private boolean onDragStart(float xPx, float yPx) {
-        // TODO(crbug.com/1497784): Check or supported mime in ClipData before proceeding.
+    private boolean onDragStart(float xPx, float yPx, ClipDescription clipDescription) {
+        if (clipDescription.filterMimeTypes(ChromeDragAndDropBrowserDelegate.CHROME_MIMETYPE_TAB)
+                == null) {
+            return false;
+        }
         if (!isDragSource()) return true;
         mStartScreenPos = new PointF(xPx, yPx);
         mLastXDp = xPx * mPxToDp;
@@ -249,9 +260,12 @@ public class TabDragSource implements View.OnDragListener {
             View view, float xPx, float yPx, boolean dropHandled, boolean didExitToolbar) {
         if (!isDragSource()) return false;
         // If tab was dragged and dropped out of source toolbar but the drop was not handled, move
-        // to a new window. TODO (crbug.com/1497784): Add isTabDragAsWindowEnabled() check below.
+        // to a new window.
         Tab tabBeingDragged = DragDropGlobalState.getInstance().tabBeingDragged;
-        if (didExitToolbar && !dropHandled && tabBeingDragged != null) {
+        if (TabUiFeatureUtilities.isTabDragAsWindowEnabled()
+                && didExitToolbar
+                && !dropHandled
+                && DragDropGlobalState.getInstance().tabBeingDragged != null) {
             // Following call is device specific and is intended for specific platform
             // SysUI.
             sendPositionInfoToSysUI(view, mStartScreenPos.x, mStartScreenPos.y, xPx, yPx);

@@ -8,7 +8,7 @@
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/platform/text/writing_mode.h"
 #include "third_party/blink/renderer/platform/wtf/casting.h"
 
@@ -17,11 +17,11 @@ namespace blink {
 class CORE_EXPORT LogicalBoxFragment final : public LogicalFragment {
  public:
   LogicalBoxFragment(WritingDirectionMode writing_direction,
-                     const NGPhysicalBoxFragment& physical_fragment)
+                     const PhysicalBoxFragment& physical_fragment)
       : LogicalFragment(writing_direction, physical_fragment) {}
 
-  const NGPhysicalBoxFragment& PhysicalBoxFragment() const {
-    return To<NGPhysicalBoxFragment>(physical_fragment_);
+  const PhysicalBoxFragment& GetPhysicalBoxFragment() const {
+    return To<PhysicalBoxFragment>(physical_fragment_);
   }
 
   bool IsWritingModeEqual() const {
@@ -42,7 +42,7 @@ class CORE_EXPORT LogicalBoxFragment final : public LogicalFragment {
     if (!IsWritingModeEqual())
       return absl::nullopt;
 
-    auto baseline = PhysicalBoxFragment().FirstBaseline();
+    auto baseline = GetPhysicalBoxFragment().FirstBaseline();
     if (baseline && physical_fragment_.IsScrollContainer())
       baseline = std::max(LayoutUnit(), std::min(*baseline, BlockSize()));
 
@@ -61,7 +61,7 @@ class CORE_EXPORT LogicalBoxFragment final : public LogicalFragment {
     if (!IsWritingModeEqual())
       return absl::nullopt;
 
-    auto baseline = PhysicalBoxFragment().LastBaseline();
+    auto baseline = GetPhysicalBoxFragment().LastBaseline();
     if (baseline && physical_fragment_.IsScrollContainer())
       baseline = std::max(LayoutUnit(), std::min(*baseline, BlockSize()));
 
@@ -83,14 +83,16 @@ class CORE_EXPORT LogicalBoxFragment final : public LogicalFragment {
   FontHeight BaselineMetrics(const LineBoxStrut& margins, FontBaseline) const;
 
   BoxStrut Borders() const {
-    return PhysicalBoxFragment().Borders().ConvertToLogical(writing_direction_);
+    return GetPhysicalBoxFragment().Borders().ConvertToLogical(
+        writing_direction_);
   }
   BoxStrut Padding() const {
-    return PhysicalBoxFragment().Padding().ConvertToLogical(writing_direction_);
+    return GetPhysicalBoxFragment().Padding().ConvertToLogical(
+        writing_direction_);
   }
 
   bool HasDescendantsForTablePart() const {
-    return PhysicalBoxFragment().HasDescendantsForTablePart();
+    return GetPhysicalBoxFragment().HasDescendantsForTablePart();
   }
 
   LayoutUnit BlockEndScrollableOverflow() const;

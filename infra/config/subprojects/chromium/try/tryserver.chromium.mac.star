@@ -143,6 +143,7 @@ try_.orchestrator_builder(
     experiments = {
         # go/nplus1shardsproposal
         "chromium.add_one_test_shard": 10,
+        "chromium.skip_successful_tests": 50,
     },
     gn_args = gn_args.config(
         configs = [
@@ -293,6 +294,7 @@ try_.orchestrator_builder(
 try_.compilator_builder(
     name = "mac13-arm64-rel-compilator",
     branch_selector = branches.selector.MAC_BRANCHES,
+    cpu = cpu.ARM64,
     # TODO (crbug.com/1245171): Revert when root issue is fixed
     grace_period = 4 * time.minute,
     main_list_view = "try",
@@ -397,6 +399,15 @@ try_.builder(
         "ci/Mac ASan 64 Builder",
         "ci/Mac ASan 64 Tests (1)",
     ],
+    gn_args = gn_args.config(
+        configs = [
+            "asan",
+            "dcheck_always_on",
+            "disable_nacl",
+            "release_builder",
+            "reclient",
+        ],
+    ),
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
 )
 
@@ -410,6 +421,9 @@ try_.builder(
         include_all_triggered_testers = True,
         is_compile_only = True,
     ),
+    experiments = {
+        "chromium.skip_successful_tests": 50,
+    },
     gn_args = gn_args.config(
         configs = [
             "ci/Mac Builder (dbg)",
@@ -482,6 +496,7 @@ try_.builder(
     name = "mac-code-coverage",
     mirrors = ["ci/mac-code-coverage"],
     execution_timeout = 20 * time.hour,
+    gn_args = "ci/mac-code-coverage",
 )
 
 ios_builder(
@@ -489,6 +504,7 @@ ios_builder(
     mirrors = [
         "ci/ios-asan",
     ],
+    gn_args = "ci/ios-asan",
 )
 
 ios_builder(
@@ -515,6 +531,7 @@ ios_builder(
     mirrors = [
         "ci/ios-device",
     ],
+    cpu = cpu.ARM64,
     gn_args = "ci/ios-device",
     reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CQ,
 )
@@ -548,6 +565,7 @@ try_.orchestrator_builder(
     experiments = {
         # go/nplus1shardsproposal
         "chromium.add_one_test_shard": 10,
+        "chromium.skip_successful_tests": 50,
     },
     gn_args = gn_args.config(
         configs = [
@@ -709,6 +727,12 @@ ios_builder(
     mirrors = ["ci/ios-simulator-code-coverage"],
     builderless = True,
     execution_timeout = 20 * time.hour,
+    gn_args = gn_args.config(
+        configs = [
+            "ci/ios-simulator-code-coverage",
+            "ios_simulator",
+        ],
+    ),
 )
 
 try_.gpu.optional_tests_builder(
@@ -733,6 +757,7 @@ try_.gpu.optional_tests_builder(
         ),
         build_gs_bucket = "chromium-gpu-fyi-archive",
     ),
+    cpu = cpu.ARM64,
     ssd = None,
     main_list_view = "try",
     tryjob = try_.job(

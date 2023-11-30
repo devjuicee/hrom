@@ -230,6 +230,14 @@ export class TabOrganizationPageElement extends PolymerElement {
   private onTipClick_() {
     this.apiProxy_.startTabGroupTutorial();
   }
+
+  private onLearnMoreClick_() {
+    this.apiProxy_.openHelpPage();
+  }
+
+  private showFeedback_() {
+    this.apiProxy_.triggerFeedback(this.sessionId_);
+  }
 }
 
 declare global {

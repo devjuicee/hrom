@@ -14,16 +14,14 @@
 namespace blink {
 
 class BlockNode;
-class NGBlockBreakToken;
+class BlockBreakToken;
 
 class CORE_EXPORT TableRowLayoutAlgorithm
-    : public LayoutAlgorithm<BlockNode,
-                             NGBoxFragmentBuilder,
-                             NGBlockBreakToken> {
+    : public LayoutAlgorithm<BlockNode, BoxFragmentBuilder, BlockBreakToken> {
  public:
   explicit TableRowLayoutAlgorithm(const LayoutAlgorithmParams& params);
 
-  const NGLayoutResult* Layout() override;
+  const LayoutResult* Layout() override;
 
   MinMaxSizesResult ComputeMinMaxSizes(const MinMaxSizesFloatInput&) override {
     // Table layout doesn't compute min/max sizes on table rows.

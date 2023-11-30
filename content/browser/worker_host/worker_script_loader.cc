@@ -93,7 +93,7 @@ void WorkerScriptLoader::Start() {
         base::BindOnce(
             [](base::WeakPtr<WorkerScriptLoader> self,
                bool /*reset_subresource_loader_params*/,
-               const net::LoadTimingInfo&) {
+               const ResponseHeadUpdateParams&) {
               if (self) {
                 self->LoadFromNetwork();
               }
@@ -274,42 +274,6 @@ void WorkerScriptLoader::OnComplete(
 }
 
 // URLLoaderClient end ---------------------------------------------------------
-
-bool WorkerScriptLoader::MaybeCreateLoaderForResponse(
-    const network::URLLoaderCompletionStatus& status,
-    network::mojom::URLResponseHeadPtr* response_head,
-    mojo::ScopedDataPipeConsumerHandle* response_body,
-    mojo::PendingRemote<network::mojom::URLLoader>* response_url_loader,
-    mojo::PendingReceiver<network::mojom::URLLoaderClient>*
-        response_client_receiver,
-    blink::ThrottlingURLLoader* url_loader) {
-  DCHECK_CURRENTLY_ON(BrowserThread::UI);
-
-  // TODO(crbug/898755): This is odd that NavigationLoaderInterceptor::
-  // MaybeCreateLoader() is called directly from WorkerScriptLoader. But
-  // NavigationLoaderInterceptor::MaybeCreateLoaderForResponse() is called from
-  // WorkerScriptFetcher::OnReceiveResponse(). This is due to the wired design
-  // of WorkerScriptLoader and WorkerScriptFetcher and the interceptors. The
-  // interceptors should be owned by WorkerScriptFetcher.
-  DCHECK(default_loader_used_);
-  if (interceptor_) {
-    bool skip_other_interceptors = false;
-    bool will_return_unsafe_redirect = false;
-    if (interceptor_->MaybeCreateLoaderForResponse(
-            status, resource_request_, response_head, response_body,
-            response_url_loader, response_client_receiver, url_loader,
-            &skip_other_interceptors, &will_return_unsafe_redirect)) {
-      // ServiceWorkerMainResourceLoaderInterceptor doesn't set
-      // skip_other_interceptors or will_return_unsafe_redirect.
-      DCHECK(!skip_other_interceptors);
-      DCHECK(!will_return_unsafe_redirect);
-      subresource_loader_params_ =
-          interceptor_->MaybeCreateSubresourceLoaderParams();
-      return true;
-    }
-  }
-  return false;
-}
 
 void WorkerScriptLoader::CommitCompleted(
     const network::URLLoaderCompletionStatus& status) {

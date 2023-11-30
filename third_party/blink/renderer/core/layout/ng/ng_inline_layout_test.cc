@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 #include "third_party/blink/renderer/core/exported/web_view_impl.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_node.h"
 #include "third_party/blink/renderer/core/layout/layout_block_flow.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_layout_algorithm.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
 #include "third_party/blink/renderer/core/testing/sim/sim_compositor.h"
 #include "third_party/blink/renderer/core/testing/sim/sim_request.h"
@@ -18,7 +18,7 @@
 
 namespace blink {
 
-class NGInlineLayoutTest : public SimTest {
+class InlineLayoutTest : public SimTest {
  public:
   ConstraintSpace ConstraintSpaceForElement(LayoutBlockFlow* block_flow) {
     ConstraintSpaceBuilder builder(block_flow->Style()->GetWritingMode(),
@@ -31,7 +31,7 @@ class NGInlineLayoutTest : public SimTest {
   }
 };
 
-TEST_F(NGInlineLayoutTest, BlockWithSingleTextNode) {
+TEST_F(InlineLayoutTest, BlockWithSingleTextNode) {
   SimRequest main_resource("https://example.com/", "text/html");
   LoadURL("https://example.com/");
   main_resource.Complete(
@@ -47,7 +47,7 @@ TEST_F(NGInlineLayoutTest, BlockWithSingleTextNode) {
 
   FragmentGeometry fragment_geometry = CalculateInitialFragmentGeometry(
       constraint_space, node, /* break_token */ nullptr);
-  const NGLayoutResult* result =
+  const LayoutResult* result =
       BlockLayoutAlgorithm({node, fragment_geometry, constraint_space})
           .Layout();
   EXPECT_TRUE(result);
@@ -58,7 +58,7 @@ TEST_F(NGInlineLayoutTest, BlockWithSingleTextNode) {
             StringView(first_child.ItemsData(false).text_content, 0, 12));
 }
 
-TEST_F(NGInlineLayoutTest, BlockWithTextAndAtomicInline) {
+TEST_F(InlineLayoutTest, BlockWithTextAndAtomicInline) {
   SimRequest main_resource("https://example.com/", "text/html");
   LoadURL("https://example.com/");
   main_resource.Complete("<div id=\"target\">Hello <img>.</div>");
@@ -74,7 +74,7 @@ TEST_F(NGInlineLayoutTest, BlockWithTextAndAtomicInline) {
   FragmentGeometry fragment_geometry =
       CalculateInitialFragmentGeometry(constraint_space, node,
                                        /* break_token */ nullptr);
-  const NGLayoutResult* result =
+  const LayoutResult* result =
       BlockLayoutAlgorithm({node, fragment_geometry, constraint_space})
           .Layout();
   EXPECT_TRUE(result);

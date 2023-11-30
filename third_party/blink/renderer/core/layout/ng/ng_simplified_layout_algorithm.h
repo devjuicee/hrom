@@ -14,8 +14,8 @@
 
 namespace blink {
 
-class NGBlockBreakToken;
-class NGPhysicalFragment;
+class BlockBreakToken;
+class PhysicalFragment;
 struct PhysicalFragmentLink;
 
 // The "simplified" layout algorithm will run in the following circumstances:
@@ -28,8 +28,8 @@ struct PhysicalFragmentLink;
 //
 // This algorithm effectively performs a (convoluted) "copy" of the previous
 // layout result. It will:
-//  1. Copy data from the previous |NGLayoutResult| into the
-//     |NGBoxFragmentBuilder|, (e.g. flags, end margin strut, etc).
+//  1. Copy data from the previous |LayoutResult| into the
+//     |BoxFragmentBuilder|, (e.g. flags, end margin strut, etc).
 //  2. Iterate through all the children and:
 //    a. If OOF-positioned determine the static-position and add it as an
 //       OOF-positioned candidate.
@@ -37,42 +37,40 @@ struct PhysicalFragmentLink;
 //       "simplified" layout on its children).
 //  3. Run the |OutOfFlowLayoutPart|.
 class CORE_EXPORT SimplifiedLayoutAlgorithm
-    : public LayoutAlgorithm<BlockNode,
-                             NGBoxFragmentBuilder,
-                             NGBlockBreakToken> {
+    : public LayoutAlgorithm<BlockNode, BoxFragmentBuilder, BlockBreakToken> {
  public:
   SimplifiedLayoutAlgorithm(const LayoutAlgorithmParams&,
-                            const NGLayoutResult&,
+                            const LayoutResult&,
                             bool keep_old_size = false);
 
   // Perform a simple copy of all children of the old fragment.
   void CloneOldChildren();
 
-  void AppendNewChildFragment(const NGPhysicalFragment&, LogicalOffset);
+  void AppendNewChildFragment(const PhysicalFragment&, LogicalOffset);
 
   // Just create a new layout result based on the current builder state. To be
   // used after CloneOldChildren() / AppendNewChildFragment().
-  const NGLayoutResult* CreateResultAfterManualChildLayout();
+  const LayoutResult* CreateResultAfterManualChildLayout();
 
   // Attempt to perform simplified layout on all children and return a new
   // result. If nullptr is returned, it means that simplified layout isn't
   // possible.
-  const NGLayoutResult* Layout() override;
+  const LayoutResult* Layout() override;
 
   MinMaxSizesResult ComputeMinMaxSizes(const MinMaxSizesFloatInput&) override {
     NOTREACHED();
     return MinMaxSizesResult();
   }
 
-  NOINLINE const NGLayoutResult* LayoutWithItemsBuilder();
+  NOINLINE const LayoutResult* LayoutWithItemsBuilder();
 
  private:
   void AddChildFragment(const PhysicalFragmentLink& old_fragment,
-                        const NGPhysicalFragment& new_fragment,
+                        const PhysicalFragment& new_fragment,
                         const MarginStrut* margin_strut = nullptr,
                         bool is_self_collapsing = false);
 
-  const NGLayoutResult& previous_result_;
+  const LayoutResult& previous_result_;
   BoxStrut border_scrollbar_padding_;
 
   const WritingDirectionMode writing_direction_;

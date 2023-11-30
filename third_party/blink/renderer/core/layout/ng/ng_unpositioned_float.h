@@ -7,12 +7,12 @@
 
 #include "base/memory/scoped_refptr.h"
 #include "third_party/blink/renderer/core/core_export.h"
+#include "third_party/blink/renderer/core/layout/block_node.h"
 #include "third_party/blink/renderer/core/layout/geometry/bfc_offset.h"
 #include "third_party/blink/renderer/core/layout/geometry/box_strut.h"
 #include "third_party/blink/renderer/core/layout/geometry/logical_size.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/core/style/computed_style_constants.h"
 
@@ -27,7 +27,7 @@ struct CORE_EXPORT UnpositionedFloat final {
 
  public:
   UnpositionedFloat(BlockNode node,
-                    const NGBlockBreakToken* token,
+                    const BlockBreakToken* token,
                     const LogicalSize available_size,
                     const LogicalSize percentage_size,
                     const LogicalSize replaced_percentage_size,
@@ -44,7 +44,7 @@ struct CORE_EXPORT UnpositionedFloat final {
         parent_style(parent_style) {}
 
   BlockNode node;
-  const NGBlockBreakToken* token = nullptr;
+  const BlockBreakToken* token = nullptr;
 
   const LogicalSize available_size;
   const LogicalSize percentage_size;
@@ -55,7 +55,7 @@ struct CORE_EXPORT UnpositionedFloat final {
 
   // layout_result and margins are used as a cache when measuring the
   // inline_size of a float in an inline context.
-  const NGLayoutResult* layout_result = nullptr;
+  const LayoutResult* layout_result = nullptr;
   BoxStrut margins;
 
   bool IsLineLeft(TextDirection cb_direction) const {

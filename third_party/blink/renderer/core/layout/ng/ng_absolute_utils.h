@@ -10,15 +10,15 @@
 #include "third_party/blink/renderer/core/layout/geometry/logical_size.h"
 #include "third_party/blink/renderer/core/layout/geometry/physical_size.h"
 #include "third_party/blink/renderer/core/layout/min_max_sizes.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/platform/geometry/layout_unit.h"
 
 namespace blink {
 
 class BlockNode;
+class BoxFragmentBuilder;
 class ConstraintSpace;
-class NGBoxFragmentBuilder;
-class NGLayoutResult;
+class LayoutResult;
 struct LogicalStaticPosition;
 
 struct CORE_EXPORT LogicalOofDimensions {
@@ -50,8 +50,9 @@ struct CORE_EXPORT LogicalOofInsets {
 CORE_EXPORT LogicalOofInsets
 ComputeOutOfFlowInsets(const ComputedStyle& style,
                        const LogicalSize& available_size,
+                       const WritingDirectionMode& container_writing_direction,
                        const WritingDirectionMode& self_writing_direction,
-                       NGAnchorEvaluatorImpl* anchor_evaluator);
+                       AnchorEvaluatorImpl* anchor_evaluator);
 
 struct CORE_EXPORT InsetModifiedContainingBlock {
   // The original containing block size that the insets refer to.
@@ -129,12 +130,12 @@ CORE_EXPORT bool ComputeOofInlineDimensions(
     const BoxStrut& border_padding,
     const absl::optional<LogicalSize>& replaced_size,
     const WritingDirectionMode container_writing_direction,
-    const Length::AnchorEvaluator* anchor_evaluator,
+    const AnchorEvaluatorImpl* anchor_evaluator,
     LogicalOofDimensions* dimensions);
 
 // If layout was performed to determine the position, this will be returned
 // otherwise it will return nullptr.
-CORE_EXPORT const NGLayoutResult* ComputeOofBlockDimensions(
+CORE_EXPORT const LayoutResult* ComputeOofBlockDimensions(
     const BlockNode&,
     const ComputedStyle& style,
     const ConstraintSpace&,
@@ -142,12 +143,12 @@ CORE_EXPORT const NGLayoutResult* ComputeOofBlockDimensions(
     const BoxStrut& border_padding,
     const absl::optional<LogicalSize>& replaced_size,
     const WritingDirectionMode container_writing_direction,
-    const Length::AnchorEvaluator* anchor_evaluator,
+    const AnchorEvaluatorImpl* anchor_evaluator,
     LogicalOofDimensions* dimensions);
 
 CORE_EXPORT void AdjustOffsetForSplitInline(
     const BlockNode& node,
-    const NGBoxFragmentBuilder* container_builder,
+    const BoxFragmentBuilder* container_builder,
     LogicalOffset& offset);
 
 }  // namespace blink

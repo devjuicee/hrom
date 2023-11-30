@@ -356,8 +356,7 @@ public class AwAutofillTest extends AwParameterizedTest {
 
     private static boolean sIsAwGCurrentAutofillService;
 
-    @Rule
-    public AwActivityTestRule mRule;
+    @Rule public AwActivityTestRule mRule;
 
     private TestWebServer mWebServer;
     private EmbeddedTestServer mEmbeddedServer;
@@ -406,7 +405,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                         });
         mContentsClient = new AwAutofillTestClient();
         TestThreadUtils.runOnUiThreadBlocking(
-                () -> AutofillProviderTestHelper.disableDownloadServerForTesting());
+                () -> AutofillProviderTestHelper.disableCrowdsourcingForTesting());
         mTestContainerView =
                 mRule.createAwTestContainerViewOnMainSync(
                         mContentsClient, false, new TestDependencyFactory());
@@ -845,7 +844,7 @@ public class AwAutofillTest extends AwParameterizedTest {
     @Feature({"AndroidWebView"})
     public void testCommit() throws Throwable {
         final String data =
-                    """
+                """
                         <html>
                         <head></head>
                         <body>
@@ -1675,7 +1674,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.FORM_SUBMISSION)
                                     .expectIntRecord(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY,
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY,
                                             AutofillProviderUMA.AWG_HAS_SUGGESTION_AUTOFILLED)
                                     .build();
                         });
@@ -1707,7 +1706,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.UMA_AUTOFILL_SUBMISSION_SOURCE)
                                     .expectNoRecords(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY)
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY)
                                     .build();
                         });
         mUMATestHelper.triggerAutofill();
@@ -1739,7 +1738,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.UMA_AUTOFILL_SUBMISSION_SOURCE)
                                     .expectNoRecords(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY)
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY)
                                     .build();
                         });
         mUMATestHelper.triggerAutofill();
@@ -1775,7 +1774,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.UMA_AUTOFILL_SUBMISSION_SOURCE)
                                     .expectNoRecords(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY)
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY)
                                     .build();
                         });
         mUMATestHelper.triggerAutofill();
@@ -1806,7 +1805,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.FORM_SUBMISSION)
                                     .expectIntRecord(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY,
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY,
                                             AutofillProviderUMA.AWG_HAS_SUGGESTION_NO_AUTOFILL)
                                     .build();
                         });
@@ -1837,7 +1836,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.UMA_AUTOFILL_SUBMISSION_SOURCE)
                                     .expectNoRecords(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY)
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY)
                                     .expectBooleanRecord(
                                             AutofillProviderUMA
                                                     .UMA_AUTOFILL_USER_CHANGED_AUTOFILLED_FIELD,
@@ -1871,7 +1870,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.FORM_SUBMISSION)
                                     .expectIntRecord(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY,
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY,
                                             AutofillProviderUMA.AWG_NO_SUGGESTION)
                                     .expectBooleanRecord(
                                             AutofillProviderUMA
@@ -1906,7 +1905,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.FORM_SUBMISSION)
                                     .expectIntRecord(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY,
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY,
                                             AutofillProviderUMA.AWG_HAS_SUGGESTION_AUTOFILLED)
                                     .expectNoRecords(
                                             AutofillProviderUMA
@@ -1940,7 +1939,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.UMA_AUTOFILL_SUBMISSION_SOURCE)
                                     .expectNoRecords(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY)
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY)
                                     .expectNoRecords(
                                             AutofillProviderUMA
                                                     .UMA_AUTOFILL_USER_CHANGED_AUTOFILLED_FIELD)
@@ -1973,7 +1972,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.UMA_AUTOFILL_SUBMISSION_SOURCE)
                                     .expectNoRecords(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY)
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY)
                                     .expectNoRecords(
                                             AutofillProviderUMA
                                                     .UMA_AUTOFILL_USER_CHANGED_AUTOFILLED_FIELD)
@@ -2006,7 +2005,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.FORM_SUBMISSION)
                                     .expectIntRecord(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY,
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY,
                                             AutofillProviderUMA.AWG_HAS_SUGGESTION_NO_AUTOFILL)
                                     .expectNoRecords(
                                             AutofillProviderUMA
@@ -2039,7 +2038,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.UMA_AUTOFILL_SUBMISSION_SOURCE)
                                     .expectNoRecords(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY)
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY)
                                     .expectNoRecords(
                                             AutofillProviderUMA
                                                     .UMA_AUTOFILL_USER_CHANGED_AUTOFILLED_FIELD)
@@ -2071,7 +2070,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                                             AutofillProviderUMA.FORM_SUBMISSION)
                                     .expectIntRecord(
                                             AutofillProviderUMA
-                                                    .UMA_AUTOFILL_AWG_SUGGSTION_AVAILABILITY,
+                                                    .UMA_AUTOFILL_AWG_SUGGESTION_AVAILABILITY,
                                             AutofillProviderUMA.AWG_NO_SUGGESTION)
                                     .expectNoRecords(
                                             AutofillProviderUMA
@@ -2097,7 +2096,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                             return HistogramWatcher.newBuilder()
                                     .expectIntRecord(
                                             AutofillProviderUMA.UMA_AUTOFILL_AUTOFILL_SESSION,
-                                            AutofillProviderUMA.NO_CALLBACK_FORM_FRAMEWORK)
+                                            AutofillProviderUMA.NO_STRUCTURE_PROVIDED)
                                     .expectNoRecords(
                                             AutofillProviderUMA.UMA_AUTOFILL_SUBMISSION_SOURCE)
                                     .build();

@@ -5,31 +5,31 @@
 #include "third_party/blink/renderer/core/layout/ng/ng_simplified_oof_layout_algorithm.h"
 
 #include "third_party/blink/renderer/core/layout/geometry/writing_mode_converter.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_relative_utils.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 
 namespace blink {
 
 SimplifiedOofLayoutAlgorithm::SimplifiedOofLayoutAlgorithm(
     const LayoutAlgorithmParams& params,
-    const NGPhysicalBoxFragment& previous_fragment,
+    const PhysicalBoxFragment& previous_fragment,
     bool is_new_fragment)
     : LayoutAlgorithm(params),
       writing_direction_(Style().GetWritingDirection()) {
   DCHECK(previous_fragment.IsFragmentainerBox());
   DCHECK(params.space.HasKnownFragmentainerBlockSize());
 
-  container_builder_.SetBoxType(previous_fragment.BoxType());
+  container_builder_.SetBoxType(previous_fragment.GetBoxType());
   container_builder_.SetPageNameIfNeeded(previous_fragment.PageName());
   container_builder_.SetFragmentBlockSize(
       params.space.FragmentainerBlockSize());
   container_builder_.SetDisableOOFDescendantsPropagation();
   container_builder_.SetHasOutOfFlowFragmentChild(true);
 
-  const NGBlockBreakToken* old_fragment_break_token =
+  const BlockBreakToken* old_fragment_break_token =
       previous_fragment.GetBreakToken();
   if (old_fragment_break_token) {
     container_builder_.SetHasColumnSpanner(
@@ -75,14 +75,14 @@ SimplifiedOofLayoutAlgorithm::SimplifiedOofLayoutAlgorithm(
       previous_fragment.MayHaveDescendantAboveBlockStart());
 }
 
-const NGLayoutResult* SimplifiedOofLayoutAlgorithm::Layout() {
+const LayoutResult* SimplifiedOofLayoutAlgorithm::Layout() {
   FinishFragmentationForFragmentainer(GetConstraintSpace(),
                                       &container_builder_);
   return container_builder_.ToBoxFragment();
 }
 
 void SimplifiedOofLayoutAlgorithm::AppendOutOfFlowResult(
-    const NGLayoutResult* result) {
+    const LayoutResult* result) {
   container_builder_.AddResult(*result, result->OutOfFlowPositionedOffset());
 }
 

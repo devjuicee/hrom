@@ -19,16 +19,13 @@
 #include "net/base/load_timing_info.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/url_request.h"
+#include "services/metrics/public/cpp/ukm_source_id.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/cpp/single_request_url_loader_factory.h"
 #include "services/network/public/cpp/url_loader_completion_status.h"
 #include "services/network/public/mojom/url_loader.mojom.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
-
-namespace blink {
-class ThrottlingURLLoader;
-}  // namespace blink
 
 namespace net {
 class IsolationInfo;
@@ -111,17 +108,6 @@ class WorkerScriptLoader : public network::mojom::URLLoader,
                         OnUploadProgressCallback ack_callback) override;
   void OnTransferSizeUpdated(int32_t transfer_size_diff) override;
   void OnComplete(const network::URLLoaderCompletionStatus& status) override;
-
-  // Returns a URLLoader client endpoint if an interceptor wants to handle the
-  // response, i.e. return a different response.  For example, service workers.
-  bool MaybeCreateLoaderForResponse(
-      const network::URLLoaderCompletionStatus& status,
-      network::mojom::URLResponseHeadPtr* response_head,
-      mojo::ScopedDataPipeConsumerHandle* response_body,
-      mojo::PendingRemote<network::mojom::URLLoader>* response_url_loader,
-      mojo::PendingReceiver<network::mojom::URLLoaderClient>*
-          response_client_receiver,
-      blink::ThrottlingURLLoader* url_loader);
 
   absl::optional<SubresourceLoaderParams> TakeSubresourceLoaderParams() {
     return std::move(subresource_loader_params_);

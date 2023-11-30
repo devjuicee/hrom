@@ -294,6 +294,7 @@
 <translation id="2224075387478458881">Записването на екрана не е разрешено, когато се вижда защитено съдържание</translation>
 <translation id="2227179592712503583">Премахване на предложението</translation>
 <translation id="2248634276911611268">Отваряне на връзката в нов раздел и превключване към него</translation>
+<translation id="2253808149208613283">Инсталирайте приложението, за да персонализирате това устройство</translation>
 <translation id="225680501294068881">Сканира се за устройства...</translation>
 <translation id="2257486738914982088">Нещо се обърка при изтеглянето на <ph name="FILENAME" /></translation>
 <translation id="2258734398699965611">Предложени файлове</translation>
@@ -1442,6 +1443,7 @@
 <translation id="6827049576281411231">Затваряне на панела за събития</translation>
 <translation id="6831561626108366035">Бутон за преминаване към <ph name="DESK_NAME" /> (<ph name="ACTIVE_STATE" />).</translation>
 <translation id="6836499262298959512">Опасен файл</translation>
+<translation id="6837621009301897464">За да направите екранна снимка, натиснете</translation>
 <translation id="6852052252232534364">Кликнете за активиране</translation>
 <translation id="6855029042976311970">Редактирано току-що</translation>
 <translation id="6856708615407876657">Превключване на категориите на резултатите от търсенето</translation>

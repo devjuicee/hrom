@@ -130,6 +130,23 @@ bool ShouldSplitCardNameAndLastFourDigits() {
 #endif
 }
 
+// In addition to just getting the values out of the profile, this function
+// handles type-specific formatting.
+std::u16string GetProfileSuggestionMainText(
+    const AutofillProfile& profile,
+    const std::string& app_locale,
+    ServerFieldType trigger_field_type) {
+  if (trigger_field_type == ADDRESS_HOME_STREET_ADDRESS) {
+    std::string street_address_line;
+    ::i18n::addressinput::GetStreetAddressLinesAsSingleLine(
+        *i18n::CreateAddressDataFromAutofillProfile(profile, app_locale),
+        &street_address_line);
+    return base::UTF8ToUTF16(street_address_line);
+  }
+
+  return profile.GetInfo(trigger_field_type, app_locale);
+}
+
 Suggestion GetEditAddressProfileSuggestion(Suggestion::BackendId backend_id) {
   Suggestion suggestion(l10n_util::GetStringUTF16(
       IDS_AUTOFILL_EDIT_ADDRESS_PROFILE_POPUP_OPTION_SELECTED));
@@ -203,19 +220,16 @@ bool AddFieldByFieldSuggestions(const std::vector<ServerFieldType>& field_types,
                                 std::vector<Suggestion>& suggestions) {
   bool any_suggestion_added = false;
   for (auto field_type : field_types) {
+    // Field-by-field suggestions are never generated for
+    // `ADDRESS_HOME_STREET_ADDRESS` field type.
+    CHECK(field_type != ADDRESS_HOME_STREET_ADDRESS);
     std::u16string main_text;
     if (field_type == PHONE_HOME_WHOLE_NUMBER) {
       main_text = GetFormattedPhoneNumberForGranularFillingSuggestion(
           profile, app_locale,
           /*should_use_national_format=*/false);
     } else {
-      // This is not how suggestion main text is built in general.
-      // (See `AutofillSuggestionGenerator::GetProfileSuggestionMainText()`)
-      // However, since the only special case is ADDRESS_HOME_STREET_ADDRESS
-      // we can safely replace the function call by the line below, since field
-      // by field suggestions are not generated for that type.
-      CHECK(field_type != ADDRESS_HOME_STREET_ADDRESS);
-      main_text = profile.GetInfo(field_type, app_locale);
+      main_text = GetProfileSuggestionMainText(profile, app_locale, field_type);
     }
     if (!main_text.empty()) {
       suggestions.emplace_back(main_text, PopupItemId::kFieldByFieldFilling);
@@ -422,6 +436,84 @@ void AddFooterChildSuggestions(
       GetDeleteAddressProfileSuggestion(Suggestion::Guid(profile.guid())));
 }
 
+// Adds nested entry to the `suggestion` for filling credit card cardholder name
+// if the `credit_card` has the corresponding info is set.
+bool AddCreditCardNameChildSuggestion(const CreditCard& credit_card,
+                                      const std::string& app_locale,
+                                      Suggestion& suggestion) {
+  if (!credit_card.HasInfo(CREDIT_CARD_NAME_FULL)) {
+    return false;
+  }
+  Suggestion cc_name(credit_card.GetInfo(CREDIT_CARD_NAME_FULL, app_locale),
+                     PopupItemId::kFieldByFieldFilling);
+  // TODO(crbug.com/1121806): Use instrument ID for server credit cards.
+  cc_name.payload = Suggestion::Guid(credit_card.guid());
+  cc_name.field_by_field_filling_type_used = CREDIT_CARD_NAME_FULL;
+  suggestion.children.push_back(std::move(cc_name));
+  return true;
+}
+
+// Adds nested entry to the `suggestion` for filling credit card number if the
+// `credit_card` has the corresponding info is set.
+bool AddCreditCardNumberChildSuggestion(const CreditCard& credit_card,
+                                        const std::string& app_locale,
+                                        Suggestion& suggestion) {
+  if (!credit_card.HasInfo(CREDIT_CARD_NUMBER)) {
+    return false;
+  }
+  static constexpr int kFieldByFieldObfuscationLength = 12;
+  Suggestion cc_number(credit_card.ObfuscatedNumberWithVisibleLastFourDigits(
+                           kFieldByFieldObfuscationLength),
+                       PopupItemId::kFieldByFieldFilling);
+  // TODO(crbug.com/1121806): Use instrument ID for server credit cards.
+  cc_number.payload = Suggestion::Guid(credit_card.guid());
+  cc_number.field_by_field_filling_type_used = CREDIT_CARD_NUMBER;
+  cc_number.labels.push_back({Suggestion::Text(l10n_util::GetStringUTF16(
+      IDS_AUTOFILL_PAYMENTS_MANUAL_FALLBACK_AUTOFILL_POPUP_CC_NUMBER_SUGGESTION_LABEL))});
+  suggestion.children.push_back(std::move(cc_number));
+  return true;
+}
+
+// Adds nested entry to the `suggestion` for filling credit card number expiry
+// date. The added entry has 2 nested entries for filling credit card expiry
+// year and month.
+void AddCreditCardExpiryDateChildSuggestion(const CreditCard& credit_card,
+                                            const std::string& app_locale,
+                                            Suggestion& suggestion) {
+  Suggestion cc_expiration(
+      credit_card.GetInfo(CREDIT_CARD_EXP_DATE_2_DIGIT_YEAR, app_locale),
+      PopupItemId::kFieldByFieldFilling);
+  // TODO(crbug.com/1121806): Use instrument ID for server credit cards.
+  cc_expiration.payload = Suggestion::Guid(credit_card.guid());
+  cc_expiration.field_by_field_filling_type_used =
+      CREDIT_CARD_EXP_DATE_2_DIGIT_YEAR;
+  cc_expiration.labels.push_back({Suggestion::Text(l10n_util::GetStringUTF16(
+      IDS_AUTOFILL_PAYMENTS_MANUAL_FALLBACK_AUTOFILL_POPUP_CC_EXPIRY_DATE_SUGGESTION_LABEL))});
+
+  Suggestion cc_expiration_year(
+      credit_card.GetInfo(CREDIT_CARD_EXP_2_DIGIT_YEAR, app_locale),
+      PopupItemId::kFieldByFieldFilling);
+  // TODO(crbug.com/1121806): Use instrument ID for server credit cards.
+  cc_expiration_year.payload = Suggestion::Guid(credit_card.guid());
+  cc_expiration_year.field_by_field_filling_type_used =
+      CREDIT_CARD_EXP_2_DIGIT_YEAR;
+  cc_expiration_year.labels.push_back({Suggestion::Text(l10n_util::GetStringUTF16(
+      IDS_AUTOFILL_PAYMENTS_MANUAL_FALLBACK_AUTOFILL_POPUP_CC_EXPIRY_YEAR_SUGGESTION_LABEL))});
+
+  Suggestion cc_expiration_month(
+      credit_card.GetInfo(CREDIT_CARD_EXP_MONTH, app_locale),
+      PopupItemId::kFieldByFieldFilling);
+  // TODO(crbug.com/1121806): Use instrument ID for server credit cards.
+  cc_expiration_month.payload = Suggestion::Guid(credit_card.guid());
+  cc_expiration_month.field_by_field_filling_type_used = CREDIT_CARD_EXP_MONTH;
+  cc_expiration_month.labels.push_back({Suggestion::Text(l10n_util::GetStringUTF16(
+      IDS_AUTOFILL_PAYMENTS_MANUAL_FALLBACK_AUTOFILL_POPUP_CC_EXPIRY_MONTH_SUGGESTION_LABEL))});
+
+  cc_expiration.children.push_back(std::move(cc_expiration_year));
+  cc_expiration.children.push_back(std::move(cc_expiration_month));
+  suggestion.children.push_back(std::move(cc_expiration));
+}
+
 // Sets the `popup_item_id` for `suggestion` depending on
 // `last_filling_granularity`.
 // `last_targeted_fields` specified the last set of fields target by the user.
@@ -469,24 +561,50 @@ PopupItemId GetProfileSuggestionPopupItemId(
   }
 }
 
-// Creates a specific granular filling label when the `last_filling_granularity`
-// for a certain form was group filling. This is done to give users feedback
-// about the filling behaviour.
-std::optional<Suggestion::Text> GetGranularFillingLabel(
+// Returns the number of occurrences of a certain `Suggestion::main_text` and
+// its granular filling label. Used to decide whether or not a differentiating
+// label should be added. If the concatenation of `Suggestion::main_text` and
+// its respective granular filling label is unique, there is no need for a
+// differentiating label.
+std::map<std::u16string, size_t>
+GetNumberOfSuggestionMainTextAndGranularFillingLabelOcurrences(
+    base::span<const Suggestion> suggestions,
+    base::span<const std::u16string> suggestions_granular_filling_labels) {
+  CHECK_EQ(suggestions_granular_filling_labels.size(), suggestions.size());
+  // Count the occurrences of the concatenation between `Suggestion::main_text`
+  // and its granular filling label.
+  std::map<std::u16string, size_t> main_text_and_granular_filling_label_count;
+  for (size_t i = 0; i < suggestions.size(); ++i) {
+    ++main_text_and_granular_filling_label_count
+        [suggestions[i].main_text.value +
+         suggestions_granular_filling_labels[i]];
+  }
+  return main_text_and_granular_filling_label_count;
+}
+
+// Creates a specific granular filling label  when the
+// `last_filling_granularity` for a certain form was group filling. This is done
+// to give users feedback about the filling behaviour. Returns an empty string
+// when no granular filling label needs to be applied.
+std::u16string GetGranularFillingLabel(
     absl::optional<ServerFieldTypeSet> optional_last_targeted_fields,
-    FieldTypeGroup triggering_field_type_group) {
+    ServerFieldType triggering_field_type) {
   if (!optional_last_targeted_fields ||
       !AreFieldsGranularFillingGroup(*optional_last_targeted_fields)) {
-    return absl::nullopt;
+    return std::u16string();
   }
-  switch (triggering_field_type_group) {
+  // TODO(crbug.com/1459990): Depending on the `optional_last_targeted_fields`
+  // and the `triggering_field_type`, add specific profile information. Such as
+  // ADDRESS_HOME_LINE1 when group filling and the `triggering_field_type` is
+  // not `ADDRESS_HOME_LINE1` nor `ADDRESS_HOME_LINE2`.
+  switch (GroupTypeOfServerFieldType(triggering_field_type)) {
     case FieldTypeGroup::kName:
-      return Suggestion::Text(l10n_util::GetStringUTF16(
-          IDS_AUTOFILL_FILL_NAME_GROUP_POPUP_OPTION_SELECTED));
+      return l10n_util::GetStringUTF16(
+          IDS_AUTOFILL_FILL_NAME_GROUP_POPUP_OPTION_SELECTED);
     case FieldTypeGroup::kCompany:
     case FieldTypeGroup::kAddress:
-      return Suggestion::Text(l10n_util::GetStringUTF16(
-          IDS_AUTOFILL_FILL_ADDRESS_GROUP_POPUP_OPTION_SELECTED));
+      return l10n_util::GetStringUTF16(
+          IDS_AUTOFILL_FILL_ADDRESS_GROUP_POPUP_OPTION_SELECTED);
     case FieldTypeGroup::kNoGroup:
     case FieldTypeGroup::kPhone:
     case FieldTypeGroup::kEmail:
@@ -497,18 +615,15 @@ std::optional<Suggestion::Text> GetGranularFillingLabel(
     case FieldTypeGroup::kUnfillable:
     case FieldTypeGroup::kBirthdateField:
     case FieldTypeGroup::kIban:
-      return absl::nullopt;
+      return std::u16string();
   }
+  return std::u16string();
 }
 
-// Returns for each profile in `profiles` label `Suggestion::Text`s to be used
-// as a secondary text in the corresponding suggestion bubble. The last label in
-// the label's vector is used to differentiate profiles, while the others are a
-// granular filling specific label and an optional separator label ("-"), which
-// exists when both a granular filling and a differentiating label exists. The
-// Granular filling label is added depending on `optional_last_targeted_fields`
-// and the `trigger_field_type`. See `GetProfileSuggestionLabels()` for details.
-std::vector<std::vector<Suggestion::Text>> GetProfileSuggestionLabels(
+// Returns for each profile in `profiles` a differentiating label string to be
+// used as a secondary text in the corresponding suggestion bubble.
+// `field_types` the types of the fields that will be filled by the suggestion.
+std::vector<std::u16string> GetProfileSuggestionLabels(
     const std::vector<const AutofillProfile*>& profiles,
     const ServerFieldTypeSet& field_types,
     ServerFieldType trigger_field_type,
@@ -547,32 +662,90 @@ std::vector<std::vector<Suggestion::Text>> GetProfileSuggestionLabels(
                                                             nullptr);
   }
 
-  std::optional<Suggestion::Text> granular_filling_label =
-      base::FeatureList::IsEnabled(features::kAutofillGranularFillingAvailable)
-          ? GetGranularFillingLabel(
-                optional_last_targeted_fields,
-                GroupTypeOfServerFieldType(trigger_field_type))
-          : absl::nullopt;
-  // Creates a list of `Suggestion::Text` to be used as labels.
+  return differentiating_labels;
+}
+
+// For each profile in `profiles`, returns a vector of `Suggestion::labels` to
+// be applied. Takes into account the `last_targeted_fields` and the
+// `trigger_field_type` to add specific granular filling labels. Optionally adds
+// a differentiating label if the Suggestion::main_text + granular filling label
+// is not unique.
+std::vector<std::vector<Suggestion::Text>>
+CreateSuggestionLabelsWithGranularFillingDetails(
+    base::span<const Suggestion> suggestions,
+    const std::vector<const AutofillProfile*>& profiles,
+    const ServerFieldTypeSet& field_types,
+    absl::optional<ServerFieldTypeSet> last_targeted_fields,
+    ServerFieldType trigger_field_type,
+    const std::string& app_locale) {
+  // Get a granular filling label to be applied to each suggestion.
+  const std::vector<std::u16string> granular_filling_labels(
+      suggestions.size(),
+      GetGranularFillingLabel(last_targeted_fields, trigger_field_type));
+
+  const std::vector<std::u16string> differentiating_labels =
+      GetProfileSuggestionLabels(profiles, field_types, trigger_field_type,
+                                 last_targeted_fields, app_locale);
+
+  const std::map<std::u16string, size_t>
+      main_text_and_granular_filling_label_count =
+          GetNumberOfSuggestionMainTextAndGranularFillingLabelOcurrences(
+              suggestions, granular_filling_labels);
+
   std::vector<std::vector<Suggestion::Text>> suggestions_labels;
-  for (const std::u16string& differentiating_label : differentiating_labels) {
-    suggestions_labels.emplace_back();
-    // Add granular filling specific labels if it exists.
-    if (granular_filling_label) {
-      suggestions_labels.back().emplace_back(
-          std::move(*granular_filling_label));
-      // Add a separator if the `differentiating_label` is not empty.
-      // This will lead to a suggestion rendered as:
-      // "Fill address - Sansa Stark".
-      if (!differentiating_label.empty()) {
-        suggestions_labels.back().emplace_back(u"-");
-      }
+  suggestions_labels.reserve(suggestions.size());
+  for (size_t i = 0; i < suggestions.size(); ++i) {
+    const std::u16string& granular_filling_label = granular_filling_labels[i];
+    const std::u16string& differentiating_label = differentiating_labels[i];
+
+    if (granular_filling_label.empty() && differentiating_label.empty()) {
+      // No labels to be added.
+      suggestions_labels.emplace_back();
+      continue;
     }
-    if (!differentiating_label.empty()) {
+
+    if (granular_filling_label.empty() && !differentiating_label.empty()) {
+      // If only a differentiating label exists, add it and continue.
+      //  _________________________
+      // | Jon snow                |
+      // | Winterfel               |
+      // |_________________________|
+      suggestions_labels.push_back({Suggestion::Text(differentiating_label)});
+      continue;
+    }
+
+    if (!granular_filling_label.empty() && differentiating_label.empty()) {
+      // If only a granular filling label label exists, add and continue.
+      //  _________________________
+      // | Jon snow                |
+      // | Fill address            |
+      // |_________________________|
+      suggestions_labels.push_back({Suggestion::Text(granular_filling_label)});
+      continue;
+    }
+
+    // Both labels exist, add the granular filling label first.
+    suggestions_labels.push_back({Suggestion::Text(granular_filling_label)});
+
+    // Check whether main_text + differentiating is unique.
+    auto main_text_and_granular_filling_label_count_iterator =
+        main_text_and_granular_filling_label_count.find(
+            suggestions[i].main_text.value + granular_filling_label);
+    CHECK(main_text_and_granular_filling_label_count_iterator !=
+          main_text_and_granular_filling_label_count.end());
+    const bool needs_differentiating_label =
+        main_text_and_granular_filling_label_count_iterator->second > 1;
+    if (needs_differentiating_label) {
+      // if main_text + differentiating labels is not unique, add the
+      // differentiating label.
+      //  _________________________________
+      // | 81274                           |
+      // | Fill address - Winterfel        |
+      // |_________________________________|
+      suggestions_labels.back().emplace_back(u"-");
       suggestions_labels.back().emplace_back(differentiating_label);
     }
   }
-
   return suggestions_labels;
 }
 
@@ -580,8 +753,8 @@ std::vector<std::vector<Suggestion::Text>> GetProfileSuggestionLabels(
 // suggestion bubble, and deduplicates suggestions having the same main text
 // and label. For each vector in `labels`, the last value is used to
 // differentiate profiles, while the others are granular filling specific
-// labels, see `GetGranularFillingLabel()`. In the case where `labels` is empty,
-// we have no differentiating label for the profile.
+// labels, see `GetGranularFillingLabel()`. In the case where `labels` is
+// empty, we have no differentiating label for the profile.
 void AssignLabelsAndDeduplicate(
     std::vector<Suggestion>& suggestions,
     const std::vector<std::vector<Suggestion::Text>>& labels,
@@ -828,7 +1001,7 @@ AutofillSuggestionGenerator::CreateSuggestionsFromProfiles(
   for (const AutofillProfile* profile : profiles) {
     // Compute the main text to be displayed in the suggestion bubble.
     std::u16string main_text =
-        GetProfileSuggestionMainText(profile, trigger_field_type);
+        GetProfileSuggestionMainText(*profile, app_locale, trigger_field_type);
     if (trigger_field_type_group == FieldTypeGroup::kPhone) {
       main_text = GetPhoneNumberValueForInput(
           trigger_field_max_length, main_text,
@@ -871,16 +1044,17 @@ AutofillSuggestionGenerator::CreateSuggestionsFromProfiles(
             features::kAutofillGranularFillingAvailable)) {
       // TODO(crbug.com/1502162): Make the granular filling options vary
       // depending on the locale.
-      AddGranularFillingChildSuggestions(last_targeted_fields,
-                                         trigger_field_type, *profile,
-                                         suggestions.back());
+      AddAddressGranularFillingChildSuggestions(last_targeted_fields,
+                                                trigger_field_type, *profile,
+                                                suggestions.back());
     }
   }
 
   AssignLabelsAndDeduplicate(
       suggestions,
-      GetProfileSuggestionLabels(profiles, field_types, trigger_field_type,
-                                 last_targeted_fields, app_locale),
+      CreateSuggestionLabelsWithGranularFillingDetails(
+          suggestions, profiles, field_types, last_targeted_fields,
+          trigger_field_type, app_locale),
       app_locale);
 
   // Add devtools test addresses suggestion if it exists. A suggestion will
@@ -912,8 +1086,8 @@ AutofillSuggestionGenerator::DeduplicatedProfilesForSuggestions(
   // `kAutofillUseAddressRewriterInProfileSubsetComparison` launches.
   std::vector<std::u16string> suggestion_main_text;
   for (const AutofillProfile* profile : matched_profiles) {
-    suggestion_main_text.push_back(
-        GetProfileSuggestionMainText(profile, trigger_field_type));
+    suggestion_main_text.push_back(GetProfileSuggestionMainText(
+        *profile, personal_data_->app_locale(), trigger_field_type));
   }
 
   std::vector<const AutofillProfile*> unique_matched_profiles;
@@ -993,8 +1167,8 @@ AutofillSuggestionGenerator::GetPrefixMatchedProfiles(
     }
 #endif  // BUILDFLAG(IS_ANDROID)
 
-    std::u16string main_text =
-        GetProfileSuggestionMainText(profile, trigger_field_type);
+    std::u16string main_text = GetProfileSuggestionMainText(
+        *profile, personal_data_->app_locale(), trigger_field_type);
 
     // Discard profiles that do not have a value for the trigger field.
     if (main_text.empty()) {
@@ -1024,26 +1198,11 @@ void AutofillSuggestionGenerator::RemoveProfilesNotUsedSinceTimestamp(
       num_profiles_suppressed);
 }
 
-std::u16string AutofillSuggestionGenerator::GetProfileSuggestionMainText(
-    const AutofillProfile* profile,
-    ServerFieldType trigger_field_type) {
-  std::string app_locale = personal_data_->app_locale();
-  if (trigger_field_type == ADDRESS_HOME_STREET_ADDRESS) {
-    std::string street_address_line;
-    ::i18n::addressinput::GetStreetAddressLinesAsSingleLine(
-        *i18n::CreateAddressDataFromAutofillProfile(*profile, app_locale),
-        &street_address_line);
-    return base::UTF8ToUTF16(street_address_line);
-  }
-
-  return profile->GetInfo(trigger_field_type, app_locale);
-}
-
-void AutofillSuggestionGenerator::AddGranularFillingChildSuggestions(
+void AutofillSuggestionGenerator::AddAddressGranularFillingChildSuggestions(
     absl::optional<ServerFieldTypeSet> last_targeted_fields,
     ServerFieldType trigger_field_type,
     const AutofillProfile& profile,
-    Suggestion& suggestion) {
+    Suggestion& suggestion) const {
   const FieldTypeGroup trigger_field_type_group =
       GroupTypeOfServerFieldType(trigger_field_type);
   const std::string app_locale = personal_data_->app_locale();
@@ -1472,7 +1631,10 @@ Suggestion AutofillSuggestionGenerator::CreateCreditCardSuggestion(
     }
   }
 
-  // TODO(crbug.com/1493360): Add child suggestions for manual fallback.
+  if (is_manual_fallback) {
+    AddPaymentsGranularFillingChildSuggestions(credit_card, suggestion);
+  }
+
   suggestion.acceptance_a11y_announcement =
       suggestion.popup_item_id == PopupItemId::kEntryNotSelectable
           ? l10n_util::GetStringUTF16(
@@ -1480,6 +1642,25 @@ Suggestion AutofillSuggestionGenerator::CreateCreditCardSuggestion(
           : l10n_util::GetStringUTF16(IDS_AUTOFILL_A11Y_ANNOUNCE_FILLED_FORM);
 
   return suggestion;
+}
+
+void AutofillSuggestionGenerator::AddPaymentsGranularFillingChildSuggestions(
+    const CreditCard& credit_card,
+    Suggestion& suggestion) const {
+  const std::string& app_locale = personal_data_->app_locale();
+
+  bool has_content_above =
+      AddCreditCardNameChildSuggestion(credit_card, app_locale, suggestion);
+  has_content_above |=
+      AddCreditCardNumberChildSuggestion(credit_card, app_locale, suggestion);
+
+  if (credit_card.HasInfo(CREDIT_CARD_EXP_DATE_2_DIGIT_YEAR)) {
+    if (has_content_above) {
+      suggestion.children.push_back(
+          AutofillSuggestionGenerator::CreateSeparator());
+    }
+    AddCreditCardExpiryDateChildSuggestion(credit_card, app_locale, suggestion);
+  }
 }
 
 std::pair<Suggestion::Text, Suggestion::Text>

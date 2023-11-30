@@ -94,9 +94,11 @@
 #include "chrome/browser/ash/login/screens/osauth/apply_online_password_screen.h"
 #include "chrome/browser/ash/login/screens/osauth/cryptohome_recovery_screen.h"
 #include "chrome/browser/ash/login/screens/osauth/cryptohome_recovery_setup_screen.h"
+#include "chrome/browser/ash/login/screens/osauth/enter_old_password_screen.h"
 #include "chrome/browser/ash/login/screens/osauth/factor_setup_success_screen.h"
 #include "chrome/browser/ash/login/screens/osauth/gaia_password_changed_screen.h"
 #include "chrome/browser/ash/login/screens/osauth/gaia_password_changed_screen_legacy.h"
+#include "chrome/browser/ash/login/screens/osauth/local_data_loss_warning_screen.h"
 #include "chrome/browser/ash/login/screens/osauth/local_password_setup_screen.h"
 #include "chrome/browser/ash/login/screens/osauth/osauth_error_screen.h"
 #include "chrome/browser/ash/login/screens/osauth/password_selection_screen.h"
@@ -162,6 +164,7 @@
 #include "chrome/browser/ui/webui/ash/login/enable_debugging_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/encryption_migration_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/enrollment_screen_handler.h"
+#include "chrome/browser/ui/webui/ash/login/enter_old_password_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/error_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/family_link_notice_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/fingerprint_setup_screen_handler.h"
@@ -190,6 +193,7 @@
 #include "chrome/browser/ui/webui/ash/login/os_trial_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/osauth/apply_online_password_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/osauth/factor_setup_success_screen_handler.h"
+#include "chrome/browser/ui/webui/ash/login/osauth/local_data_loss_warning_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/osauth/osauth_error_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/packaged_license_screen_handler.h"
 #include "chrome/browser/ui/webui/ash/login/parental_handoff_screen_handler.h"
@@ -503,8 +507,12 @@ void WizardController::ContinueOobeFlow() {
   // Use the saved screen preference from Local State if exist.
   const std::string screen_pref =
       GetLocalState()->GetString(prefs::kOobeScreenPending);
-  if (!screen_pref.empty() && HasScreen(PrefToScreenId(screen_pref))) {
-    AdvanceToScreen(PrefToScreenId(screen_pref));
+  const OobeScreenId screen_id = PrefToScreenId(screen_pref);
+  GetLoginDisplayHost()->GetOobeMetricsHelper()->RecordPreLoginOobeResume(
+      screen_id);
+
+  if (!screen_pref.empty() && HasScreen(screen_id)) {
+    AdvanceToScreen(screen_id);
   } else {
     ShowPackagedLicenseScreen();
   }
@@ -922,6 +930,14 @@ WizardController::CreateScreens() {
                             weak_factory_.GetWeakPtr())));
   }
 
+  append(std::make_unique<LocalDataLossWarningScreen>(
+      oobe_ui->GetView<LocalDataLossWarningScreenHandler>()->AsWeakPtr(),
+      base::DoNothing()));
+
+  append(std::make_unique<EnterOldPasswordScreen>(
+      oobe_ui->GetView<EnterOldPasswordScreenHandler>()->AsWeakPtr(),
+      base::DoNothing()));
+
   append(std::make_unique<OSAuthErrorScreen>(
       oobe_ui->GetView<OSAuthErrorScreenHandler>()->AsWeakPtr(),
       base::BindRepeating(&WizardController::OnOSAuthErrorScreenExit,
@@ -1092,6 +1108,7 @@ void WizardController::ShowPasswordSelectionScreen() {
 }
 
 void WizardController::ShowOSAuthErrorScreen() {
+  CHECK(wizard_context_->osauth_error.has_value());
   SetCurrentScreen(GetScreen(OSAuthErrorScreenView::kScreenId));
 }
 
@@ -1237,8 +1254,6 @@ void WizardController::ShowArcVmDataMigrationScreen() {
 void WizardController::ShowCryptohomeRecoveryScreen(
     std::unique_ptr<UserContext> user_context) {
   wizard_context_->user_context = std::move(user_context);
-  wizard_context_->knowledge_factor_setup.auth_setup_flow =
-      WizardContext::AuthChangeFlow::kRecovery;
   SetCurrentScreen(GetScreen(CryptohomeRecoveryScreenView::kScreenId));
 }
 
@@ -1402,6 +1417,7 @@ void WizardController::OnUserAllowlistCheckScreenExit(
   CHECK(result == UserAllowlistCheckScreen::Result::RETRY);
   OnScreenExit(UserAllowlistCheckScreenView::kScreenId,
                UserAllowlistCheckScreen::GetResultString(result));
+  GetScreen<GaiaScreen>()->Reset();
   AdvanceToScreen(GaiaView::kScreenId);
 }
 
@@ -1466,7 +1482,7 @@ void WizardController::OnSamlConfirmPasswordScreenExit(
       return;
     case SamlConfirmPasswordScreen::Result::kTooManyAttempts:
       ShowSignInFatalErrorScreen(
-          SignInFatalErrorScreen::Error::SCRAPED_PASSWORD_VERIFICATION_FAILURE,
+          SignInFatalErrorScreen::Error::kScrapedPasswordVerificationFailure,
           base::Value::Dict());
   }
 }
@@ -1590,16 +1606,16 @@ void WizardController::OnOsTrialScreenExit(OsTrialScreen::Result result) {
   OnScreenExit(OsTrialScreenView::kScreenId,
                OsTrialScreen::GetResultString(result));
   switch (result) {
-    case OsTrialScreen::Result::BACK:
+    case OsTrialScreen::Result::kBack:
       // The OS Trial screen is only shown when OS Installation is started from
       // the welcome screen, so if the back button was clicked we go back to
       // the welcome screen.
       ShowWelcomeScreen();
       break;
-    case OsTrialScreen::Result::NEXT_TRY:
+    case OsTrialScreen::Result::kNextTry:
       ShowNetworkScreen();
       break;
-    case OsTrialScreen::Result::NEXT_INSTALL:
+    case OsTrialScreen::Result::kNextInstall:
       ShowOsInstallScreen();
       break;
   }
@@ -1802,19 +1818,19 @@ void WizardController::OnWelcomeScreenExit(WelcomeScreen::Result result) {
   OnScreenExit(WelcomeView::kScreenId, WelcomeScreen::GetResultString(result));
 
   switch (result) {
-    case WelcomeScreen::Result::SETUP_DEMO:
+    case WelcomeScreen::Result::kSetupDemo:
       StartDemoModeSetup();
       return;
-    case WelcomeScreen::Result::ENABLE_DEBUGGING:
+    case WelcomeScreen::Result::kEnableDebugging:
       ShowEnableDebuggingScreen();
       return;
-    case WelcomeScreen::Result::NEXT_OS_INSTALL:
+    case WelcomeScreen::Result::kNextOSInstall:
       ShowOsTrialScreen();
       return;
-    case WelcomeScreen::Result::NEXT:
+    case WelcomeScreen::Result::kNext:
       ShowNetworkScreen();
       return;
-    case WelcomeScreen::Result::QUICK_START:
+    case WelcomeScreen::Result::kQuickStart:
       ShowQuickStartScreen();
       return;
   }
@@ -2094,12 +2110,12 @@ void WizardController::OnDemoSetupScreenExit(DemoSetupScreen::Result result) {
   demo_setup_controller_.reset();
 
   switch (result) {
-    case DemoSetupScreen::Result::COMPLETED:
+    case DemoSetupScreen::Result::kCompleted:
       PerformOOBECompletedActions(
           OobeMetricsHelper::CompletedPreLoginOobeFlowType::kDemo);
       SwitchWebUItoMojo();
       break;
-    case DemoSetupScreen::Result::CANCELED:
+    case DemoSetupScreen::Result::kCanceled:
       ShowWelcomeScreen();
       break;
   }
@@ -2285,12 +2301,12 @@ void WizardController::OnRecommendAppsScreenExit(
                RecommendAppsScreen::GetResultString(result));
 
   switch (result) {
-    case RecommendAppsScreen::Result::SELECTED:
+    case RecommendAppsScreen::Result::kSelected:
       ShowAppDownloadingScreen();
       break;
-    case RecommendAppsScreen::Result::SKIPPED:
-    case RecommendAppsScreen::Result::NOT_APPLICABLE:
-    case RecommendAppsScreen::Result::LOAD_ERROR:
+    case RecommendAppsScreen::Result::kSkipped:
+    case RecommendAppsScreen::Result::kNotApplicable:
+    case RecommendAppsScreen::Result::kLoadError:
       ShowAssistantOptInFlowScreen();
       break;
   }

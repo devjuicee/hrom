@@ -4,10 +4,10 @@
 
 #include "third_party/blink/renderer/core/layout/ng/ng_absolute_utils.h"
 
+#include "third_party/blink/renderer/core/layout/block_node.h"
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/geometry/static_position.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/core/testing/core_unit_test_helper.h"
@@ -15,7 +15,7 @@
 namespace blink {
 namespace {
 
-class NGAbsoluteUtilsTest : public RenderingTest {
+class AbsoluteUtilsTest : public RenderingTest {
  protected:
   ConstraintSpace CreateConstraintSpace(
       WritingDirectionMode writing_direction) {
@@ -106,8 +106,8 @@ class NGAbsoluteUtilsTest : public RenderingTest {
         container_writing_direction,
         ToPhysicalSize(space.AvailableSize(),
                        container_writing_direction.GetWritingMode()));
-    NGLogicalAnchorQuery anchor_query;
-    NGAnchorEvaluatorImpl anchor_evaluator(
+    LogicalAnchorQuery anchor_query;
+    AnchorEvaluatorImpl anchor_evaluator(
         *node.GetLayoutBox(), anchor_query,
         /* default_anchor_specifier */ nullptr,
         /* implicit_anchor */ nullptr, container_converter,
@@ -117,13 +117,13 @@ class NGAbsoluteUtilsTest : public RenderingTest {
         PhysicalOffset());
     WritingDirectionMode self_writing_direction =
         node.Style().GetWritingDirection();
-    const LogicalOofInsets insets =
-        ComputeOutOfFlowInsets(node.Style(), space.AvailableSize(),
-                               self_writing_direction, &anchor_evaluator);
+    const LogicalOofInsets insets = ComputeOutOfFlowInsets(
+        node.Style(), space.AvailableSize(), container_writing_direction,
+        self_writing_direction, &anchor_evaluator);
     const InsetModifiedContainingBlock imcb =
         ComputeInsetModifiedContainingBlock(
             node, space.AvailableSize(), insets, static_position,
-            container_writing_direction, self_writing_direction);
+            container_writing_direction, node.Style().GetWritingDirection());
     ComputeOofInlineDimensions(node, node.Style(), space, imcb, border_padding,
                                absl::nullopt, container_writing_direction,
                                /* anchor_evaluator */ nullptr, dimensions);
@@ -145,8 +145,8 @@ class NGAbsoluteUtilsTest : public RenderingTest {
         container_writing_direction,
         ToPhysicalSize(space.AvailableSize(),
                        container_writing_direction.GetWritingMode()));
-    NGLogicalAnchorQuery anchor_query;
-    NGAnchorEvaluatorImpl anchor_evaluator(
+    LogicalAnchorQuery anchor_query;
+    AnchorEvaluatorImpl anchor_evaluator(
         *node.GetLayoutBox(), anchor_query,
         /* default_anchor_specifier */ nullptr,
         /* implicit_anchor */ nullptr, container_converter,
@@ -156,13 +156,13 @@ class NGAbsoluteUtilsTest : public RenderingTest {
         PhysicalOffset());
     WritingDirectionMode self_writing_direction =
         node.Style().GetWritingDirection();
-    const LogicalOofInsets insets =
-        ComputeOutOfFlowInsets(node.Style(), space.AvailableSize(),
-                               self_writing_direction, &anchor_evaluator);
+    const LogicalOofInsets insets = ComputeOutOfFlowInsets(
+        node.Style(), space.AvailableSize(), container_writing_direction,
+        self_writing_direction, &anchor_evaluator);
     const InsetModifiedContainingBlock imcb =
         ComputeInsetModifiedContainingBlock(
             node, space.AvailableSize(), insets, static_position,
-            container_writing_direction, self_writing_direction);
+            container_writing_direction, node.Style().GetWritingDirection());
     ComputeOofBlockDimensions(node, node.Style(), space, imcb, border_padding,
                               absl::nullopt, container_writing_direction,
                               /* anchor_evaluator */ nullptr, dimensions);
@@ -177,7 +177,7 @@ class NGAbsoluteUtilsTest : public RenderingTest {
   ConstraintSpace vrl_space_;
 };
 
-TEST_F(NGAbsoluteUtilsTest, Horizontal) {
+TEST_F(AbsoluteUtilsTest, Horizontal) {
   BlockNode node(element_->GetLayoutBox());
   element_->SetInlineStyleProperty(CSSPropertyID::kContain, "size");
   element_->SetInlineStyleProperty(CSSPropertyID::kContainIntrinsicSize,
@@ -337,7 +337,7 @@ TEST_F(NGAbsoluteUtilsTest, Horizontal) {
   EXPECT_EQ(160, dimensions.size.inline_size);
 }
 
-TEST_F(NGAbsoluteUtilsTest, Vertical) {
+TEST_F(AbsoluteUtilsTest, Vertical) {
   element_->SetInlineStyleProperty(CSSPropertyID::kContain, "size");
   element_->SetInlineStyleProperty(CSSPropertyID::kContainIntrinsicSize,
                                    "60px 4px");
@@ -455,7 +455,7 @@ TEST_F(NGAbsoluteUtilsTest, Vertical) {
   EXPECT_EQ(260, dimensions.size.block_size);
 }
 
-TEST_F(NGAbsoluteUtilsTest, CenterStaticPosition) {
+TEST_F(AbsoluteUtilsTest, CenterStaticPosition) {
   BlockNode node(element_->GetLayoutBox());
   LogicalStaticPosition static_position = {{LayoutUnit(150), LayoutUnit(200)},
                                            LogicalStaticPosition::kInlineCenter,
@@ -489,7 +489,7 @@ TEST_F(NGAbsoluteUtilsTest, CenterStaticPosition) {
   EXPECT_EQ(25, dimensions.inset.block_end);
 }
 
-TEST_F(NGAbsoluteUtilsTest, MinMax) {
+TEST_F(AbsoluteUtilsTest, MinMax) {
   element_->SetInlineStyleProperty(CSSPropertyID::kMinWidth, "70px");
   element_->SetInlineStyleProperty(CSSPropertyID::kMaxWidth, "150px");
   element_->SetInlineStyleProperty(CSSPropertyID::kMinHeight, "70px");

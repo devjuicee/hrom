@@ -8,6 +8,7 @@
 #import "base/memory/ptr_util.h"
 #import "base/metrics/histogram_functions.h"
 #import "base/task/sequenced_task_runner.h"
+#import "ios/chrome/browser/snapshots/model/snapshot_generator.h"
 #import "ios/chrome/browser/snapshots/model/snapshot_manager.h"
 #import "ios/chrome/browser/snapshots/model/snapshot_storage.h"
 #import "ios/web/public/web_client.h"
@@ -45,8 +46,8 @@ SnapshotTabHelper::~SnapshotTabHelper() {
   DCHECK(!web_state_);
 }
 
-void SnapshotTabHelper::SetDelegate(id<SnapshotManagerDelegate> delegate) {
-  snapshot_manager_.delegate = delegate;
+void SnapshotTabHelper::SetDelegate(id<SnapshotGeneratorDelegate> delegate) {
+  [snapshot_manager_ setDelegate:delegate];
 }
 
 void SnapshotTabHelper::SetSnapshotStorage(SnapshotStorage* snapshot_storage) {
@@ -104,9 +105,9 @@ SnapshotID SnapshotTabHelper::GetSnapshotID() const {
 SnapshotTabHelper::SnapshotTabHelper(web::WebState* web_state)
     : web_state_(web_state) {
   DCHECK(web_state_);
-  snapshot_manager_ =
-      [[SnapshotManager alloc] initWithWebState:web_state_
-                                     snapshotID:GenerateSnapshotID(web_state_)];
+  snapshot_manager_ = [[SnapshotManager alloc]
+      initWithGenerator:[[SnapshotGenerator alloc] initWithWebState:web_state_]
+             snapshotID:GenerateSnapshotID(web_state_)];
   web_state_observation_.Observe(web_state_);
 }
 

@@ -32,7 +32,7 @@
 #include "third_party/blink/renderer/core/layout/layout_multi_column_spanner_placeholder.h"
 #include "third_party/blink/renderer/core/layout/multi_column_fragmentainer_group.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/paint/paint_layer.h"
 
 namespace blink {
@@ -69,14 +69,14 @@ class ChildFragmentIterator {
     return IsValid();
   }
 
-  const NGPhysicalBoxFragment* operator->() const {
+  const PhysicalBoxFragment* operator->() const {
     DCHECK(IsValid());
-    return To<NGPhysicalBoxFragment>(
+    return To<PhysicalBoxFragment>(
         CurrentFragment()->Children()[child_index_].get());
   }
-  const NGPhysicalBoxFragment& operator*() const {
+  const PhysicalBoxFragment& operator*() const {
     DCHECK(IsValid());
-    return To<NGPhysicalBoxFragment>(
+    return To<PhysicalBoxFragment>(
         *CurrentFragment()->Children()[child_index_]);
   }
   PhysicalOffset Offset() const {
@@ -87,7 +87,7 @@ class ChildFragmentIterator {
   wtf_size_t FragmentIndex() const { return fragment_index_; }
 
  private:
-  const NGPhysicalBoxFragment* CurrentFragment() const {
+  const PhysicalBoxFragment* CurrentFragment() const {
     return container_.GetPhysicalFragment(fragment_index_);
   }
 
@@ -103,13 +103,13 @@ class ChildFragmentIterator {
   wtf_size_t child_index_ = 0;
 };
 
-LayoutPoint ComputeLocation(const NGPhysicalBoxFragment& column_box,
+LayoutPoint ComputeLocation(const PhysicalBoxFragment& column_box,
                             PhysicalOffset column_offset,
                             LayoutUnit set_inline_size,
                             const LayoutBlockFlow& container,
                             wtf_size_t fragment_index,
                             const PhysicalBoxStrut& border_padding_scrollbar) {
-  const NGPhysicalBoxFragment* container_fragment =
+  const PhysicalBoxFragment* container_fragment =
       container.GetPhysicalFragment(fragment_index);
   WritingModeConverter converter(
       container_fragment->Style().GetWritingDirection(),
@@ -126,7 +126,7 @@ LayoutPoint ComputeLocation(const NGPhysicalBoxFragment& column_box,
       set_inline_size, converter.ToLogical(column_box.Size()).block_size);
   PhysicalOffset physical_offset = converter.ToPhysical(
       logical_offset, converter.ToPhysical(column_set_logical_size));
-  const NGBlockBreakToken* previous_container_break_token = nullptr;
+  const BlockBreakToken* previous_container_break_token = nullptr;
   if (fragment_index > 0) {
     previous_container_break_token =
         container.GetPhysicalFragment(fragment_index - 1)->GetBreakToken();

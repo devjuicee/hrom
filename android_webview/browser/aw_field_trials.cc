@@ -8,8 +8,10 @@
 #include "base/feature_list.h"
 #include "base/metrics/persistent_histogram_allocator.h"
 #include "base/path_service.h"
+#include "components/history/core/browser/features.h"
 #include "components/metrics/persistent_histograms.h"
 #include "components/safe_browsing/core/common/features.h"
+#include "content/public/common/content_features.h"
 #include "net/base/features.h"
 #include "third_party/blink/public/common/features.h"
 #include "ui/android/ui_android_features.h"
@@ -84,6 +86,9 @@ void AwFieldTrials::RegisterFeatureOverrides(base::FeatureList* feature_list) {
   aw_feature_overrides.DisableFeature(
       blink::features::kReduceUserAgentMinorVersion);
 
+  // Disable fenced frames on WebView.
+  aw_feature_overrides.DisableFeature(blink::features::kFencedFrames);
+
   // Disable skip Safe Browsing subresource checks on WebView since WebView's
   // rollout schedule is behind Clank's schedule.
   aw_feature_overrides.DisableFeature(
@@ -97,6 +102,13 @@ void AwFieldTrials::RegisterFeatureOverrides(base::FeatureList* feature_list) {
 
   // Disable scrollbar-width on WebView.
   aw_feature_overrides.DisableFeature(blink::features::kScrollbarWidth);
+
+  // Disable the new prefetch limits policy on WebView (it is enabled by
+  // default on Android, but we need a slower ramp up on WebView).
+  aw_feature_overrides.DisableFeature(::features::kPrefetchNewLimits);
+
+  // Disable Populating the VisitedLinkDatabase on WebView.
+  aw_feature_overrides.DisableFeature(history::kPopulateVisitedLinkDatabase);
 
   aw_feature_overrides.RegisterOverrides(feature_list);
 }

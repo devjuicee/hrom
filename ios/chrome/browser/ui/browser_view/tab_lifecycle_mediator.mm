@@ -11,11 +11,11 @@
 #import "ios/chrome/browser/commerce/model/price_notifications/price_notifications_tab_helper.h"
 #import "ios/chrome/browser/download/model/download_manager_tab_helper.h"
 #import "ios/chrome/browser/download/model/pass_kit_tab_helper.h"
-#import "ios/chrome/browser/follow/follow_iph_presenter.h"
-#import "ios/chrome/browser/follow/follow_tab_helper.h"
+#import "ios/chrome/browser/follow/model/follow_iph_presenter.h"
+#import "ios/chrome/browser/follow/model/follow_tab_helper.h"
 #import "ios/chrome/browser/itunes_urls/model/itunes_urls_handler_tab_helper.h"
 #import "ios/chrome/browser/lens/model/lens_tab_helper.h"
-#import "ios/chrome/browser/ntp/new_tab_page_tab_helper.h"
+#import "ios/chrome/browser/ntp/model/new_tab_page_tab_helper.h"
 #import "ios/chrome/browser/overscroll_actions/model/overscroll_actions_tab_helper.h"
 #import "ios/chrome/browser/parcel_tracking/parcel_tracking_prefs.h"
 #import "ios/chrome/browser/parcel_tracking/parcel_tracking_util.h"
@@ -80,9 +80,9 @@
   // Only realized webstates should have dependencies installed.
   DCHECK(webState->IsRealized());
 
-  DCHECK(_snapshotManagerDelegate);
+  DCHECK(_snapshotGeneratorDelegate);
   SnapshotTabHelper::FromWebState(webState)->SetDelegate(
-      _snapshotManagerDelegate);
+      _snapshotGeneratorDelegate);
 
   PasswordTabHelper* passwordTabHelper =
       PasswordTabHelper::FromWebState(webState);

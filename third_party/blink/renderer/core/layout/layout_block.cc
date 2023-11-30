@@ -44,21 +44,20 @@
 #include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/html/html_marquee_element.h"
 #include "third_party/blink/renderer/core/html_names.h"
-#include "third_party/blink/renderer/core/layout/box_layout_extra_input.h"
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
 #include "third_party/blink/renderer/core/layout/flex/layout_flexible_box.h"
 #include "third_party/blink/renderer/core/layout/hit_test_location.h"
 #include "third_party/blink/renderer/core/layout/hit_test_result.h"
 #include "third_party/blink/renderer/core/layout/layout_inline.h"
+#include "third_party/blink/renderer/core/layout/layout_ng_block_flow.h"
 #include "third_party/blink/renderer/core/layout/layout_object_inlines.h"
 #include "third_party/blink/renderer/core/layout/layout_theme.h"
 #include "third_party/blink/renderer/core/layout/layout_view.h"
+#include "third_party/blink/renderer/core/layout/legacy_layout_tree_walking.h"
 #include "third_party/blink/renderer/core/layout/mathml/layout_mathml_block.h"
-#include "third_party/blink/renderer/core/layout/ng/layout_ng_block_flow.h"
-#include "third_party/blink/renderer/core/layout/ng/legacy_layout_tree_walking.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_disable_side_effects_scope.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_text.h"
 #include "third_party/blink/renderer/core/layout/text_autosizer.h"
 #include "third_party/blink/renderer/core/page/page.h"
@@ -338,7 +337,7 @@ void LayoutBlock::Paint(const PaintInfo& paint_info) const {
   }
 
   if (PhysicalFragmentCount()) {
-    const NGPhysicalBoxFragment* fragment = GetPhysicalFragment(0);
+    const PhysicalBoxFragment* fragment = GetPhysicalFragment(0);
     DCHECK(fragment);
     NGBoxFragmentPainter(*fragment).Paint(paint_info);
     return;
@@ -399,7 +398,7 @@ void LayoutBlock::RemovePositionedObjects(LayoutObject* stay_within) {
   // PositionedObjects() is populated in legacy, and in NG when inside a
   // fragmentation context root. But in other NG cases it's empty as an
   // optimization, since we can just look at the children in the fragment tree.
-  for (const NGPhysicalBoxFragment& fragment : PhysicalFragments()) {
+  for (const PhysicalBoxFragment& fragment : PhysicalFragments()) {
     if (!fragment.HasOutOfFlowFragmentChild()) {
       continue;
     }
@@ -474,7 +473,7 @@ bool LayoutBlock::NodeAtPoint(HitTestResult& result,
          GetPhysicalFragment(0)->GetBreakToken()->IsRepeated());
 
   if (PhysicalFragmentCount()) {
-    const NGPhysicalBoxFragment* fragment = GetPhysicalFragment(0);
+    const PhysicalBoxFragment* fragment = GetPhysicalFragment(0);
     DCHECK(fragment);
     return NGBoxFragmentPainter(*fragment).NodeAtPoint(
         result, hit_test_location, accumulated_offset, phase);
@@ -493,7 +492,7 @@ bool LayoutBlock::HitTestChildren(HitTestResult& result,
   if (PhysicalFragmentCount() && CanTraversePhysicalFragments()) {
     DCHECK(!Parent()->CanTraversePhysicalFragments());
     DCHECK_LE(PhysicalFragmentCount(), 1u);
-    const NGPhysicalBoxFragment* fragment = GetPhysicalFragment(0);
+    const PhysicalBoxFragment* fragment = GetPhysicalFragment(0);
     DCHECK(fragment);
     DCHECK(!fragment->HasItems());
     return NGBoxFragmentPainter(*fragment).NodeAtPoint(
@@ -716,7 +715,7 @@ PhysicalRect LayoutBlock::LocalCaretRect(
 void LayoutBlock::AddOutlineRects(OutlineRectCollector& collector,
                                   OutlineInfo* info,
                                   const PhysicalOffset& additional_offset,
-                                  NGOutlineType include_block_overflows) const {
+                                  OutlineType include_block_overflows) const {
   NOT_DESTROYED();
 #if DCHECK_IS_ON()
   // TODO(crbug.com/987836): enable this DCHECK universally.
@@ -732,7 +731,7 @@ void LayoutBlock::AddOutlineRects(OutlineRectCollector& collector,
     collector.AddRect(PhysicalRect(additional_offset, Size()));
   }
 
-  if (ShouldIncludeBlockVisualOverflow(include_block_overflows) &&
+  if (ShouldIncludeBlockInkOverflow(include_block_overflows) &&
       !HasNonVisibleOverflow() && !HasControlClip()) {
     AddOutlineRectsForNormalChildren(collector, additional_offset,
                                      include_block_overflows);
@@ -808,7 +807,7 @@ LayoutBlock* LayoutBlock::CreateAnonymousWithParentAndDisplay(
 
 RecalcScrollableOverflowResult LayoutBlock::RecalcScrollableOverflow() {
   NOT_DESTROYED();
-  DCHECK(!NGDisableSideEffectsScope::IsDisabled());
+  DCHECK(!DisableLayoutSideEffectsScope::IsDisabled());
   return RecalcScrollableOverflowNG();
 }
 
@@ -821,7 +820,7 @@ void LayoutBlock::RecalcVisualOverflow() {
 
   DCHECK(CanUseFragmentsForVisualOverflow());
   DCHECK(!DisplayLockUtilities::LockedAncestorPreventingPrePaint(*this));
-  for (const NGPhysicalBoxFragment& fragment : PhysicalFragments()) {
+  for (const PhysicalBoxFragment& fragment : PhysicalFragments()) {
     DCHECK(fragment.CanUseFragmentsForInkOverflow());
     fragment.GetMutableForPainting().RecalcInkOverflow();
   }

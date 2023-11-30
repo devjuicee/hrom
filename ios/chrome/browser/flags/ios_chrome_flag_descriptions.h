@@ -374,16 +374,6 @@ extern const char kEnableSuggestionsScrollingOnIPadDescription[];
 extern const char kEnableSignedOutViewDemotionName[];
 extern const char kEnableSignedOutViewDemotionDescription[];
 
-// Title and description for the flag to enable user policies for users that
-// are signed-in only without sync (unless explicitly enabled for that level).
-extern const char kEnableUserPolicyForSigninAndNoSyncConsentLevelName[];
-extern const char kEnableUserPolicyForSigninAndNoSyncConsentLevelDescription[];
-
-// Title and description for the flag to enable user policies for users that
-// are signed-in or signed-in+sync.
-extern const char kEnableUserPolicyForSigninOrSyncConsentLevelName[];
-extern const char kEnableUserPolicyForSigninOrSyncConsentLevelDescription[];
-
 // Title and description for the flag to enable filtering experiments by Google
 // group membership.
 extern const char kEnableVariationsGoogleGroupFilteringName[];
@@ -475,11 +465,6 @@ extern const char kIOSIncognitoDownloadsWarningDescription[];
 extern const char kIOSKeyboardAccessoryUpgradeName[];
 extern const char kIOSKeyboardAccessoryUpgradeDescription[];
 
-// Title and description for the flag to enable the new iOS post-restore
-// sign-in prompt.
-extern const char kIOSNewPostRestoreExperienceName[];
-extern const char kIOSNewPostRestoreExperienceDescription[];
-
 // Title and description for the flag to enable parcel tracking.
 extern const char kIOSParcelTrackingName[];
 extern const char kIOSParcelTrackingDescription[];
@@ -493,11 +478,6 @@ extern const char kIOSPasswordAuthOnEntryDescription[];
 // accessing the any of the Password Manager surfaces.
 extern const char kIOSPasswordAuthOnEntryV2Name[];
 extern const char kIOSPasswordAuthOnEntryV2Description[];
-
-// Title and description for the flag to split password settings and password
-// management into two separate UIs.
-extern const char kIOSPasswordUISplitName[];
-extern const char kIOSPasswordUISplitDescription[];
 
 // Title and description for the flag to enable password bottom sheet on IOS.
 extern const char kIOSPasswordBottomSheetName[];
@@ -774,10 +754,6 @@ extern const char kIPHPriceNotificationsWhileBrowsingDescription[];
 extern const char kNotificationSettingsMenuItemName[];
 extern const char kNotificationSettingsMenuItemDescription[];
 
-// Title and description for the flag to native restore web states.
-extern const char kRestoreSessionFromCacheName[];
-extern const char kRestoreSessionFromCacheDescription[];
-
 // Title and description for the flag to remove excess NTP tabs that don't have
 // navigation history.
 extern const char kRemoveExcessNTPsExperimentName[];
@@ -829,11 +805,6 @@ extern const char kShowAutofillTypePredictionsDescription[];
 // Tab Grid button.
 extern const char kShowInactiveTabsCountName[];
 extern const char kShowInactiveTabsCountDescription[];
-
-// Title and description for the flag to show the User Policy notification at
-// startup if needed.
-extern const char  kShowUserPolicyNotificationAtStartupIfNeededName[];
-extern const char  kShowUserPolicyNotificationAtStartupIfNeededDescription[];
 
 // Title and description for the flag to enable ignoring undecryptable passwords
 // in the password storage.

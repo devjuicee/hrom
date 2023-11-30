@@ -12,6 +12,7 @@
 #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom-shared.h"
 #include "third_party/blink/renderer/core/css/resolver/style_resolver.h"
 #include "third_party/blink/renderer/core/html/forms/html_input_element.h"
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
 #include "third_party/blink/renderer/core/layout/inline/initial_letter_utils.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_box_state.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_break_token.h"
@@ -26,21 +27,20 @@
 #include "third_party/blink/renderer/core/layout/inline/paragraph_line_breaker.h"
 #include "third_party/blink/renderer/core/layout/inline/ruby_utils.h"
 #include "third_party/blink/renderer/core/layout/inline/score_line_breaker.h"
+#include "third_party/blink/renderer/core/layout/layout_result.h"
 #include "third_party/blink/renderer/core/layout/layout_text_combine.h"
 #include "third_party/blink/renderer/core/layout/list/layout_outside_list_marker.h"
 #include "third_party/blink/renderer/core/layout/list/unpositioned_list_marker.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_disable_side_effects_scope.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_floats_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_result.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_positioned_float.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_relative_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_space_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_unpositioned_float.h"
+#include "third_party/blink/renderer/core/layout/space_utils.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_inline_text.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/platform/fonts/shaping/shape_result_spacing.h"
@@ -62,7 +62,7 @@ class LineBreakStrategy {
                     const InlineNode& node,
                     const ComputedStyle& block_style,
                     const InlineBreakToken* break_token,
-                    const NGColumnSpannerPath* column_spanner_path) {
+                    const ColumnSpannerPath* column_spanner_path) {
     if (!column_spanner_path) {
       const TextWrap text_wrap = block_style.GetTextWrap();
       if (UNLIKELY(text_wrap == TextWrap::kBalance)) {
@@ -234,7 +234,7 @@ InlineLayoutAlgorithm::InlineLayoutAlgorithm(
     InlineNode inline_node,
     const ConstraintSpace& space,
     const InlineBreakToken* break_token,
-    const NGColumnSpannerPath* column_spanner_path,
+    const ColumnSpannerPath* column_spanner_path,
     InlineChildLayoutContext* context)
     : LayoutAlgorithm(inline_node,
                       &inline_node.Style(),
@@ -290,8 +290,9 @@ InlineBoxState* InlineLayoutAlgorithm::HandleCloseTag(
   // Just clear |NeedsLayout| flags. Culled inline boxes do not need paint
   // invalidations. If this object produces box fragments,
   // |InlineBoxStateStack| takes care of invalidations.
-  if (!NGDisableSideEffectsScope::IsDisabled())
+  if (!DisableLayoutSideEffectsScope::IsDisabled()) {
     item.GetLayoutObject()->ClearNeedsLayoutWithoutPaintInvalidation();
+  }
   return box;
 }
 
@@ -756,8 +757,9 @@ void InlineLayoutAlgorithm::PlaceControlItem(const InlineItem& item,
 
   DCHECK(item.GetLayoutObject());
   DCHECK(item.GetLayoutObject()->IsText());
-  if (!NGDisableSideEffectsScope::IsDisabled())
+  if (!DisableLayoutSideEffectsScope::IsDisabled()) {
     item.GetLayoutObject()->ClearNeedsLayoutWithFullPaintInvalidation();
+  }
 
   if (UNLIKELY(!item_result->Length())) {
     // Empty or fully collapsed text isn't needed for layout, but needs
@@ -826,7 +828,7 @@ InlineBoxState* InlineLayoutAlgorithm::PlaceAtomicInline(
                                  baseline_type_);
 }
 
-// Place a NGLayoutResult into the line box.
+// Place a LayoutResult into the line box.
 void InlineLayoutAlgorithm::PlaceLayoutResult(InlineItemResult* item_result,
                                               LogicalLineItems* line_box,
                                               InlineBoxState* box,
@@ -837,8 +839,8 @@ void InlineLayoutAlgorithm::PlaceLayoutResult(InlineItemResult* item_result,
   DCHECK(item.Style());
   FontHeight metrics =
       LogicalBoxFragment(GetConstraintSpace().GetWritingDirection(),
-                         To<NGPhysicalBoxFragment>(
-                             item_result->layout_result->PhysicalFragment()))
+                         To<PhysicalBoxFragment>(
+                             item_result->layout_result->GetPhysicalFragment()))
           .BaselineMetrics(item_result->margins, baseline_type_);
   if (box)
     box->metrics.Unite(metrics);
@@ -860,15 +862,15 @@ void InlineLayoutAlgorithm::PlaceBlockInInline(const InlineItem& item,
   DCHECK(layout_object->IsAnonymous());
   DCHECK(!layout_object->IsInline());
   DCHECK(item_result->layout_result);
-  const NGLayoutResult& result = *item_result->layout_result;
+  const LayoutResult& result = *item_result->layout_result;
   const auto& box_fragment =
-      To<NGPhysicalBoxFragment>(result.PhysicalFragment());
+      To<PhysicalBoxFragment>(result.GetPhysicalFragment());
   LogicalBoxFragment fragment(GetConstraintSpace().GetWritingDirection(),
                               box_fragment);
 
   // Setup |container_builder_|. Set it up here instead of in |CreateLine|,
   // because there should be only one block-in-inline, and we need data from the
-  // |NGLayoutResult|.
+  // |LayoutResult|.
   container_builder_.SetIsBlockInInline();
   container_builder_.SetInlineSize(fragment.InlineSize());
 
@@ -1050,7 +1052,7 @@ void InlineLayoutAlgorithm::PlaceFloatingObjects(
       PositionedFloat positioned_float =
           PositionFloat(origin_bfc_block_offset, child.unpositioned_float,
                         &GetExclusionSpace());
-      const NGBlockBreakToken* break_token = positioned_float.BreakToken();
+      const BlockBreakToken* break_token = positioned_float.BreakToken();
       if (break_token) {
         const auto* parallel_token =
             InlineBreakToken::CreateForParallelBlockFlow(
@@ -1070,8 +1072,9 @@ void InlineLayoutAlgorithm::PlaceFloatingObjects(
 
     // Skip any children which aren't positioned floats.
     if (!child.layout_result ||
-        !child.layout_result->PhysicalFragment().IsFloating())
+        !child.layout_result->GetPhysicalFragment().IsFloating()) {
       continue;
+    }
 
     LayoutUnit block_offset =
         child.bfc_offset.block_offset - bfc_block_offset + baseline_adjustment;
@@ -1079,7 +1082,7 @@ void InlineLayoutAlgorithm::PlaceFloatingObjects(
     // We need to manually account for the flipped-lines writing mode here :(.
     if (IsFlippedLinesWritingMode(GetConstraintSpace().GetWritingMode())) {
       LogicalFragment fragment(GetConstraintSpace().GetWritingDirection(),
-                               child.layout_result->PhysicalFragment());
+                               child.layout_result->GetPhysicalFragment());
 
       block_offset = -fragment.BlockSize() - block_offset;
     }
@@ -1092,7 +1095,7 @@ void InlineLayoutAlgorithm::PlaceFloatingObjects(
 void InlineLayoutAlgorithm::PlaceRelativePositionedItems(
     LogicalLineItems* line_box) {
   for (auto& child : *line_box) {
-    const auto* physical_fragment = child.PhysicalFragment();
+    const auto* physical_fragment = child.GetPhysicalFragment();
     if (!physical_fragment)
       continue;
     child.rect.offset += ComputeRelativeOffsetForInline(
@@ -1360,7 +1363,7 @@ bool InlineLayoutAlgorithm::AddAnyClearanceAfterLine(
   return true;
 }
 
-const NGLayoutResult* InlineLayoutAlgorithm::Layout() {
+const LayoutResult* InlineLayoutAlgorithm::Layout() {
   const auto& constraint_space = GetConstraintSpace();
   ExclusionSpace initial_exclusion_space(constraint_space.GetExclusionSpace());
 
@@ -1516,7 +1519,7 @@ const NGLayoutResult* InlineLayoutAlgorithm::Layout() {
     const auto* block_in_inline_result = line_info.BlockInInlineLayoutResult();
     if (block_in_inline_result) {
       if (UNLIKELY(block_in_inline_result->Status() !=
-                   NGLayoutResult::kSuccess)) {
+                   LayoutResult::kSuccess)) {
         items_builder->ReleaseCurrentLogicalLineItems();
         return block_in_inline_result;
       }
@@ -1546,8 +1549,7 @@ const NGLayoutResult* InlineLayoutAlgorithm::Layout() {
       if (container_builder_.GetAdjoiningObjectTypes() &&
           bfc_block_offset != constraint_space.ExpectedBfcBlockOffset()) {
         items_builder->ReleaseCurrentLogicalLineItems();
-        return container_builder_.Abort(
-            NGLayoutResult::kBfcBlockOffsetResolved);
+        return container_builder_.Abort(LayoutResult::kBfcBlockOffsetResolved);
       }
     }
 
@@ -1659,13 +1661,13 @@ const NGLayoutResult* InlineLayoutAlgorithm::Layout() {
     }
 
     // Success!
-    container_builder_.SetBreakToken(line_info.BreakToken());
+    container_builder_.SetBreakToken(line_info.GetBreakToken());
     container_builder_.SetBaseDirection(line_info.BaseDirection());
 
     // Propagate any break tokens for floats that we fragmented before or inside
     // to the block container in 3 steps: 1) in `PositionLeadingFloats`, 2) from
     // `LineInfo` here, 3) then `CreateLine` may propagate more.
-    for (const NGBreakToken* parallel_token :
+    for (const BreakToken* parallel_token :
          line_info.ParallelFlowBreakTokens()) {
       DCHECK(parallel_token->IsInlineType());
       DCHECK(To<InlineBreakToken>(parallel_token)->IsInParallelBlockFlow());
@@ -1691,8 +1693,7 @@ const NGLayoutResult* InlineLayoutAlgorithm::Layout() {
       }
     } else {
       if (!AddAnyClearanceAfterLine(line_info)) {
-        return container_builder_.Abort(
-            NGLayoutResult::kOutOfFragmentainerSpace);
+        return container_builder_.Abort(LayoutResult::kOutOfFragmentainerSpace);
       }
       container_builder_.SetBlockSize(container_builder_.LineHeight());
 
@@ -1718,9 +1719,9 @@ const NGLayoutResult* InlineLayoutAlgorithm::Layout() {
 
   DCHECK(items_builder);
   container_builder_.PropagateChildrenData(*line_box);
-  const NGLayoutResult* layout_result = container_builder_.ToLineBoxFragment();
-  items_builder->AssociateLogicalLineItems(line_box,
-                                           layout_result->PhysicalFragment());
+  const LayoutResult* layout_result = container_builder_.ToLineBoxFragment();
+  items_builder->AssociateLogicalLineItems(
+      line_box, layout_result->GetPhysicalFragment());
   line_break_strategy.DidCreateLine(is_end_paragraph);
   return layout_result;
 }

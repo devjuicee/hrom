@@ -362,11 +362,15 @@ static_assert(sizeof(PartitionPage) == kPageMetadataSize,
 // Certain functions rely on PartitionPage being either SlotSpanMetadata or
 // SubsequentPageMetadata, and therefore freely casting between each other.
 // TODO(https://crbug.com/1500662) Stop ignoring the -Winvalid-offsetof warning.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winvalid-offsetof"
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winvalid-offsetof"
+#endif
 static_assert(offsetof(PartitionPage, slot_span_metadata) == 0, "");
 static_assert(offsetof(PartitionPage, subsequent_page_metadata) == 0, "");
-#pragma GCC diagnostic pop
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 PA_ALWAYS_INLINE PartitionPage* PartitionSuperPageToMetadataArea(
     uintptr_t super_page) {
@@ -915,8 +919,8 @@ void IterateSlotSpans(uintptr_t super_page,
       Page::FromAddr(SuperPagePayloadBegin(super_page, with_quarantine));
   auto* const last_page =
       Page::FromAddr(SuperPagePayloadEnd(super_page) - PartitionPageSize());
-  Page* page;
-  SlotSpan* slot_span;
+  Page* page = nullptr;
+  SlotSpan* slot_span = nullptr;
   for (page = first_page; page <= last_page;) {
     PA_DCHECK(!page->slot_span_metadata_offset);  // Ensure slot span beginning.
     if (!page->is_valid) {

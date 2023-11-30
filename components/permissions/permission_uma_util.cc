@@ -45,6 +45,10 @@
 #include "base/android/jni_string.h"
 #endif
 
+namespace {
+bool scoped_revocation_reporter_in_scope = false;
+}  // namespace
+
 namespace permissions {
 
 #define PERMISSION_BUBBLE_TYPE_UMA(metric_name, request_type_for_uma) \
@@ -293,6 +297,14 @@ void RecordUmaForWhetherUsageUkmWasRecorded(ContentSettingsType permission_type,
   if (permission_type == ContentSettingsType::NOTIFICATIONS) {
     base::UmaHistogramBoolean("Permissions.Usage.Notifications.DidRecordUkm",
                               has_source_id);
+  }
+}
+
+void RecordUmaForRevocationSourceUI(ContentSettingsType permission_type,
+                                    PermissionSourceUI source_ui) {
+  if (permission_type == ContentSettingsType::NOTIFICATIONS) {
+    base::UmaHistogramEnumeration(
+        "Permissions.Revocation.Notifications.SourceUI", source_ui);
   }
 }
 
@@ -973,7 +985,9 @@ PermissionUmaUtil::ScopedRevocationReporter::ScopedRevocationReporter(
       content_type_(content_type),
       source_ui_(source_ui) {
   if (!primary_url_.is_valid() ||
-      (!secondary_url_.is_valid() && !secondary_url_.is_empty())) {
+      (!secondary_url_.is_valid() && !secondary_url_.is_empty()) ||
+      !IsRequestablePermissionType(content_type_) ||
+      !PermissionUtil::IsPermission(content_type_)) {
     is_initially_allowed_ = false;
     return;
   }
@@ -986,6 +1000,7 @@ PermissionUmaUtil::ScopedRevocationReporter::ScopedRevocationReporter(
   settings_map->GetWebsiteSetting(primary_url, secondary_url, content_type_,
                                   &setting_info);
   last_modified_date_ = setting_info.metadata.last_modified();
+  scoped_revocation_reporter_in_scope = true;
 }
 
 PermissionUmaUtil::ScopedRevocationReporter::ScopedRevocationReporter(
@@ -1004,10 +1019,13 @@ PermissionUmaUtil::ScopedRevocationReporter::ScopedRevocationReporter(
           source_ui) {}
 
 PermissionUmaUtil::ScopedRevocationReporter::~ScopedRevocationReporter() {
+  scoped_revocation_reporter_in_scope = false;
   if (!is_initially_allowed_)
     return;
-  if (!IsRequestablePermissionType(content_type_))
+  if (!IsRequestablePermissionType(content_type_) ||
+      !PermissionUtil::IsPermission(content_type_)) {
     return;
+  }
   HostContentSettingsMap* settings_map =
       PermissionsClient::Get()->GetSettingsMap(browser_context_);
   ContentSetting final_content_setting = settings_map->GetContentSetting(
@@ -1025,6 +1043,10 @@ PermissionUmaUtil::ScopedRevocationReporter::~ScopedRevocationReporter() {
           content_type_, base::Time::Now() - last_modified_date_);
     }
   }
+}
+
+bool PermissionUmaUtil::ScopedRevocationReporter::IsInstanceInScope() {
+  return scoped_revocation_reporter_in_scope;
 }
 
 void PermissionUmaUtil::RecordPermissionUsage(
@@ -1093,6 +1115,10 @@ void PermissionUmaUtil::RecordPermissionAction(
     auto actions = permission_actions_history->GetHistory(
         cutoff, PermissionActionsHistory::EntryFilter::WANT_ALL_PROMPTS);
     PermissionActionsHistory::FillInActionCounts(&actions_counts, actions);
+  }
+
+  if (action == PermissionAction::REVOKED) {
+    RecordUmaForRevocationSourceUI(permission, source_ui);
   }
 
   PermissionsClient::Get()->GetUkmSourceId(

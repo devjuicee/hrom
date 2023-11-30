@@ -157,6 +157,7 @@ class SyncServiceImpl : public SyncService,
       ModelType type,
       const std::string& histogram_name) const override;
   void GetTypesWithUnsyncedData(
+      ModelTypeSet requested_types,
       base::OnceCallback<void(ModelTypeSet)> callback) const override;
   void GetLocalDataDescriptions(
       ModelTypeSet types,
@@ -256,9 +257,6 @@ class SyncServiceImpl : public SyncService,
   SyncEncryptionHandler::Observer* GetEncryptionObserverForTest();
 
   SyncClient* GetSyncClientForTest();
-
- protected:
-  bool IsSyncFeatureConsideredRequested() const override;
 
  private:
   enum UnrecoverableErrorReason {
@@ -391,11 +389,6 @@ class SyncServiceImpl : public SyncService,
   // Records (or may record) histograms related to trusted vault passphrase
   // type.
   void MaybeRecordTrustedVaultHistograms();
-
-  // Whether sync-the-feature should be enabled without further action (e.g.
-  // ChromeOS Ash). In practice it means SyncRequested and FirstSetupComplete
-  // are set automatically.
-  bool ShouldAutoStartSyncFeature() const;
 
   // Clean up download status recorder.
   void OnDownloadStatusRecorderFinished();

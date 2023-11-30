@@ -635,7 +635,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.HistoryClusters.DismissReason"
-    enum="NTPHistoryClustersDismissReason" expires_after="2024-03-01">
+    enum="NTPHistoryClustersDismissReason" expires_after="2024-05-26">
   <owner>romanarora@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
   <summary>
@@ -698,7 +698,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.HistoryClusters.ImageDisplayState"
-    enum="NTPHistoryClustersImageDisplayState" expires_after="2024-02-20">
+    enum="NTPHistoryClustersImageDisplayState" expires_after="2024-05-26">
   <owner>romanarora@chromium.org</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -787,6 +787,8 @@ chromium-metrics-reviews@google.com.
     <variant name="1"/>
     <variant name="2"/>
     <variant name="3"/>
+    <variant name="4"/>
+    <variant name="5"/>
   </token>
   <token key="Type">
     <variant name="Suggest"/>
@@ -1244,7 +1246,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Modules.InstanceCount" units="count"
-    expires_after="2024-01-14">
+    expires_after="2024-05-26">
   <owner>danpeng@google.com</owner>
   <owner>romanarora@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>
@@ -1312,7 +1314,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="NewTabPage.Modules.Restored" units="count"
-    expires_after="2024-02-04">
+    expires_after="2024-05-26">
   <owner>danpeng@google.com</owner>
   <owner>tiborg@chromium.org</owner>
   <owner>chrome-desktop-ntp@google.com</owner>

@@ -150,17 +150,6 @@ chromium-metrics-reviews@google.com.
   <variant name="Launch" summary="launch"/>
 </variants>
 
-<variants name="SearchCategory">
-  <variant name="Apps" summary="installed apps"/>
-  <variant name="AppShortcut" summary="shortcut for installed apps"/>
-  <variant name="Files" summary="local and Google Drive files"/>
-  <variant name="Games" summary="system settings"/>
-  <variant name="Helps" summary="help articles"/>
-  <variant name="Images" summary="image results"/>
-  <variant name="PlayStore" summary="play store suggestions"/>
-  <variant name="Web" summary="webpages"/>
-</variants>
-
 <variants name="SearchView">
   <variant name="AnswerCard" summary="answer card"/>
   <variant name="AppsSearch" summary="app tiles search"/>
@@ -1293,7 +1282,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Apps.AppList.SystemInfoProvider.CrosHealthdProbeError.{ProbeErrorSourceStruct}"
-    enum="CrosDiagnosticsCrosHealthdProbeError" expires_after="2024-02-25">
+    enum="CrosDiagnosticsCrosHealthdProbeError" expires_after="2024-05-26">
   <owner>laurencom@google.com</owner>
   <owner>tby@google.com</owner>
   <summary>
@@ -2215,7 +2204,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Apps.MediaApp.Load.OtherOpenWindowCount" units="windows"
-    expires_after="2024-03-24">
+    expires_after="2024-05-26">
   <owner>tapted@chromium.org</owner>
   <owner>patricialor@chromium.org</owner>
   <summary>
@@ -2372,6 +2361,19 @@ chromium-metrics-reviews@google.com.
     promise app is a temporary item in the Launcher/ Shelf which represents an
     app installation, and critical app installation stages will trigger an
     update to this histogram under their relevant event category.
+  </summary>
+</histogram>
+
+<histogram name="Apps.PromiseApp.PromiseAppType" enum="PromiseAppType"
+    expires_after="2024-10-20">
+  <owner>vpao@google.com</owner>
+  <owner>chromeos-apps-foundation-team@google.com</owner>
+  <summary>
+    Records what app type a promise app is when the app installation
+    successfully finishes. A promise app is a temporary item in the Launcher/
+    Shelf which represents an app installation, and this metric tracks which app
+    type is installed most frequently and additionally indicates which platform
+    the installation was triggered from.
   </summary>
 </histogram>
 

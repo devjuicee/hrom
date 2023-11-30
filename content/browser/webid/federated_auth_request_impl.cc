@@ -417,6 +417,39 @@ bool IsFrameVisible(RenderFrameHost* frame) {
          frame->GetVisibilityState() == content::PageVisibilityState::kVisible;
 }
 
+void MaybeAppendQueryParameters(
+    const FederatedAuthRequestImpl::IdentityProviderLoginUrlInfo&
+        idp_login_info,
+    GURL* login_url) {
+  if (!IsFedCmDomainHintEnabled()) {
+    return;
+  }
+  if (idp_login_info.login_hint.empty() && idp_login_info.domain_hint.empty()) {
+    return;
+  }
+  std::string old_query = login_url->query();
+  if (!old_query.empty()) {
+    old_query += "&";
+  }
+  std::string new_query_string = old_query;
+  if (!idp_login_info.login_hint.empty()) {
+    new_query_string +=
+        "login_hint=" + base::EscapeUrlEncodedData(idp_login_info.login_hint,
+                                                   /*use_plus=*/false);
+  }
+  if (!idp_login_info.domain_hint.empty()) {
+    if (!new_query_string.empty()) {
+      new_query_string += "&";
+    }
+    new_query_string +=
+        "domain_hint=" + base::EscapeUrlEncodedData(idp_login_info.domain_hint,
+                                                    /*use_plus=*/false);
+  }
+  GURL::Replacements replacements;
+  replacements.SetQueryStr(new_query_string);
+  *login_url = login_url->ReplaceComponents(replacements);
+}
+
 }  // namespace
 
 FederatedAuthRequestImpl::FetchData::FetchData() = default;
@@ -802,11 +835,7 @@ void FederatedAuthRequestImpl::RequestToken(
   request_dialog_controller_ = CreateDialogController();
   start_time_ = base::TimeTicks::Now();
 
-  FederatedApiPermissionStatus permission_status =
-      GetApiPermissionStatus(url::Origin::Create(idp_get_params_ptrs[0]
-                                                     ->providers[0]
-                                                     ->get_federated()
-                                                     ->config->config_url));
+  FederatedApiPermissionStatus permission_status = GetApiPermissionStatus();
 
   absl::optional<TokenStatus> error_token_status;
   FederatedAuthRequestResult request_result =
@@ -1139,6 +1168,11 @@ void FederatedAuthRequestImpl::OnAllConfigAndWellKnownFetched(
                               /*should_delay_callback=*/true);
       continue;
     }
+    // The login url should be valid unless IdP login status API is disabled.
+    if (idp_info->metadata.idp_login_url.is_valid()) {
+      idp_login_infos_[idp_info->metadata.idp_login_url] = {
+          idp_info->provider->login_hint, idp_info->provider->domain_hint};
+    }
 
     // Make sure that we don't fetch accounts if the IDP sign-in bit is reset to
     // false during the API call. e.g. by the login/logout HEADER.
@@ -1161,9 +1195,10 @@ void FederatedAuthRequestImpl::OnAllConfigAndWellKnownFetched(
         // We fail sooner before, but just to double check, we assert that
         // we are inside a user gesture here again.
         CHECK(render_frame_host().HasTransientUserActivation());
-        // TODO(crbug.com/1487270): we should probably make idp_signin_url
+        // TODO(crbug.com/1487270): we should probably make idp_login_url
         // optional instead of empty.
-        SignInToIdP(idp_info->metadata.idp_login_url);
+        LoginToIdP(/*can_append_hints=*/false,
+                   idp_info->metadata.idp_login_url);
         // TODO(https://crbug.com/1487268): handle the button flow and the
         // Multi IdP API (what should happen if you are logged in to some
         // IdPs but not to others).
@@ -1299,6 +1334,19 @@ void FederatedAuthRequestImpl::OnFetchDataForIdpFailed(
 
 void FederatedAuthRequestImpl::MaybeShowAccountsDialog() {
   if (!fetch_data_.pending_idps.empty()) {
+    return;
+  }
+
+  // The accounts fetch could be delayed for legitimate reasons. A user may be
+  // able to disable FedCM API (e.g. via settings or dismissing another FedCM UI
+  // on the same RP origin) before the browser receives the accounts response.
+  // We should exit early without showing any UI.
+  if (GetApiPermissionStatus() != FederatedApiPermissionStatus::GRANTED) {
+    CompleteRequestWithError(
+        FederatedAuthRequestResult::kErrorDisabledInSettings,
+        TokenStatus::kDisabledInSettings,
+        /*token_error=*/absl::nullopt,
+        /*should_delay_callback=*/true);
     return;
   }
 
@@ -1463,8 +1511,9 @@ void FederatedAuthRequestImpl::MaybeShowAccountsDialog() {
       show_auto_reauthn_checkbox,
       base::BindOnce(&FederatedAuthRequestImpl::OnAccountSelected,
                      weak_ptr_factory_.GetWeakPtr()),
-      base::BindOnce(&FederatedAuthRequestImpl::SignInToIdP,
-                     weak_ptr_factory_.GetWeakPtr()),
+      base::BindOnce(&FederatedAuthRequestImpl::LoginToIdP,
+                     weak_ptr_factory_.GetWeakPtr(),
+                     /*can_append_hints=*/false),
       base::BindOnce(&FederatedAuthRequestImpl::OnDialogDismissed,
                      weak_ptr_factory_.GetWeakPtr()));
   devtools_instrumentation::OnFedCmDialogShown(&render_frame_host());
@@ -1562,8 +1611,9 @@ void FederatedAuthRequestImpl::HandleAccountsFetchFailure(
       idp_info->metadata,
       base::BindOnce(&FederatedAuthRequestImpl::OnDismissFailureDialog,
                      weak_ptr_factory_.GetWeakPtr()),
-      base::BindOnce(&FederatedAuthRequestImpl::SignInToIdP,
-                     weak_ptr_factory_.GetWeakPtr()));
+      base::BindOnce(&FederatedAuthRequestImpl::LoginToIdP,
+                     weak_ptr_factory_.GetWeakPtr(),
+                     /*can_append_hints=*/true));
   fedcm_metrics_->RecordMismatchDialogShown();
   mismatch_dialog_shown_time_ = base::TimeTicks::Now();
   devtools_instrumentation::OnFedCmDialogShown(&render_frame_host());
@@ -1750,9 +1800,7 @@ void FederatedAuthRequestImpl::OnAccountSelected(const GURL& idp_config_url,
   // settings are changed while an existing FedCM UI is displayed. Ideally, we
   // should enforce this check before all requests but users typically won't
   // have time to disable the FedCM API in other types of requests.
-  url::Origin idp_origin = url::Origin::Create(idp_config_url);
-  if (GetApiPermissionStatus(idp_origin) !=
-      FederatedApiPermissionStatus::GRANTED) {
+  if (GetApiPermissionStatus() != FederatedApiPermissionStatus::GRANTED) {
     CompleteRequestWithError(
         FederatedAuthRequestResult::kErrorDisabledInSettings,
         TokenStatus::kDisabledInSettings,
@@ -1803,6 +1851,8 @@ void FederatedAuthRequestImpl::OnAccountSelected(const GURL& idp_config_url,
 
 void FederatedAuthRequestImpl::OnDismissFailureDialog(
     IdentityRequestDialogController::DismissReason dismiss_reason) {
+  dialog_type_ = kNone;
+
   // Clicking the close button and swiping away the account chooser are more
   // intentional than other ways of dismissing the account chooser such as
   // the virtual keyboard showing on Android. Dismissal through closing the
@@ -1838,6 +1888,8 @@ void FederatedAuthRequestImpl::OnDismissErrorDialog(
     IdpNetworkRequestManager::FetchStatus status,
     absl::optional<TokenError> token_error,
     IdentityRequestDialogController::DismissReason dismiss_reason) {
+  dialog_type_ = kNone;
+
   bool has_url = token_error && !token_error->url.is_empty();
   ErrorDialogResult result;
   switch (dismiss_reason) {
@@ -1869,6 +1921,8 @@ void FederatedAuthRequestImpl::OnDismissErrorDialog(
 
 void FederatedAuthRequestImpl::OnDialogDismissed(
     IdentityRequestDialogController::DismissReason dismiss_reason) {
+  dialog_type_ = kNone;
+
   // Clicking the close button and swiping away the account chooser are more
   // intentional than other ways of dismissing the account chooser such as
   // the virtual keyboard showing on Android.
@@ -1970,6 +2024,11 @@ void FederatedAuthRequestImpl::ShowErrorDialog(
       base::BindOnce(&FederatedAuthRequestImpl::CompleteRequestWithError,
                      weak_ptr_factory_.GetWeakPtr()));
 
+  dialog_type_ = kError;
+  config_url_ = idp_config_url;
+  token_request_status_ = status;
+  token_error_ = token_error;
+
   // TODO(crbug.com/1485710): Refactor IdentityCredentialTokenError
   request_dialog_controller_->ShowErrorDialog(
       GetTopFrameOriginForDisplay(GetEmbeddingOrigin()), iframe_for_display,
@@ -1983,6 +2042,7 @@ void FederatedAuthRequestImpl::ShowErrorDialog(
           ? base::BindOnce(&FederatedAuthRequestImpl::ShowModalDialog,
                            weak_ptr_factory_.GetWeakPtr(), token_error->url)
           : base::NullCallback());
+  devtools_instrumentation::OnFedCmDialogShown(&render_frame_host());
 }
 
 void FederatedAuthRequestImpl::OnTokenResponseReceived(
@@ -2084,22 +2144,16 @@ void FederatedAuthRequestImpl::CompleteTokenRequest(
             should_delay_callback);
         return;
       }
-      // Grant sharing permission specific to *this account*.
-      //
-      // TODO(majidvp): But wait which account?
-      //   1) The account that user selected in our UI (i.e., account_id_) or
-      //   2) The one for which the IDP generated a token.
-      //
-      // Ideally these are one and the same but currently there is no
-      // enforcement for that equality so they could be different. In the
-      // future we may want to enforce that the token account (aka subject)
-      // matches the user selected account. But for now these questions are
-      // moot since we don't actually inspect the returned idtoken.
-      // https://crbug.com/1199088
+
+      // Auto re-authentication can only be triggered when there's already a
+      // sharing permission OR the IdP is exempted with 3PC access. Either way
+      // we shouldn't explicitly grant permission here.
       CHECK(!account_id_.empty());
-      permission_delegate_->GrantSharingPermission(
-          origin(), GetEmbeddingOrigin(), url::Origin::Create(idp_config_url),
-          account_id_);
+      if (dialog_type_ != kAutoReauth) {
+        permission_delegate_->GrantSharingPermission(
+            origin(), GetEmbeddingOrigin(), url::Origin::Create(idp_config_url),
+            account_id_);
+      }
 
       SetRequiresUserMediation(false);
 
@@ -2267,6 +2321,7 @@ void FederatedAuthRequestImpl::CleanUp() {
   token_response_time_ = base::TimeTicks();
   accounts_dialog_shown_time_ = absl::nullopt;
   mismatch_dialog_shown_time_ = absl::nullopt;
+  idp_login_infos_.clear();
   idp_infos_.clear();
   idp_data_for_display_.clear();
   fetch_data_ = FetchData();
@@ -2274,6 +2329,8 @@ void FederatedAuthRequestImpl::CleanUp() {
   metrics_endpoints_.clear();
   token_request_get_infos_.clear();
   login_url_ = GURL();
+  config_url_ = GURL();
+  token_error_ = absl::nullopt;
   dialog_type_ = kNone;
 }
 
@@ -2440,8 +2497,8 @@ void FederatedAuthRequestImpl::OnRejectRequest() {
                            /*should_delay_callback=*/false);
 }
 
-FederatedApiPermissionStatus FederatedAuthRequestImpl::GetApiPermissionStatus(
-    const url::Origin& idp_origin) {
+FederatedApiPermissionStatus
+FederatedAuthRequestImpl::GetApiPermissionStatus() {
   DCHECK(api_permission_delegate_);
   return api_permission_delegate_->GetApiPermissionStatus(GetEmbeddingOrigin());
 }
@@ -2467,13 +2524,37 @@ void FederatedAuthRequestImpl::DismissAccountsDialogForDevtools(
 
 void FederatedAuthRequestImpl::AcceptConfirmIdpLoginDialogForDevtools() {
   DCHECK(login_url_.is_valid());
-  SignInToIdP(login_url_);
+  LoginToIdP(/*can_append_hints=*/true, login_url_);
 }
 
 void FederatedAuthRequestImpl::DismissConfirmIdpLoginDialogForDevtools() {
   // These values match what HandleAccountsFetchFailure passes.
   OnDismissFailureDialog(
       IdentityRequestDialogController::DismissReason::kOther);
+}
+
+bool FederatedAuthRequestImpl::HasMoreDetailsButtonForDevtools() {
+  return token_error_ && token_error_->url.is_valid();
+}
+
+void FederatedAuthRequestImpl::ClickErrorDialogGotItForDevtools() {
+  DCHECK(token_error_);
+  OnDismissErrorDialog(
+      config_url_, token_request_status_, token_error_,
+      IdentityRequestDialogController::DismissReason::kGotItButton);
+}
+
+void FederatedAuthRequestImpl::ClickErrorDialogMoreDetailsForDevtools() {
+  DCHECK(token_error_ && token_error_->url.is_valid());
+  ShowModalDialog(token_error_->url);
+  OnDismissErrorDialog(
+      config_url_, token_request_status_, token_error_,
+      IdentityRequestDialogController::DismissReason::kMoreDetailsButton);
+}
+
+void FederatedAuthRequestImpl::DismissErrorDialogForDevtools() {
+  OnDismissErrorDialog(config_url_, token_request_status_, token_error_,
+                       IdentityRequestDialogController::DismissReason::kOther);
 }
 
 bool FederatedAuthRequestImpl::GetSingleReturningAccount(
@@ -2591,9 +2672,17 @@ void FederatedAuthRequestImpl::SetRequiresUserMediation(
       GURL(site), requires_user_mediation);
 }
 
-void FederatedAuthRequestImpl::SignInToIdP(GURL signin_url) {
+void FederatedAuthRequestImpl::LoginToIdP(bool can_append_hints,
+                                          GURL login_url) {
+  const auto& it = idp_login_infos_.find(login_url);
+  CHECK(it != idp_login_infos_.end());
+  if (can_append_hints) {
+    // Before invoking UI, append the query parameters to the `idp_login_url` if
+    // needed.
+    MaybeAppendQueryParameters(it->second, &login_url);
+  }
   permission_delegate_->AddIdpSigninStatusObserver(this);
-  ShowModalDialog(signin_url);
+  ShowModalDialog(login_url);
 }
 
 void FederatedAuthRequestImpl::PreventSilentAccess(
@@ -2653,16 +2742,12 @@ void FederatedAuthRequestImpl::Disconnect(
   bool should_complete_request_immediately = false;
   devtools_instrumentation::WillSendFedCmRequest(
       &render_frame_host(), &intercept, &should_complete_request_immediately);
-  should_complete_request_immediately_ =
-      (intercept && should_complete_request_immediately) ||
-      api_permission_delegate_->ShouldCompleteRequestImmediately();
 
   auto network_manager = CreateNetworkManager();
 
   disconnect_request_ = FederatedAuthDisconnectRequest::Create(
       std::move(network_manager), permission_delegate_, &render_frame_host(),
-      fedcm_metrics_.get(), std::move(options),
-      should_complete_request_immediately_);
+      fedcm_metrics_.get(), std::move(options));
   FederatedAuthDisconnectRequest* disconnect_request_ptr =
       disconnect_request_.get();
 

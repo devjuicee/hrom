@@ -864,8 +864,10 @@ void FormStructure::ProcessQueryResponse(
       }
       field->set_server_predictions({field_suggestion->predictions().begin(),
                                      field_suggestion->predictions().end()});
-      field->set_may_use_prefilled_placeholder(
-          field_suggestion->may_use_prefilled_placeholder());
+      if (field_suggestion->has_may_use_prefilled_placeholder()) {
+        field->set_may_use_prefilled_placeholder(
+            field_suggestion->may_use_prefilled_placeholder());
+      }
       if (heuristic_type != field->Type().GetStorableType()) {
         query_response_overrode_heuristics = true;
       }
@@ -965,6 +967,7 @@ std::vector<FormDataPredictions> FormStructure::GetFieldTypePredictions(
       annotated_field.heuristic_type =
           FieldTypeToStringView(field->heuristic_type());
       annotated_field.server_type = FieldTypeToStringView(field->server_type());
+      annotated_field.html_type = FieldTypeToStringView(field->html_type());
       annotated_field.overall_type = field->Type().ToString();
       annotated_field.parseable_name =
           base::UTF16ToUTF8(field->parseable_name());
@@ -1502,12 +1505,20 @@ void FormStructure::EncodeFormFieldsForUpload(
     }
 
     // Don't upload checkable fields.
-    if (IsCheckable(field->check_status))
+    if (IsCheckable(field->check_status)) {
       continue;
+    }
 
     // Add the same field elements as the query and a few more below.
-    if (ShouldSkipField(*field))
+    if (ShouldSkipField(*field)) {
       continue;
+    }
+
+    // Do not upload fields that were filled with a fallback type, as this would
+    // introduce unnecessary noise in the field votes.
+    if (field->WasAutofilledWithFallback()) {
+      continue;
+    }
 
     auto* added_field = upload->add_field();
 

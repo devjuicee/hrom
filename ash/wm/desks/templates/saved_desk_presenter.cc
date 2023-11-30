@@ -34,6 +34,7 @@
 #include "base/time/time.h"
 #include "third_party/re2/src/re2/re2.h"
 #include "ui/base/l10n/l10n_util.h"
+#include "ui/display/screen.h"
 #include "ui/wm/core/window_util.h"
 
 namespace ash {
@@ -355,8 +356,7 @@ void SavedDeskPresenter::UpdateUIForSavedDeskLibrary() {
   // The library and the library button is always hidden if we enter tablet
   // mode. If not in tablet mode, the library button is visible if there are
   // saved desks in the model, *or* we are already showing the library.
-  const bool in_tablet_mode =
-      Shell::Get()->tablet_mode_controller()->InTabletMode();
+  const bool in_tablet_mode = display::Screen::GetScreen()->InTabletMode();
 
   for (auto& overview_grid : overview_session_->grid_list()) {
     const bool is_showing_library = overview_grid->IsShowingSavedDeskLibrary();
@@ -382,7 +382,7 @@ void SavedDeskPresenter::UpdateUIForSavedDeskLibrary() {
 
 void SavedDeskPresenter::DeleteEntry(
     const base::Uuid& uuid,
-    absl::optional<DeskTemplateType> record_for_type) {
+    std::optional<DeskTemplateType> record_for_type) {
   weak_ptr_factory_.InvalidateWeakPtrs();
   GetDeskModel()->DeleteEntry(
       uuid,
@@ -527,7 +527,7 @@ void SavedDeskPresenter::GetAllEntries(const base::Uuid& item_to_focus,
 
 void SavedDeskPresenter::OnDeleteEntry(
     const base::Uuid& uuid,
-    absl::optional<DeskTemplateType> record_for_type,
+    std::optional<DeskTemplateType> record_for_type,
     desks_storage::DeskModel::DeleteEntryStatus status) {
   if (status != desks_storage::DeskModel::DeleteEntryStatus::kOk)
     return;
@@ -611,7 +611,7 @@ void SavedDeskPresenter::LaunchSavedDeskIntoNewDesk(
   if (saved_desk_type == DeskTemplateType::kSaveAndRecall) {
     // Passing nullopt as type since this indicates that we don't want to record
     // the `delete` metric for this operation.
-    DeleteEntry(uuid, /*record_for_type=*/absl::nullopt);
+    DeleteEntry(uuid, /*record_for_type=*/std::nullopt);
     RecordTimeBetweenSaveAndRecall(base::Time::Now() -
                                    saved_desk_creation_time);
   }

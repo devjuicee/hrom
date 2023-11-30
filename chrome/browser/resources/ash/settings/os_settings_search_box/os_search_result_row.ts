@@ -665,11 +665,12 @@ export class OsSearchResultRowElement extends OsSearchResultRowElementBase {
    * @return The name of the icon to use.
    */
   private getResultIcon_(): string {
+    const isRevampEnabled = isRevampWayfindingEnabled();
     if (isPersonalizationSearchResult(this.searchResult)) {
-      return 'os-settings:paint-brush';
+      return isRevampEnabled ? 'os-settings:personalization-revamp' :
+                               'os-settings:paint-brush';
     }
 
-    const isRevampEnabled = isRevampWayfindingEnabled();
     const settingsSearchResult = this.searchResult as SettingsSearchResult;
     switch (settingsSearchResult.icon) {
       case SearchResultIcon.kA11y:
@@ -702,7 +703,7 @@ export class OsSearchResultRowElement extends OsSearchResultRowElementBase {
       case SearchResultIcon.kChromeVox:
         return 'os-settings:chromevox';
       case SearchResultIcon.kClock:
-        return 'os-settings:access-time';
+        return 'os-settings:clock';
       case SearchResultIcon.kContrast:
         return 'os-settings:contrast';
       case SearchResultIcon.kDeveloperTags:
@@ -714,7 +715,8 @@ export class OsSearchResultRowElement extends OsSearchResultRowElementBase {
       case SearchResultIcon.kDockedMagnifier:
         return 'os-settings:docked-magnifier';
       case SearchResultIcon.kDrive:
-        return 'os-settings:google-drive';
+        return isRevampEnabled ? 'os-settings:google-drive-revamp' :
+                                 'os-settings:google-drive';
       case SearchResultIcon.kEthernet:
         return 'os-settings:settings-ethernet';
       case SearchResultIcon.kFingerprint:
@@ -725,18 +727,17 @@ export class OsSearchResultRowElement extends OsSearchResultRowElementBase {
         return 'os-settings:fullscreen-magnifier';
       case SearchResultIcon.kGeolocation:
         return 'os-settings:geolocation';
-      case SearchResultIcon.kGlobe:
-        return 'os-settings:language';
       case SearchResultIcon.kGooglePlay:
         return 'os-settings:google-play';
-      case SearchResultIcon.kHardDrive:
-        return 'os-settings:hard-drive';
       case SearchResultIcon.kHotspot:
         return 'os-settings:hotspot';
       case SearchResultIcon.kInstantTethering:
         return 'os-settings:magic-tethering';
       case SearchResultIcon.kKeyboard:
         return 'os-settings:keyboard';
+      case SearchResultIcon.kLanguage:
+        return isRevampEnabled ? 'os-settings:language-revamp' :
+                                 'os-settings:language';
       case SearchResultIcon.kLaptop:
         return 'os-settings:laptop-chromebook';
       case SearchResultIcon.kLock:
@@ -757,7 +758,8 @@ export class OsSearchResultRowElement extends OsSearchResultRowElementBase {
       case SearchResultIcon.kOnScreenKeyboard:
         return 'os-settings:on-screen-keyboard';
       case SearchResultIcon.kPaintbrush:
-        return 'os-settings:paint-brush';
+        return isRevampEnabled ? 'os-settings:personalization-revamp' :
+                                 'os-settings:paint-brush';
       case SearchResultIcon.kPenguin:
         return 'os-settings:crostini-mascot';
       case SearchResultIcon.kPhone:
@@ -769,13 +771,17 @@ export class OsSearchResultRowElement extends OsSearchResultRowElementBase {
       case SearchResultIcon.kPrinter:
         return 'os-settings:print';
       case SearchResultIcon.kReset:
-        return 'os-settings:restore';
+        return isRevampEnabled ? 'os-settings:startup' : 'os-settings:restore';
+      case SearchResultIcon.kRestore:
+        return isRevampEnabled ? 'os-settings:restore-revamp' :
+                                 'os-settings:startup';
       case SearchResultIcon.kSelectToSpeak:
         return 'os-settings:select-to-speak';
       case SearchResultIcon.kShield:
         return 'cr:security';
-      case SearchResultIcon.kStartup:
-        return 'os-settings:startup';
+      case SearchResultIcon.kStorage:
+        return isRevampEnabled ? 'os-settings:storage' :
+                                 'os-settings:hard-drive';
       case SearchResultIcon.kStylus:
         return 'os-settings:stylus';
       case SearchResultIcon.kSync:

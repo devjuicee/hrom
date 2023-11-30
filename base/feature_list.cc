@@ -138,19 +138,21 @@ struct FeatureEntry {
   // Size of the pickled structure, NOT the total size of this entry.
   uint64_t pickle_size;
 
+  // Return a pointer to the pickled data area immediately following the entry.
+  char* GetPickledDataPtr() { return reinterpret_cast<char*>(this + 1); }
+  const char* GetPickledDataPtr() const {
+    return reinterpret_cast<const char*>(this + 1);
+  }
+
   // Reads the feature and trial name from the pickle. Calling this is only
   // valid on an initialized entry that's in shared memory.
   bool GetFeatureAndTrialName(StringPiece* feature_name,
                               StringPiece* trial_name) const {
-    const char* src =
-        reinterpret_cast<const char*>(this) + sizeof(FeatureEntry);
-
-    Pickle pickle(src, checked_cast<size_t>(pickle_size));
+    Pickle pickle(GetPickledDataPtr(), checked_cast<size_t>(pickle_size));
     PickleIterator pickle_iter(pickle);
-
-    if (!pickle_iter.ReadStringPiece(feature_name))
+    if (!pickle_iter.ReadStringPiece(feature_name)) {
       return false;
-
+    }
     // Return true because we are not guaranteed to have a trial name anyways.
     std::ignore = pickle_iter.ReadStringPiece(trial_name);
     return true;
@@ -266,9 +268,8 @@ FeatureList::ScopedDisallowOverrides::~ScopedDisallowOverrides() {
 #endif
 }
 
-void FeatureList::InitializeFromCommandLine(
-    const std::string& enable_features,
-    const std::string& disable_features) {
+void FeatureList::InitFromCommandLine(const std::string& enable_features,
+                                      const std::string& disable_features) {
   DCHECK(!initialized_);
 
   std::string parsed_enable_features;
@@ -308,8 +309,7 @@ void FeatureList::InitializeFromCommandLine(
   initialized_from_command_line_ = true;
 }
 
-void FeatureList::InitializeFromSharedMemory(
-    PersistentMemoryAllocator* allocator) {
+void FeatureList::InitFromSharedMemory(PersistentMemoryAllocator* allocator) {
   DCHECK(!initialized_);
 
   PersistentMemoryAllocator::Iterator iter(allocator);
@@ -406,9 +406,7 @@ void FeatureList::AddFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
 
     entry->override_state = override.second.overridden_state;
     entry->pickle_size = pickle.size();
-
-    char* dst = reinterpret_cast<char*>(entry) + sizeof(FeatureEntry);
-    memcpy(dst, pickle.data(), pickle.size());
+    memcpy(entry->GetPickledDataPtr(), pickle.data(), pickle.size());
 
     allocator->MakeIterable(entry);
   }
@@ -506,14 +504,14 @@ bool FeatureList::ParseEnableFeatureString(StringPiece enable_feature,
 }
 
 // static
-bool FeatureList::InitializeInstance(const std::string& enable_features,
-                                     const std::string& disable_features) {
-  return InitializeInstance(enable_features, disable_features,
-                            std::vector<FeatureOverrideInfo>());
+bool FeatureList::InitInstance(const std::string& enable_features,
+                               const std::string& disable_features) {
+  return InitInstance(enable_features, disable_features,
+                      std::vector<FeatureOverrideInfo>());
 }
 
 // static
-bool FeatureList::InitializeInstance(
+bool FeatureList::InitInstance(
     const std::string& enable_features,
     const std::string& disable_features,
     const std::vector<FeatureOverrideInfo>& extra_overrides) {
@@ -540,7 +538,7 @@ bool FeatureList::InitializeInstance(
   }
 
   std::unique_ptr<FeatureList> feature_list(new FeatureList);
-  feature_list->InitializeFromCommandLine(enable_features, disable_features);
+  feature_list->InitFromCommandLine(enable_features, disable_features);
   feature_list->RegisterExtraFeatureOverrides(extra_overrides);
   FeatureList::SetInstance(std::move(feature_list));
   return !instance_existed_before;

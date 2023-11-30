@@ -507,6 +507,17 @@ chromium-metrics-reviews@google.com.
   <token key="PermissionType" variants="AllPermissionTypes"/>
 </histogram>
 
+<histogram name="Permissions.GetLastCommittedOriginAsURL.IsFileURL"
+    enum="Boolean" expires_after="2024-10-30">
+  <owner>elklm@chromium.org</owner>
+  <owner>src/components/permissions/PERMISSIONS_OWNERS</owner>
+  <summary>
+    Recorded whenever a RenderFrameHost is used to fetch an origin for
+    permission verification on Android. This histogram is needed to verify if
+    the file url override rule is still needed.
+  </summary>
+</histogram>
+
 <histogram name="Permissions.MissingOSLevelPermission.Action"
     enum="PermissionAction" expires_after="2024-05-19">
   <owner>andypaicu@chromium.org</owner>
@@ -1098,15 +1109,6 @@ chromium-metrics-reviews@google.com.
     set to be blocked completely.
   </summary>
   <token key="RegularProfileFiltered">
-    <variant name=""
-        summary="prior to version M-110. It is recorded for both regular and
-                 irregular profiles">
-      <obsolete>
-        Deprecated in M110. Used to include data from both regular and irregular
-        profiles, such as incognito profiles. Consult the new histograms with
-        the RegularProfile tag instead.
-      </obsolete>
-    </variant>
     <variant name="RegularProfile."
         summary="from version M-110. It is recorded only for regular profiles"/>
   </token>
@@ -1167,6 +1169,17 @@ chromium-metrics-reviews@google.com.
   <summary>
     Records, each time when the notification permission is revoked, whether a
     UKM event was recorded as well.
+  </summary>
+</histogram>
+
+<histogram name="Permissions.Revocation.Notifications.SourceUI"
+    enum="PermissionSourceUI" expires_after="2024-06-24">
+  <owner>engedy@chromium.org</owner>
+  <owner>willxu@google.com</owner>
+  <owner>src/components/permissions/PERMISSIONS_OWNERS</owner>
+  <summary>
+    When revoking the notification from a website for push messaging, this
+    records the PermissionSourceUI where it occurred.
   </summary>
 </histogram>
 

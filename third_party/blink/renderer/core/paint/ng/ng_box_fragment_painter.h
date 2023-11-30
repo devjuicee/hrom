@@ -11,11 +11,9 @@
 #include "third_party/blink/renderer/core/layout/background_bleed_avoidance.h"
 #include "third_party/blink/renderer/core/layout/hit_test_phase.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_cursor.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/paint/box_painter_base.h"
 #include "third_party/blink/renderer/core/paint/ng/ng_inline_paint_context.h"
-#include "third_party/blink/renderer/platform/geometry/layout_point.h"
-#include "third_party/blink/renderer/platform/geometry/layout_size.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 
 namespace blink {
@@ -26,24 +24,24 @@ class FragmentItems;
 class HitTestLocation;
 class HitTestResult;
 class InlineBackwardCursor;
+class InlineBoxFragmentPainter;
 class InlineCursor;
-class NGInlineBoxFragmentPainter;
-class NGPhysicalFragment;
+class PhysicalFragment;
 class ScopedPaintState;
 struct PaintInfo;
 
 // Painter for LayoutNG box fragments, paints borders and background. Delegates
-// to NGTextFragmentPainter to paint line box fragments.
+// to TextFragmentPainter to paint line box fragments.
 class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
   STACK_ALLOCATED();
 
  public:
-  NGBoxFragmentPainter(const NGPhysicalBoxFragment&);
+  explicit NGBoxFragmentPainter(const PhysicalBoxFragment&);
   // Construct for an inline box.
   NGBoxFragmentPainter(const InlineCursor& inline_box_cursor,
                        const FragmentItem& item,
-                       const NGPhysicalBoxFragment& fragment,
-                       NGInlinePaintContext* inline_context);
+                       const PhysicalBoxFragment& fragment,
+                       InlinePaintContext* inline_context);
 
   void Paint(const PaintInfo&);
   // Routes single PaintPhase to actual painters, and traverses children.
@@ -78,7 +76,6 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
  protected:
   PhysicalBoxStrut ComputeBorders() const override;
   PhysicalBoxStrut ComputePadding() const override;
-  PhysicalBoxStrut ComputeMargins() const override;
   BoxPainterBase::FillLayerInfo GetFillLayerInfo(
       const Color&,
       const FillLayer&,
@@ -91,18 +88,17 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
                          bool object_has_multiple_boxes) override;
   void PaintTextClipMask(const PaintInfo& paint_info,
                          PhysicalOffset paint_offset,
-                         NGInlineBoxFragmentPainter* inline_box_painter);
-  PhysicalRect AdjustRectForScrolledContent(
-      const PaintInfo&,
-      const BoxPainterBase::FillLayerInfo&,
-      const PhysicalRect&) override;
+                         InlineBoxFragmentPainter* inline_box_painter);
+  PhysicalRect AdjustRectForScrolledContent(GraphicsContext&,
+                                            const PhysicalBoxStrut& borders,
+                                            const PhysicalRect&) const override;
 
  private:
-  NGBoxFragmentPainter(const NGPhysicalBoxFragment&,
+  NGBoxFragmentPainter(const PhysicalBoxFragment&,
                        const DisplayItemClient& display_item_client,
                        const InlineCursor* inline_box_cursor = nullptr,
                        const FragmentItem* box_item = nullptr,
-                       NGInlinePaintContext* inline_context = nullptr);
+                       InlinePaintContext* inline_context = nullptr);
 
   enum MoveTo { kDontSkipChildren, kSkipChildren };
   bool ShouldPaint(const ScopedPaintState&) const;
@@ -151,7 +147,7 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
   void PaintLineBoxChildItems(InlineCursor* children,
                               const PaintInfo&,
                               const PhysicalOffset& paint_offset);
-  void PaintLineBox(const NGPhysicalFragment& line_box_fragment,
+  void PaintLineBox(const PhysicalFragment& line_box_fragment,
                     const DisplayItemClient& display_item_client,
                     const FragmentItem& line_box_item,
                     const PaintInfo&,
@@ -164,7 +160,7 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
                      const PhysicalOffset& paint_offset,
                      const PhysicalOffset& parent_offset);
   void PaintBoxItem(const FragmentItem& item,
-                    const NGPhysicalBoxFragment& child_fragment,
+                    const PhysicalBoxFragment& child_fragment,
                     const InlineCursor& cursor,
                     const PaintInfo& paint_info,
                     const PhysicalOffset& paint_offset);
@@ -174,7 +170,7 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
                     const PhysicalOffset& paint_offset,
                     const PhysicalOffset& parent_offset);
   void PaintFloatingItems(const PaintInfo& paint_info, InlineCursor* cursor);
-  void PaintFloatingChildren(const NGPhysicalFragment&,
+  void PaintFloatingChildren(const PhysicalFragment&,
                              const PaintInfo& paint_info);
   void PaintFloats(const PaintInfo&);
   void PaintMask(const PaintInfo&, const PhysicalOffset& paint_offset);
@@ -188,7 +184,7 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
   bool PaintOverflowControls(const PaintInfo&,
                              const PhysicalOffset& paint_offset);
 
-  NGInlinePaintContext& EnsureInlineContext();
+  InlinePaintContext& EnsureInlineContext();
 
   // This should be called in the background paint phase even if there is no
   // other painted content.
@@ -208,7 +204,7 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
     // T is PhysicalRect or gfx::QuadF.
     template <typename T>
     bool AddNodeToResult(Node* node,
-                         const NGPhysicalBoxFragment* box_fragment,
+                         const PhysicalBoxFragment* box_fragment,
                          const T& bounds_rect,
                          const PhysicalOffset& offset) const;
     // Same as |AddNodeToResult|, except that |offset| is in the content
@@ -216,11 +212,10 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
     // differ when |container| is a scroll container.
     // T is PhysicalRect or gfx::QuadF.
     template <typename T>
-    bool AddNodeToResultWithContentOffset(
-        Node* node,
-        const NGPhysicalBoxFragment& container,
-        const T& bounds_rect,
-        PhysicalOffset offset) const;
+    bool AddNodeToResultWithContentOffset(Node* node,
+                                          const PhysicalBoxFragment& container,
+                                          const T& bounds_rect,
+                                          PhysicalOffset offset) const;
 
     HitTestPhase phase;
     const HitTestLocation& location;
@@ -242,7 +237,7 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
   bool HitTestChildren(const HitTestContext& hit_test,
                        const PhysicalOffset& physical_offset);
   bool HitTestChildren(const HitTestContext& hit_test,
-                       const NGPhysicalBoxFragment& container,
+                       const PhysicalBoxFragment& container,
                        const InlineCursor& children,
                        const PhysicalOffset& physical_offset);
   bool HitTestBlockChildren(HitTestResult&,
@@ -250,10 +245,10 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
                             PhysicalOffset,
                             HitTestPhase);
   bool HitTestItemsChildren(const HitTestContext& hit_test,
-                            const NGPhysicalBoxFragment& container,
+                            const PhysicalBoxFragment& container,
                             const InlineCursor& children);
   bool HitTestFloatingChildren(const HitTestContext& hit_test,
-                               const NGPhysicalFragment& container,
+                               const PhysicalFragment& container,
                                const PhysicalOffset& accumulated_offset);
   bool HitTestFloatingChildItems(const HitTestContext& hit_test,
                                  const InlineCursor& children,
@@ -263,11 +258,11 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
   // @param physical_offset Physical offset of the given box fragment in the
   // paint layer.
   bool HitTestInlineChildBoxFragment(const HitTestContext& hit_test,
-                                     const NGPhysicalBoxFragment& fragment,
+                                     const PhysicalBoxFragment& fragment,
                                      const InlineBackwardCursor& cursor,
                                      const PhysicalOffset& physical_offset);
   bool HitTestChildBoxItem(const HitTestContext& hit_test,
-                           const NGPhysicalBoxFragment& container,
+                           const PhysicalBoxFragment& container,
                            const FragmentItem& item,
                            const InlineBackwardCursor& cursor);
 
@@ -300,7 +295,7 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
   bool UpdateHitTestResultForView(const PhysicalRect& bounds_rect,
                                   const HitTestContext& hit_test) const;
 
-  const NGPhysicalBoxFragment& PhysicalFragment() const {
+  const PhysicalBoxFragment& GetPhysicalFragment() const {
     return box_fragment_;
   }
   const DisplayItemClient& GetDisplayItemClient() const {
@@ -311,22 +306,22 @@ class CORE_EXPORT NGBoxFragmentPainter : public BoxPainterBase {
   static bool ShouldHitTestCulledInlineAncestors(const HitTestContext& hit_test,
                                                  const FragmentItem& item);
 
-  const NGPhysicalBoxFragment& box_fragment_;
+  const PhysicalBoxFragment& box_fragment_;
   const DisplayItemClient& display_item_client_;
   const FragmentItems* items_ = nullptr;
   const FragmentItem* box_item_ = nullptr;
   const InlineCursor* inline_box_cursor_ = nullptr;
-  NGInlinePaintContext* inline_context_ = nullptr;
-  absl::optional<NGInlinePaintContext> inline_context_storage_;
+  InlinePaintContext* inline_context_ = nullptr;
+  absl::optional<InlinePaintContext> inline_context_storage_;
 };
 
 inline NGBoxFragmentPainter::NGBoxFragmentPainter(
-    const NGPhysicalBoxFragment& box,
+    const PhysicalBoxFragment& box,
     const DisplayItemClient& display_item_client,
     const InlineCursor* inline_box_cursor,
     const FragmentItem* box_item,
-    NGInlinePaintContext* inline_context)
-    : BoxPainterBase(&box.GetDocument(), box.Style(), box.GetNode()),
+    InlinePaintContext* inline_context)
+    : BoxPainterBase(box.GetDocument(), box.Style(), box.GetNode()),
       box_fragment_(box),
       display_item_client_(display_item_client),
       items_(box.Items()),
@@ -344,7 +339,7 @@ inline NGBoxFragmentPainter::NGBoxFragmentPainter(
 }
 
 inline NGBoxFragmentPainter::NGBoxFragmentPainter(
-    const NGPhysicalBoxFragment& fragment)
+    const PhysicalBoxFragment& fragment)
     : NGBoxFragmentPainter(fragment,
                            *fragment.GetLayoutObject(),
                            /* inline_box_cursor */ nullptr,
@@ -354,8 +349,8 @@ inline NGBoxFragmentPainter::NGBoxFragmentPainter(
 inline NGBoxFragmentPainter::NGBoxFragmentPainter(
     const InlineCursor& inline_box_cursor,
     const FragmentItem& item,
-    const NGPhysicalBoxFragment& fragment,
-    NGInlinePaintContext* inline_context)
+    const PhysicalBoxFragment& fragment,
+    InlinePaintContext* inline_context)
     : NGBoxFragmentPainter(fragment,
                            *item.GetDisplayItemClient(),
                            &inline_box_cursor,

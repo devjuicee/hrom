@@ -677,26 +677,6 @@ chromium-metrics-reviews@google.com.
   </token>
 </histogram>
 
-<histogram name="Search.GsaAccountChangeNotificationSource"
-    enum="GsaAccountChangeNotificationSource" expires_after="M77">
-  <owner>lizeb@chromium.org</owner>
-  <summary>
-    On Android, when GSA tells Chrome about an account change, what is the
-    notification mechanism used, which is either the service connection, or a
-    broadcast. Recorded once per account change.
-  </summary>
-</histogram>
-
-<histogram name="Search.GsaBroadcastsAccountChanges"
-    enum="BooleanAccountChange" expires_after="M77">
-  <owner>lizeb@chromium.org</owner>
-  <summary>
-    On Android, whether GSA tells Chrome about account changes through the
-    service or through a broadcast. This is reported at most once per Chrome
-    startup.
-  </summary>
-</histogram>
-
 <histogram name="Search.IcingContextReportingStatus"
     enum="IcingContextReportingStatus" expires_after="M77">
   <owner>donnd@chromium.org</owner>
@@ -721,7 +701,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Search.Image.Camera.Result" enum="CameraResult"
-    expires_after="2024-03-24">
+    expires_after="2024-05-26">
   <owner>juanmojica@google.com</owner>
   <owner>schechter@google.com</owner>
   <owner>stanfield@google.com</owner>

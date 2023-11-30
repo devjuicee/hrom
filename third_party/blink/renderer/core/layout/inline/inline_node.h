@@ -9,18 +9,18 @@
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_node_data.h"
 #include "third_party/blink/renderer/core/layout/layout_block_flow.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_layout_input_node.h"
+#include "third_party/blink/renderer/core/layout/layout_input_node.h"
 #include "third_party/blink/renderer/core/layout/svg/svg_character_data.h"
 #include "third_party/blink/renderer/platform/wtf/casting.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
 namespace blink {
 
+class BreakToken;
+class ColumnSpannerPath;
 class ConstraintSpace;
 class InlineChildLayoutContext;
-class NGBreakToken;
-class NGColumnSpannerPath;
-class NGLayoutResult;
+class LayoutResult;
 class OffsetMapping;
 struct InlineItemsData;
 struct SvgTextContentRange;
@@ -36,10 +36,10 @@ class CORE_EXPORT InlineNode : public LayoutInputNode {
     return To<LayoutBlockFlow>(box_.Get());
   }
 
-  const NGLayoutResult* Layout(const ConstraintSpace&,
-                               const NGBreakToken*,
-                               const NGColumnSpannerPath*,
-                               InlineChildLayoutContext* context) const;
+  const LayoutResult* Layout(const ConstraintSpace&,
+                             const BreakToken*,
+                             const ColumnSpannerPath*,
+                             InlineChildLayoutContext* context) const;
 
   // Computes the value of min-content and max-content for this anonymous block
   // box. min-content is the inline size when lines wrap at every break
@@ -185,8 +185,8 @@ class CORE_EXPORT InlineNode : public LayoutInputNode {
     return To<LayoutBlockFlow>(box_.Get())->GetInlineNodeData();
   }
   const InlineNodeData& Data() const {
-    DCHECK(IsPrepareLayoutFinished() &&
-           !GetLayoutBlockFlow()->NeedsCollectInlines());
+    DCHECK(IsPrepareLayoutFinished());
+    DCHECK(!GetLayoutBlockFlow()->NeedsCollectInlines());
     return *To<LayoutBlockFlow>(box_.Get())->GetInlineNodeData();
   }
   // Same as |Data()| but can access even when |NeedsCollectInlines()| is set.

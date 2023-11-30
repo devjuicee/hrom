@@ -5,13 +5,14 @@
 #include "third_party/blink/renderer/core/layout/ng/ng_page_layout_algorithm.h"
 
 #include <algorithm>
+
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/layout_view.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_layout_algorithm.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_out_of_flow_layout_part.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 
 namespace blink {
@@ -19,10 +20,10 @@ namespace blink {
 PageLayoutAlgorithm::PageLayoutAlgorithm(const LayoutAlgorithmParams& params)
     : LayoutAlgorithm(params) {}
 
-const NGLayoutResult* PageLayoutAlgorithm::Layout() {
+const LayoutResult* PageLayoutAlgorithm::Layout() {
   DCHECK(!GetBreakToken());
   auto writing_direction = GetConstraintSpace().GetWritingDirection();
-  const NGBlockBreakToken* break_token = nullptr;
+  const BlockBreakToken* break_token = nullptr;
   LayoutUnit intrinsic_block_size;
   LogicalOffset page_offset;
   uint32_t page_index = 0;
@@ -32,7 +33,7 @@ const NGLayoutResult* PageLayoutAlgorithm::Layout() {
 
   do {
     // Lay out one page. Each page will become a fragment.
-    const NGPhysicalBoxFragment* page =
+    const PhysicalBoxFragment* page =
         LayoutPage(page_index, page_name, break_token);
 
     if (page_name != page->PageName()) {
@@ -82,10 +83,10 @@ MinMaxSizesResult PageLayoutAlgorithm::ComputeMinMaxSizes(
   return MinMaxSizesResult();
 }
 
-const NGPhysicalBoxFragment* PageLayoutAlgorithm::LayoutPage(
+const PhysicalBoxFragment* PageLayoutAlgorithm::LayoutPage(
     uint32_t page_index,
     const AtomicString& page_name,
-    const NGBlockBreakToken* break_token) const {
+    const BlockBreakToken* break_token) const {
   const LayoutView* view = Node().GetDocument().GetLayoutView();
   WritingMode writing_mode = GetConstraintSpace().GetWritingMode();
   LogicalSize page_size =
@@ -98,9 +99,9 @@ const NGPhysicalBoxFragment* PageLayoutAlgorithm::LayoutPage(
       CalculateInitialFragmentGeometry(child_space, Node(), GetBreakToken());
   BlockLayoutAlgorithm child_algorithm(
       {Node(), fragment_geometry, child_space, break_token});
-  child_algorithm.SetBoxType(NGPhysicalFragment::kPageBox);
-  const NGLayoutResult* result = child_algorithm.Layout();
-  return &To<NGPhysicalBoxFragment>(result->PhysicalFragment());
+  child_algorithm.SetBoxType(PhysicalFragment::kPageBox);
+  const LayoutResult* result = child_algorithm.Layout();
+  return &To<PhysicalBoxFragment>(result->GetPhysicalFragment());
 }
 
 ConstraintSpace PageLayoutAlgorithm::CreateConstraintSpaceForPages(

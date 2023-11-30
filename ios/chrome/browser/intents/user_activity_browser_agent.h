@@ -35,7 +35,8 @@ class UserActivityBrowserAgent
                             BOOL application_is_active);
 
   // Handles the 3D touch application static items.
-  BOOL Handle3DTouchApplicationShortcuts();
+  BOOL Handle3DTouchApplicationShortcuts(
+      UIApplicationShortcutItem* shortcut_item);
 
   // Opens a new Tab or routes to correct Tab.
   void RouteToCorrectTab();
@@ -43,9 +44,6 @@ class UserActivityBrowserAgent
   // Return YES if the user intends to open links in a certain mode and the
   // browser will proceed the request.
   BOOL ProceedWithUserActivity(NSUserActivity* user_activity);
-
-  // Public setter used for testing.
-  void SetTabOpenerForTesting(id<TabOpening> tab_opener) { tab_opener_ = tab_opener; }
 
  private:
   friend class BrowserUserData<UserActivityBrowserAgent>;
@@ -61,7 +59,7 @@ class UserActivityBrowserAgent
 
   // Handles the 3D touch application static items. Does nothing if in first
   // run.
-  BOOL HandleShortcutItem();
+  BOOL HandleShortcutItem(UIApplicationShortcutItem* shortcut_item);
 
   // Open the requested URLs if the app is active. If the app is not active,
   // updates the startupParameters if needed.

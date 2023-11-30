@@ -42,10 +42,6 @@ class D3DSharedFence;
 #endif
 }  // namespace gfx
 
-namespace viz {
-class TestSharedImageInterface;
-}
-
 namespace gpu {
 class ClientSharedImage;
 class GpuMemoryBufferManager;
@@ -58,65 +54,11 @@ struct SharedImageCapabilities;
 // synchronized using SyncTokens. See //docs/design/gpu_synchronization.md.
 class GPU_EXPORT SharedImageInterface {
  public:
-  // Provides access to the CPU visible memory for the mailbox if it is being
-  // used for CPU READ/WRITE and underlying resource(native buffers/shared
-  // memory) is CPU mappable. Memory and strides can be requested for each
-  // plane.
-  class GPU_EXPORT ScopedMapping {
-   public:
-    ~ScopedMapping();
-
-    // Returns a pointer to the beginning of the plane.
-    void* Memory(const uint32_t plane_index);
-
-    // Returns plane stride.
-    size_t Stride(const uint32_t plane_index);
-
-    // Returns the size of the buffer.
-    gfx::Size Size();
-
-    // Returns BufferFormat.
-    gfx::BufferFormat Format();
-
-    // Returns whether the underlying resource is shared memory.
-    bool IsSharedMemory();
-
-    // Dumps information about the memory backing this instance to |pmd|.
-    // The memory usage is attributed to |buffer_dump_guid|.
-    // |tracing_process_id| uniquely identifies the process owning the memory.
-    // |importance| is relevant only for the cases of co-ownership, the memory
-    // gets attributed to the owner with the highest importance.
-    void OnMemoryDump(
-        base::trace_event::ProcessMemoryDump* pmd,
-        const base::trace_event::MemoryAllocatorDumpGuid& buffer_dump_guid,
-        uint64_t tracing_process_id,
-        int importance);
-
-   private:
-    friend class ClientSharedImageInterface;
-    friend class SharedImageInterfaceInProcess;
-    friend class viz::TestSharedImageInterface;
-
-    ScopedMapping();
-    static std::unique_ptr<ScopedMapping> Create(
-        gfx::GpuMemoryBuffer* gpu_memory_buffer);
-
-    bool Init(gfx::GpuMemoryBuffer* gpu_memory_buffer);
-
-    // ScopedMapping is essentially a wrapper around GpuMemoryBuffer for now for
-    // simplicity and will be removed later.
-    // TODO(crbug.com/1474697): Refactor/Rename GpuMemoryBuffer and its
-    // implementations  as the end goal after all clients using GMB are
-    // converted to use the ScopedMapping and notion of GpuMemoryBuffer is being
-    // removed.
-    raw_ptr<gfx::GpuMemoryBuffer> buffer_;
-  };
+  virtual ~SharedImageInterface() = default;
 
   static std::unique_ptr<gfx::GpuMemoryBuffer>
   CreateGpuMemoryBufferForUseByScopedMapping(
       GpuMemoryBufferHandleInfo handle_info);
-
-  virtual ~SharedImageInterface() = default;
 
   // Creates a shared image of requested |format|, |size| and |color_space|.
   // |usage| is a combination of |SharedImageUsage| bits that describes which
@@ -361,19 +303,6 @@ class GPU_EXPORT SharedImageInterface {
   // Informs that existing |mailbox| with |usage| can be passed to
   // DestroySharedImage().
   virtual void NotifyMailboxAdded(const Mailbox& mailbox, uint32_t usage);
-
-  // Maps |mailbox| into CPU visible memory(if SharedImageUsage/BufferUsage are
-  // set to do CPU READ/WRITE) and returns a ScopedMapping object which can be
-  // used to read/write to the CPU mapped memory. Mailbox must have been created
-  // with CPU_READ/CPU_WRITE usage. Note that this call can be blocking
-  // and blocks on the clients thread only the first time for a given |mailbox|.
-  virtual std::unique_ptr<SharedImageInterface::ScopedMapping> MapSharedImage(
-      const Mailbox& mailbox);
-
-  // Same behavior as the above, except that this version takes
-  // a |client_shared_image| parameter (which holds a mailbox).
-  virtual std::unique_ptr<SharedImageInterface::ScopedMapping> MapSharedImage(
-      const scoped_refptr<ClientSharedImage>& client_shared_image);
 
   virtual const SharedImageCapabilities& GetCapabilities() = 0;
 };

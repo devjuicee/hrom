@@ -117,9 +117,10 @@ public class StatusMediator
     private int mPermissionIconDisplayTimeoutMs = PERMISSION_ICON_DEFAULT_DISPLAY_TIMEOUT_MS;
 
     private CookieControlsBridge mCookieControlsBridge;
-    private boolean mHighConfidenceBreakageReceived;
     private int mCookieBlockingStatus;
     private int mBlockingStatus3pcd;
+    private int mLastTabId;
+    private boolean mCurrentTabCrashed;
 
     /**
      * @param model The {@link PropertyModel} for this mediator.
@@ -557,11 +558,11 @@ public class StatusMediator
             return SearchEngineUtils.getFallbackNavigationIcon(mBrandedColorScheme);
         }
 
-        var profile = mProfileSupplier.get();
-        if (profile == null) {
+        if (!mProfileSupplier.hasValue()) {
             return SearchEngineUtils.getFallbackSearchIcon(mBrandedColorScheme);
         }
 
+        var profile = mProfileSupplier.get();
         return SearchEngineUtils.getForProfile(profile).getSearchEngineLogo(mBrandedColorScheme);
     }
 
@@ -649,8 +650,15 @@ public class StatusMediator
     // CookieControlsObserver interface
     @Override
     public void onBreakageConfidenceLevelChanged(int level) {
-        if (mHighConfidenceBreakageReceived) return;
-        mHighConfidenceBreakageReceived = level == CookieControlsBreakageConfidenceLevel.HIGH;
+        if (level == CookieControlsBreakageConfidenceLevel.HIGH) {
+            animateCookieControlsIcon(
+                    () -> {
+                        if (mBlockingStatus3pcd == CookieBlocking3pcdStatus.NOT_IN3PCD) {
+                            mPageInfoIPHController.showCookieControlsIPH(
+                                    getIPHTimeout(), R.string.cookie_controls_iph_message);
+                        }
+                    });
+        }
     }
 
     @Override
@@ -805,13 +813,15 @@ public class StatusMediator
             if (webContents != null && profile != null) {
                 BrowserContextHandle originalBrowserContext =
                         profile.isOffTheRecord() ? profile.getOriginalProfile() : null;
-                if (mCookieControlsBridge != null) {
-                    mCookieControlsBridge.updateWebContents(webContents, originalBrowserContext);
-                } else {
+                if (mCookieControlsBridge == null) {
                     mCookieControlsBridge =
                             new CookieControlsBridge(this, webContents, originalBrowserContext);
+                } else if (mLastTabId != currentTab.getId() || mCurrentTabCrashed) {
+                    mCookieControlsBridge.updateWebContents(webContents, originalBrowserContext);
+                    mCurrentTabCrashed = false;
                 }
             }
+            mLastTabId = currentTab.getId();
         }
     }
 
@@ -839,12 +849,10 @@ public class StatusMediator
                             mPageInfoIPHController.showCookieControlsReminderIPH(
                                     getIPHTimeout(),
                                     R.string.cookie_controls_reminder_iph_message));
-        } else if (mHighConfidenceBreakageReceived) {
-            animateCookieControlsIcon(
-                    () ->
-                            mPageInfoIPHController.showCookieControlsIPH(
-                                    getIPHTimeout(), R.string.cookie_controls_iph_message));
-            mHighConfidenceBreakageReceived = false;
         }
+    }
+
+    public void onTabCrashed() {
+        mCurrentTabCrashed = true;
     }
 }

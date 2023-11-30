@@ -109,14 +109,18 @@ void Connection::Close(
     return;
   }
 
-  // TODO(b/310241114): Notify phone when reason ==
-  // ConnectionClosedReason::kComplete.
   if (authenticated_ &&
       reason ==
           TargetDeviceConnectionBroker::ConnectionClosedReason::kUserAborted) {
     // TODO(b/306422046): Verify the message is received despite closing the
     // NearbyConnection immediately after.
-    NotifyPhoneUserAborted();
+    SendMessageWithoutResponse(requests::BuildBootstrapStateCancelMessage(),
+                               QuickStartResponseType::kBootstrapStateCancel);
+  } else if (authenticated_ && reason ==
+                                   TargetDeviceConnectionBroker::
+                                       ConnectionClosedReason::kComplete) {
+    SendMessageWithoutResponse(requests::BuildBootstrapStateCompleteMessage(),
+                               QuickStartResponseType::kBootstrapStateComplete);
   }
 
   connection_state_ = State::kClosing;
@@ -257,6 +261,9 @@ void Connection::OnRequestAccountTransferAssertionResponse(
 
   assertion_info.authenticator_data = fido_response->auth_data;
   assertion_info.signature = fido_response->signature;
+  std::string client_data = client_data_->CreateJson();
+  assertion_info.client_data =
+      std::vector<uint8_t>(client_data.begin(), client_data.end());
 
   quick_start_metrics_.RecordGaiaTransferResult(
       /*succeeded=*/true, /*failure_reason=*/absl::nullopt);
@@ -450,11 +457,6 @@ void Connection::OnUserVerificationPacketDecoded(
 
 base::Value::Dict Connection::GetPrepareForUpdateInfo() {
   return session_context_.GetPrepareForUpdateInfo();
-}
-
-void Connection::NotifyPhoneUserAborted() {
-  SendMessageWithoutResponse(requests::BuildBootstrapStateCancelMessage(),
-                             QuickStartResponseType::kBootstrapStateCancel);
 }
 
 void Connection::DecodeQuickStartMessage(

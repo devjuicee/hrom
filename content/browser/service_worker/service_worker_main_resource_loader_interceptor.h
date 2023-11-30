@@ -81,6 +81,9 @@ class CONTENT_EXPORT ServiceWorkerMainResourceLoaderInterceptor final
   absl::optional<SubresourceLoaderParams> MaybeCreateSubresourceLoaderParams()
       override;
 
+  // MaybeCreateLoaderForResponse() should NOT overridden here, because
+  // `WorkerScriptLoader` assumes so.
+
  private:
   friend class ServiceWorkerMainResourceLoaderInterceptorTest;
 
@@ -122,6 +125,16 @@ class CONTENT_EXPORT ServiceWorkerMainResourceLoaderInterceptor final
   // service worker code don't match, however in cases where these wouldn't
   // match the load will be aborted later anyway.
   absl::optional<blink::StorageKey> GetStorageKeyFromWorkerHost(
+      const url::Origin& origin);
+
+  absl::optional<blink::StorageKey> GetStorageKeyFromWorkerHost(
+      content::StoragePartition* storage_partition,
+      blink::DedicatedWorkerToken dedicated_worker_token,
+      const url::Origin& origin);
+
+  absl::optional<blink::StorageKey> GetStorageKeyFromWorkerHost(
+      content::StoragePartition* storage_partition,
+      blink::SharedWorkerToken shared_worker_token,
       const url::Origin& origin);
 
   // For navigations, |handle_| outlives |this|. It's owned by

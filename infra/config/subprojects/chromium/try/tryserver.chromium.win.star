@@ -49,6 +49,7 @@ try_.builder(
     cores = 16,
     ssd = True,
     execution_timeout = 9 * time.hour,
+    gn_args = "ci/win-asan",
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
 )
 
@@ -77,6 +78,9 @@ try_.builder(
     executable = "recipe:chromium/fuzz",
     builderless = False,
     os = os.WINDOWS_ANY,
+    experiments = {
+        "chromium.skip_successful_tests": 50,
+    },
     main_list_view = "try",
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
     tryjob = try_.job(),
@@ -97,6 +101,7 @@ try_.orchestrator_builder(
         # go/nplus1shardsproposal
         "chromium.add_one_test_shard": 5,
         "chromium.compilator_can_outlive_parent": 100,
+        "chromium.skip_successful_tests": 50,
     },
     gn_args = gn_args.config(
         configs = [
@@ -123,6 +128,7 @@ try_.compilator_builder(
     # TODO (crbug.com/1245171): Revert when root issue is fixed
     grace_period = 4 * time.minute,
     main_list_view = "try",
+    siso_enabled = True,
 )
 
 # TODO: crbug.com/1502025 - Reduce duplicated configs from the shadow builder.
@@ -259,6 +265,20 @@ try_.builder(
 )
 
 try_.builder(
+    name = "win10-multiscreen-fyi-rel",
+    description_html = (
+        "This builder is intended to run tests related to multiscreen " +
+        "functionality on Windows. For more info, see " +
+        "<a href=\"http://shortn/_4L6uYvA1xU\">http://shortn/_4L6uYvA1xU</a>."
+    ),
+    mirrors = [
+        "ci/win10-multiscreen-fyi-rel",
+    ],
+    os = os.WINDOWS_10,
+    contact_team_email = "web-windowing-team@google.com",
+)
+
+try_.builder(
     name = "win10-wpt-content-shell-fyi-rel",
     mirrors = [
         "ci/win10-wpt-content-shell-fyi-rel",
@@ -321,6 +341,7 @@ try_.builder(
     name = "win10-code-coverage",
     mirrors = ["ci/win10-code-coverage"],
     execution_timeout = 20 * time.hour,
+    gn_args = "ci/win10-code-coverage",
 )
 
 try_.gpu.optional_tests_builder(

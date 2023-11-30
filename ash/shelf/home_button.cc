@@ -28,7 +28,6 @@
 #include "ash/style/ash_color_provider.h"
 #include "ash/style/typography.h"
 #include "ash/user_education/user_education_class_properties.h"
-#include "ash/wm/tablet_mode/tablet_mode_controller.h"
 #include "base/check_op.h"
 #include "base/i18n/rtl.h"
 #include "base/memory/raw_ptr.h"
@@ -432,7 +431,7 @@ void HomeButton::OnShelfButtonAboutToRequestFocusFromTabTraversal(
 void HomeButton::ButtonPressed(views::Button* sender,
                                const ui::Event& event,
                                views::InkDrop* ink_drop) {
-  if (Shell::Get()->tablet_mode_controller()->InTabletMode()) {
+  if (display::Screen::GetScreen()->InTabletMode()) {
     base::RecordAction(
         base::UserMetricsAction("AppList_HomeButtonPressedTablet"));
   } else {
@@ -710,10 +709,11 @@ void HomeButton::CreateQuickAppButton() {
 
   quick_app_button_->SetPaintToLayer();
   quick_app_button_->layer()->SetFillsBoundsOpaquely(false);
-  quick_app_button_->SetImage(
+  quick_app_button_->SetImageModel(
       views::Button::STATE_NORMAL,
-      AppListModelProvider::Get()->quick_app_access_model()->GetAppIcon(
-          preferred_size));
+      ui::ImageModel::FromImageSkia(
+          AppListModelProvider::Get()->quick_app_access_model()->GetAppIcon(
+              preferred_size)));
   views::HighlightPathGenerator::Install(
       quick_app_button_,
       std::make_unique<views::RoundRectHighlightPathGenerator>(
@@ -1004,10 +1004,11 @@ void HomeButton::OnQuickAppIconChanged() {
   }
 
   const int control_size = ShelfControlButton::CalculatePreferredSize().width();
-  quick_app_button_->SetImage(
+  quick_app_button_->SetImageModel(
       views::Button::STATE_NORMAL,
-      AppListModelProvider::Get()->quick_app_access_model()->GetAppIcon(
-          gfx::Size(control_size, control_size)));
+      ui::ImageModel::FromImageSkia(
+          AppListModelProvider::Get()->quick_app_access_model()->GetAppIcon(
+              gfx::Size(control_size, control_size))));
 }
 
 void HomeButton::AnimateQuickAppButtonIn() {

@@ -58,17 +58,6 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
-<histogram name="History.Backend.TransactionBeginError"
-    enum="SqliteLoggedResultCode" expires_after="2023-10-01">
-  <owner>tommycli@chromium.org</owner>
-  <owner>asully@chromium.org</owner>
-  <component>UI&gt;Browser&gt;History</component>
-  <summary>
-    The exact database error encountered when beginning a transaction, if it
-    failed.
-  </summary>
-</histogram>
-
 <histogram name="History.Backend.TransactionBeginSuccess" enum="BooleanSuccess"
     expires_after="2023-10-01">
   <owner>tommycli@chromium.org</owner>
@@ -1677,7 +1666,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="History.DomainCount1Day_V3" units="domains"
-    expires_after="2024-03-24">
+    expires_after="2024-05-26">
   <owner>mpearson@chromium.org</owner>
   <owner>mjzhang@chromium.org</owner>
   <owner>chrome-analysis-team@google.com</owner>
@@ -2070,17 +2059,6 @@ chromium-metrics-reviews@google.com.
     unavailable, i.e. where the query doesn't really happen. Emitted on NTP load
     and on omnibox popup shown on Android where the repeatable queries are
     requested to be shown in the Most Visited tiles.
-  </summary>
-</histogram>
-
-<histogram name="History.ResultsRenderedTime" units="ms" expires_after="M90">
-  <owner>calamity@chromium.org</owner>
-  <owner>dbeam@chromium.org</owner>
-  <component>UI&gt;Browser&gt;History</component>
-  <summary>
-    Records the time taken to load the history Web UI and render (at least) a
-    screen full of items. This is roughly equivalent to 'time to first
-    meaningful paint' for the history page.
   </summary>
 </histogram>
 

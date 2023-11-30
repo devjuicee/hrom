@@ -31,6 +31,7 @@
 #include "content/browser/loader/navigation_early_hints_manager.h"
 #include "content/browser/loader/navigation_loader_interceptor.h"
 #include "content/browser/loader/navigation_url_loader_delegate.h"
+#include "content/browser/loader/response_head_update_params.h"
 #include "content/browser/loader/subresource_proxying_url_loader_service.h"
 #include "content/browser/navigation_subresource_loader_params.h"
 #include "content/browser/preloading/prefetch/prefetch_url_loader_interceptor.h"
@@ -155,11 +156,10 @@ class NavigationLoaderInterceptorBrowserContainer
       mojo::PendingRemote<network::mojom::URLLoader>* loader,
       mojo::PendingReceiver<network::mojom::URLLoaderClient>* client_receiver,
       blink::ThrottlingURLLoader* url_loader,
-      bool* skip_other_interceptors,
-      bool* will_return_unsafe_redirect) override {
+      bool* skip_other_interceptors) override {
     return browser_interceptor_->MaybeCreateLoaderForResponse(
         status, request, response_head, response_body, loader, client_receiver,
-        url_loader, skip_other_interceptors, will_return_unsafe_redirect);
+        url_loader);
   }
 
  private:
@@ -457,8 +457,6 @@ void NavigationURLLoaderImpl::StartImpl(
     std::string accept_langs) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   DCHECK(!started_);
-  DCHECK(!head_);
-  head_ = network::mojom::URLResponseHead::New();
   started_ = true;
 
   resource_request_->headers.SetHeader(
@@ -592,7 +590,6 @@ void NavigationURLLoaderImpl::Restart() {
   }
   interceptor_index_ = 0;
   received_response_ = false;
-  head_ = network::mojom::URLResponseHead::New();
   MaybeStartLoader(/*interceptor=*/nullptr, /*single_request_factory=*/{});
 }
 
@@ -637,8 +634,6 @@ void NavigationURLLoaderImpl::MaybeStartLoader(
 
     subresource_loader_params_ =
         interceptor->MaybeCreateSubresourceLoaderParams();
-    if (interceptor->ShouldBypassRedirectChecks())
-      bypass_redirect_checks_ = true;
     return;
   }
 
@@ -685,17 +680,20 @@ void NavigationURLLoaderImpl::MaybeStartLoader(
   }
 
   // No interceptors wanted to handle this request.
-  FallbackToNonInterceptedRequest(false);
+  FallbackToNonInterceptedRequest(false, ResponseHeadUpdateParams());
 }
 
 void NavigationURLLoaderImpl::FallbackToNonInterceptedRequest(
     bool reset_subresource_loader_params,
-    const net::LoadTimingInfo& timing_info) {
+    const ResponseHeadUpdateParams& head_update_params) {
   if (reset_subresource_loader_params)
     subresource_loader_params_.reset();
 
-  intercepting_worker_start_time_ = timing_info.service_worker_start_time;
-  intercepting_worker_ready_time_ = timing_info.service_worker_ready_time;
+  intercepting_worker_start_time_ =
+      head_update_params.load_timing_info.service_worker_start_time;
+  intercepting_worker_ready_time_ =
+      head_update_params.load_timing_info.service_worker_ready_time;
+  intercepting_worker_router_info_ = head_update_params.router_info.Clone();
 
   scoped_refptr<network::SharedURLLoaderFactory> factory =
       PrepareForNonInterceptedRequest();
@@ -837,12 +835,12 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   DCHECK(!cached_metadata);
   LogQueueTimeHistogram("Navigation.QueueTime.OnReceiveResponse",
                         resource_request_->is_outermost_main_frame);
-  head_ = std::move(head);
 
   // Early Hints preloads should not be committed for PDF.
   // See https://github.com/whatwg/html/issues/7823
-  if (head_->mime_type == "application/pdf" || head_->mime_type == "text/pdf")
+  if (head->mime_type == "application/pdf" || head->mime_type == "text/pdf") {
     early_hints_manager_.reset();
+  }
 
   if (!response_body)
     return;
@@ -851,10 +849,13 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   received_response_ = true;
 
   if (!intercepting_worker_start_time_.is_null()) {
-    head_->load_timing.service_worker_start_time =
+    head->load_timing.service_worker_start_time =
         intercepting_worker_start_time_;
-    head_->load_timing.service_worker_ready_time =
+    head->load_timing.service_worker_ready_time =
         intercepting_worker_ready_time_;
+  }
+  if (!intercepting_worker_router_info_.is_null()) {
+    head->service_worker_router_info = intercepting_worker_router_info_.Clone();
   }
 
   // If the default loader (network) was used to handle the URL load request
@@ -862,10 +863,10 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   // loader for the response. e.g. service workers.
   //
   // As the navigation request has received a response, the URLLoader has
-  // completed without any network errors. Some interceptors may still wish to
-  // handle the response.
+  // completed without any network errors. Some interceptors may still wish
+  // to handle the response.
   auto status = network::URLLoaderCompletionStatus(net::OK);
-  if (MaybeCreateLoaderForResponse(status, &head_)) {
+  if (MaybeCreateLoaderForResponse(status, &head)) {
     return;
   }
 
@@ -882,8 +883,8 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   // This needs to be after the URLLoader has been moved to
   // `url_loader_client_endpoints` in order to abort the request, to avoid
   // receiving unexpected call.
-  if (head_->headers &&
-      head_->headers->response_code() == net::HTTP_NOT_MODIFIED) {
+  if (head->headers &&
+      head->headers->response_code() == net::HTTP_NOT_MODIFIED) {
     // Call CancelWithError instead of OnComplete so that if there is an
     // intercepting URLLoaderFactory it gets notified.
     url_loader_->CancelWithError(
@@ -893,15 +894,15 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   }
 
   bool must_download = download_utils::MustDownload(
-      browser_context_, url_, head_->headers.get(), head_->mime_type);
-  bool known_mime_type = blink::IsSupportedMimeType(head_->mime_type);
+      browser_context_, url_, head->headers.get(), head->mime_type);
+  bool known_mime_type = blink::IsSupportedMimeType(head->mime_type);
 
 #if BUILDFLAG(ENABLE_PLUGINS)
-  if (!head_->intercepted_by_plugin && !must_download && !known_mime_type) {
+  if (!head->intercepted_by_plugin && !must_download && !known_mime_type) {
     // No plugin throttles intercepted the response. Ask if the plugin
     // registered to PluginService wants to handle the request.
     CheckPluginAndContinueOnReceiveResponse(
-        std::move(head_), std::move(url_loader_client_endpoints),
+        std::move(head), std::move(url_loader_client_endpoints),
         /*is_download_if_not_handled_by_plugin=*/true,
         std::vector<WebPluginInfo>());
     return;
@@ -910,9 +911,9 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
 
   // When a plugin intercepted the response, we don't want to download it.
   bool is_download =
-      !head_->intercepted_by_plugin && (must_download || !known_mime_type);
+      !head->intercepted_by_plugin && (must_download || !known_mime_type);
 
-  CallOnReceivedResponse(std::move(head_),
+  CallOnReceivedResponse(std::move(head),
                          std::move(url_loader_client_endpoints), is_download);
 }
 
@@ -1173,13 +1174,10 @@ bool NavigationURLLoaderImpl::MaybeCreateLoaderForResponse(
     mojo::PendingReceiver<network::mojom::URLLoaderClient>
         response_client_receiver;
     bool skip_other_interceptors = false;
-    bool will_return_unsafe_redirect = false;
     if (interceptor->MaybeCreateLoaderForResponse(
             status, *resource_request_, response, &response_body_,
             &response_url_loader_, &response_client_receiver, url_loader_.get(),
-            &skip_other_interceptors, &will_return_unsafe_redirect)) {
-      if (will_return_unsafe_redirect)
-        bypass_redirect_checks_ = true;
+            &skip_other_interceptors)) {
       response_loader_receiver_.reset();
       response_loader_receiver_.Bind(
           std::move(response_client_receiver),

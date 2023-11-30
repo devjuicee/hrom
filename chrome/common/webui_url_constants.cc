@@ -322,6 +322,8 @@ const char kChromeUIAccountMigrationWelcomeURL[] =
     "chrome://account-migration-welcome";
 const char kChromeUIAddSupervisionHost[] = "add-supervision";
 const char kChromeUIAddSupervisionURL[] = "chrome://add-supervision/";
+const char kChromeUIAppInstallDialogHost[] = "app-install-dialog";
+const char kChromeUIAppInstallDialogURL[] = "chrome://app-install-dialog/";
 const char kChromeUIArcOverviewTracingHost[] = "arc-overview-tracing";
 const char kChromeUIArcOverviewTracingURL[] = "chrome://arc-overview-tracing/";
 const char kChromeUIArcPowerControlHost[] = "arc-power-control";
@@ -423,9 +425,6 @@ const char kChromeUIVcTrayTesterHost[] = "vc-tray-tester";
 const char kChromeUIVcTrayTesterURL[] = "chrome://vc-tray-tester";
 const char kChromeUIVmHost[] = "vm";
 const char kChromeUIVmUrl[] = "chrome://vm";
-const char kChromeUIWebAppInstallDialogHost[] = "web-app-install-dialog";
-const char kChromeUIWebAppInstallDialogURL[] =
-    "chrome://web-app-install-dialog/";
 
 const char kChromeUIUrgentPasswordExpiryNotificationHost[] =
     "urgent-password-expiry-notification";
@@ -438,40 +437,40 @@ bool IsSystemWebUIHost(base::StringPiece host) {
   // Compares host instead of full URL for performance (the strings are
   // shorter).
   static const char* const kHosts[] = {
-    kChromeUIAccountManagerErrorHost,
-    kChromeUIAccountMigrationWelcomeHost,
-    kChromeUIAddSupervisionHost,
-    kChromeUIAssistantOptInHost,
-    kChromeUIBluetoothPairingHost,
-    kChromeUIBorealisCreditsHost,
-    kChromeUIBorealisInstallerHost,
-    kChromeUICertificateManagerHost,
-    kChromeUICloudUploadHost,
-    kChromeUICrostiniCreditsHost,
-    kChromeUICrostiniInstallerHost,
-    kChromeUICryptohomeHost,
-    kChromeUIDeviceEmulatorHost,
-    kChromeUIEmojiPickerHost,
-    kChromeUIInternetConfigDialogHost,
-    kChromeUIInternetDetailDialogHost,
-    kChromeUILockScreenNetworkHost,
-    kChromeUILockScreenStartReauthHost,
-    kChromeUIMobileSetupHost,
-    kChromeUIMultiDeviceSetupHost,
-    kChromeUINetworkHost,
-    kChromeUINotificationTesterHost,
-    kChromeUIOobeHost,
-    kChromeUIOSCreditsHost,
-    kChromeUIOSSettingsHost,
-    kChromeUIPasswordChangeHost,
-    kChromeUIPowerHost,
-    kChromeUISetTimeHost,
-    kChromeUISmbCredentialsHost,
-    kChromeUISmbShareHost,
-    kChromeUIVcTrayTesterHost,
-    kChromeUIWebAppInstallDialogHost,
+      kChromeUIAccountManagerErrorHost,
+      kChromeUIAccountMigrationWelcomeHost,
+      kChromeUIAddSupervisionHost,
+      kChromeUIAppInstallDialogHost,
+      kChromeUIAssistantOptInHost,
+      kChromeUIBluetoothPairingHost,
+      kChromeUIBorealisCreditsHost,
+      kChromeUIBorealisInstallerHost,
+      kChromeUICertificateManagerHost,
+      kChromeUICloudUploadHost,
+      kChromeUICrostiniCreditsHost,
+      kChromeUICrostiniInstallerHost,
+      kChromeUICryptohomeHost,
+      kChromeUIDeviceEmulatorHost,
+      kChromeUIEmojiPickerHost,
+      kChromeUIInternetConfigDialogHost,
+      kChromeUIInternetDetailDialogHost,
+      kChromeUILockScreenNetworkHost,
+      kChromeUILockScreenStartReauthHost,
+      kChromeUIMobileSetupHost,
+      kChromeUIMultiDeviceSetupHost,
+      kChromeUINetworkHost,
+      kChromeUINotificationTesterHost,
+      kChromeUIOobeHost,
+      kChromeUIOSCreditsHost,
+      kChromeUIOSSettingsHost,
+      kChromeUIPasswordChangeHost,
+      kChromeUIPowerHost,
+      kChromeUISetTimeHost,
+      kChromeUISmbCredentialsHost,
+      kChromeUISmbShareHost,
+      kChromeUIVcTrayTesterHost,
 #if BUILDFLAG(PLATFORM_CFM)
-    kCfmNetworkSettingsHost,
+      kCfmNetworkSettingsHost,
 #endif  // BUILDFLAG(PLATFORM_CFM)
   };
   for (const char* h : kHosts) {
@@ -605,6 +604,8 @@ const char kAutofillSubPage[] = "autofill";
 const char kClearBrowserDataSubPage[] = "clearBrowserData";
 const char kContentSettingsSubPage[] = "content";
 const char kAllSitesSettingsSubpage[] = "content/all";
+const char kFileSystemSubpage[] = "content/filesystem";
+const char kFileSystemSettingsSubpage[] = "content/filesystem/siteDetails";
 const char kOnDeviceSiteDataSubpage[] = "content/siteData";
 const char kCookieSettingsSubPage[] = "cookies";
 const char kDownloadsSubPage[] = "downloads";
@@ -635,15 +636,9 @@ const char kTriggeredResetProfileSettingsSubPage[] =
     "triggeredResetProfileSettings";
 const char kManageProfileSubPage[] = "manageProfile";
 const char kPeopleSubPage[] = "people";
-const char kPrivacySandboxAdPersonalizationSubPage[] =
-    "privacySandbox?view=adPersonalizationDialog";
-const char kPrivacySandboxLearnMoreSubPage[] =
-    "privacySandbox?view=learnMoreDialog";
-const char kPrivacySandboxSubPage[] = "privacySandbox";
 
 #if !BUILDFLAG(IS_ANDROID)
 const char kAdPrivacySubPagePath[] = "/adPrivacy";
-const char kPrivacySandboxSubPagePath[] = "/privacySandbox";
 const char kPerformanceSubPagePath[] = "/performance";
 const char kPreloadingSubPagePath[] = "/preloading";
 const char kTrackingProtectionSubPagePath[] = "/trackingProtection";

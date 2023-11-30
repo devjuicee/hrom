@@ -4,10 +4,10 @@
 
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment.h"
 
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
 #include "third_party/blink/renderer/core/layout/geometry/writing_mode_converter.h"
 #include "third_party/blink/renderer/core/layout/layout_box.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 
 namespace blink {
 
@@ -22,12 +22,12 @@ FontHeight LogicalBoxFragment::BaselineMetrics(
   absl::optional<LayoutUnit> baseline;
   switch (physical_fragment_.Style().BaselineSource()) {
     case EBaselineSource::kAuto:
-      baseline = PhysicalBoxFragment().UseLastBaselineForInlineBaseline()
+      baseline = GetPhysicalBoxFragment().UseLastBaselineForInlineBaseline()
                      ? LastBaseline()
                      : FirstBaseline();
 
       // Some blocks force the baseline to be the block-end margin edge.
-      if (PhysicalBoxFragment().UseBlockEndMarginEdgeForInlineBaseline()) {
+      if (GetPhysicalBoxFragment().UseBlockEndMarginEdgeForInlineBaseline()) {
         baseline = BlockSize() + (writing_direction_.IsFlippedLines()
                                       ? margins.line_over
                                       : margins.line_under);
@@ -68,7 +68,7 @@ FontHeight LogicalBoxFragment::BaselineMetrics(
 LayoutUnit LogicalBoxFragment::BlockEndScrollableOverflow() const {
   WritingModeConverter converter(writing_direction_, physical_fragment_.Size());
   LogicalRect overflow =
-      converter.ToLogical(PhysicalBoxFragment().ScrollableOverflow());
+      converter.ToLogical(GetPhysicalBoxFragment().ScrollableOverflow());
   return overflow.BlockEndOffset();
 }
 

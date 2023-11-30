@@ -43,6 +43,7 @@
 #include "chrome/browser/ui/autofill/payments/autofill_snackbar_controller_impl.h"
 #include "chrome/browser/ui/autofill/payments/card_unmask_authentication_selection_dialog_controller_impl.h"
 #include "chrome/browser/ui/autofill/payments/card_unmask_otp_input_dialog_controller_impl.h"
+#include "chrome/browser/ui/autofill/payments/chrome_payments_autofill_client.h"
 #include "chrome/browser/ui/autofill/payments/create_card_unmask_prompt_view.h"
 #include "chrome/browser/ui/autofill/payments/credit_card_scanner_controller.h"
 #include "chrome/browser/ui/autofill/payments/iban_bubble_controller_impl.h"
@@ -216,13 +217,13 @@ ChromeAutofillClient::GetURLLoaderFactory() {
       ->GetURLLoaderFactoryForBrowserProcess();
 }
 
-AutofillDownloadManager* ChromeAutofillClient::GetDownloadManager() {
-  if (!download_manager_) {
+AutofillCrowdsourcingManager* ChromeAutofillClient::GetCrowdsourcingManager() {
+  if (!crowdsourcing_manager_) {
     // Lazy initialization to avoid virtual function calls in the constructor.
-    download_manager_ = std::make_unique<AutofillDownloadManager>(
+    crowdsourcing_manager_ = std::make_unique<AutofillCrowdsourcingManager>(
         this, GetChannel(), GetLogManager());
   }
-  return download_manager_.get();
+  return crowdsourcing_manager_.get();
 }
 
 AutofillOptimizationGuide* ChromeAutofillClient::GetAutofillOptimizationGuide()
@@ -350,6 +351,15 @@ FormDataImporter* ChromeAutofillClient::GetFormDataImporter() {
         GetPersonalDataManager()->app_locale());
   }
   return form_data_importer_.get();
+}
+
+payments::PaymentsAutofillClient*
+ChromeAutofillClient::GetPaymentsAutofillClient() {
+  if (!payments_autofill_client_) {
+    payments_autofill_client_ =
+        std::make_unique<payments::ChromePaymentsAutofillClient>();
+  }
+  return payments_autofill_client_.get();
 }
 
 payments::PaymentsNetworkInterface*

@@ -7,13 +7,13 @@
 
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/renderer/core/core_export.h"
+#include "third_party/blink/renderer/core/layout/block_node.h"
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
 #include "third_party/blink/renderer/core/layout/geometry/box_strut.h"
 #include "third_party/blink/renderer/core/layout/geometry/fragment_geometry.h"
 #include "third_party/blink/renderer/core/layout/geometry/logical_size.h"
 #include "third_party/blink/renderer/core/layout/geometry/physical_size.h"
 #include "third_party/blink/renderer/core/layout/min_max_sizes.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
 #include "third_party/blink/renderer/core/layout/table/table_node.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/core/style/computed_style_constants.h"
@@ -494,7 +494,7 @@ LayoutUnit ComputeInitialBlockSizeForFragment(
 CORE_EXPORT LayoutUnit
 CalculateDefaultBlockSize(const ConstraintSpace& space,
                           const BlockNode& node,
-                          const NGBlockBreakToken* break_token,
+                          const BlockBreakToken* break_token,
                           const BoxStrut& border_scrollbar_padding);
 
 // Flex layout is interested in ignoring lengths in a particular axis. This
@@ -678,7 +678,7 @@ template <typename MinMaxSizesFunc>
 FragmentGeometry CalculateInitialFragmentGeometry(
     const ConstraintSpace& space,
     const BlockNode& node,
-    const NGBlockBreakToken* break_token,
+    const BlockBreakToken* break_token,
     const MinMaxSizesFunc& min_max_sizes_func,
     bool is_intrinsic = false) {
   const auto& style = node.Style();
@@ -760,7 +760,7 @@ FragmentGeometry CalculateInitialFragmentGeometry(
 CORE_EXPORT FragmentGeometry
 CalculateInitialFragmentGeometry(const ConstraintSpace&,
                                  const BlockNode&,
-                                 const NGBlockBreakToken*,
+                                 const BlockBreakToken*,
                                  bool is_intrinsic = false);
 
 // Shrinks the logical |size| by |insets|.
@@ -795,7 +795,7 @@ LogicalSize CalculateReplacedChildPercentageSize(
 LayoutUnit ClampIntrinsicBlockSize(
     const ConstraintSpace&,
     const BlockNode&,
-    const NGBlockBreakToken* break_token,
+    const BlockBreakToken* break_token,
     const BoxStrut& border_scrollbar_padding,
     LayoutUnit current_intrinsic_block_size,
     absl::optional<LayoutUnit> body_margin_block_sum = absl::nullopt);

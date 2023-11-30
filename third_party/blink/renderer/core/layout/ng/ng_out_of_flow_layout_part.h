@@ -7,14 +7,14 @@
 
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/renderer/core/core_export.h"
+#include "third_party/blink/renderer/core/layout/block_node.h"
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
 #include "third_party/blink/renderer/core/layout/geometry/logical_rect.h"
 #include "third_party/blink/renderer/core/layout/geometry/physical_offset.h"
 #include "third_party/blink/renderer/core/layout/geometry/static_position.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_containing_block_utils.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_absolute_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment_builder.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
 #include "third_party/blink/renderer/core/layout/ng/non_overflowing_scroll_range.h"
 #include "third_party/blink/renderer/core/style/computed_style_base_constants.h"
 #include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_map.h"
@@ -23,10 +23,10 @@
 
 namespace blink {
 
+class BlockBreakToken;
 class LayoutBox;
 class LayoutObject;
-class NGBlockBreakToken;
-class NGLayoutResult;
+class LayoutResult;
 template <typename OffsetType>
 class OofContainingBlock;
 class SimplifiedOofLayoutAlgorithm;
@@ -35,8 +35,8 @@ template <typename OffsetType>
 struct MulticolWithPendingOofs;
 
 // Helper class for positioning of out-of-flow blocks.
-// It should be used together with NGBoxFragmentBuilder.
-// See NGBoxFragmentBuilder::AddOutOfFlowChildCandidate documentation
+// It should be used together with BoxFragmentBuilder.
+// See BoxFragmentBuilder::AddOutOfFlowChildCandidate documentation
 // for example of using these classes together.
 class CORE_EXPORT OutOfFlowLayoutPart {
   STACK_ALLOCATED();
@@ -44,7 +44,7 @@ class CORE_EXPORT OutOfFlowLayoutPart {
  public:
   OutOfFlowLayoutPart(const BlockNode& container_node,
                       const ConstraintSpace& container_space,
-                      NGBoxFragmentBuilder* container_builder);
+                      BoxFragmentBuilder* container_builder);
   void Run();
 
   struct ColumnBalancingInfo {
@@ -65,7 +65,7 @@ class CORE_EXPORT OutOfFlowLayoutPart {
     void PropagateSpaceShortage(LayoutUnit space_shortage);
 
     // The list of columns to balance.
-    NGFragmentBuilder::ChildrenVector columns;
+    FragmentBuilder::ChildrenVector columns;
     // The list of OOF fragmentainer descendants of |columns|.
     HeapVector<LogicalOofNodeForFragmentation>
         out_of_flow_fragmentainer_descendants;
@@ -135,10 +135,10 @@ class CORE_EXPORT OutOfFlowLayoutPart {
 
     // The multicol break token that stores a reference to |mutable_link|'s
     // break token in its list of child break tokens.
-    Member<const NGBlockBreakToken> parent_break_token;
+    Member<const BlockBreakToken> parent_break_token;
 
     explicit MulticolChildInfo(PhysicalFragmentLink* mutable_link,
-                               NGBlockBreakToken* parent_break_token = nullptr)
+                               BlockBreakToken* parent_break_token = nullptr)
         : mutable_link(mutable_link), parent_break_token(parent_break_token) {}
 
     void Trace(Visitor* visitor) const;
@@ -205,7 +205,7 @@ class CORE_EXPORT OutOfFlowLayoutPart {
     // layout result if we needed to know the size in order to calculate the
     // offset. If an initial result is set, it will either be re-used or
     // replaced in the final layout pass.
-    Member<const NGLayoutResult> initial_layout_result;
+    Member<const LayoutResult> initial_layout_result;
     // The |block_estimate| is wrt. the candidate's writing mode.
     absl::optional<LayoutUnit> block_estimate;
     LogicalOofDimensions node_dimensions;
@@ -244,12 +244,12 @@ class CORE_EXPORT OutOfFlowLayoutPart {
    public:
     NodeInfo node_info;
     OffsetInfo offset_info;
-    Member<const NGBlockBreakToken> break_token;
+    Member<const BlockBreakToken> break_token;
 
     // The physical fragment of the containing block used when laying out a
     // fragmentainer descendant. This is the containing block as defined by the
     // spec: https://www.w3.org/TR/css-position-3/#absolute-cb.
-    Member<const NGPhysicalFragment> containing_block_fragment;
+    Member<const PhysicalFragment> containing_block_fragment;
 
     void Trace(Visitor* visitor) const;
   };
@@ -289,7 +289,7 @@ class CORE_EXPORT OutOfFlowLayoutPart {
 
   void LayoutCandidates(HeapVector<LogicalOofPositionedNode>* candidates);
 
-  void HandleMulticolsWithPendingOOFs(NGBoxFragmentBuilder* container_builder);
+  void HandleMulticolsWithPendingOOFs(BoxFragmentBuilder* container_builder);
   void LayoutOOFsInMulticol(
       const BlockNode& multicol,
       const MulticolWithPendingOofs<LogicalOffset>* multicol_info);
@@ -305,7 +305,7 @@ class CORE_EXPORT OutOfFlowLayoutPart {
 
   NodeInfo SetupNodeInfo(const LogicalOofPositionedNode& oof_node);
 
-  const NGLayoutResult* LayoutOOFNode(
+  const LayoutResult* LayoutOOFNode(
       NodeToLayout& oof_node_to_layout,
       const ConstraintSpace* fragmentainer_constraint_space = nullptr,
       bool is_last_fragmentainer_so_far = false);
@@ -315,27 +315,27 @@ class CORE_EXPORT OutOfFlowLayoutPart {
   OffsetInfo CalculateOffset(
       const NodeInfo& node_info,
       bool is_first_run = true,
-      const NGLogicalAnchorQueryMap* anchor_queries = nullptr);
+      const LogicalAnchorQueryMap* anchor_queries = nullptr);
   // Calculates offsets with the given ComputedStyle. Returns nullopt if
   // |try_fit_available_space| is true and the layout result does not fit the
   // available space.
   absl::optional<OffsetInfo> TryCalculateOffset(
       const NodeInfo& node_info,
       const ComputedStyle& style,
-      const NGLogicalAnchorQueryMap* anchor_queries,
+      const LogicalAnchorQueryMap* anchor_queries,
       const LayoutObject* implicit_anchor,
       bool try_fit_available_space,
       bool is_first_run,
       NonOverflowingScrollRange* out_scroll_range);
 
-  const NGLayoutResult* Layout(
+  const LayoutResult* Layout(
       const NodeToLayout& oof_node_to_layout,
       const ConstraintSpace* fragmentainer_constraint_space,
       bool is_last_fragmentainer_so_far);
 
   bool IsContainingBlockForCandidate(const LogicalOofPositionedNode&);
 
-  const NGLayoutResult* GenerateFragment(
+  const LayoutResult* GenerateFragment(
       const NodeToLayout& oof_node_to_layout,
       const ConstraintSpace* fragmentainer_constraint_space,
       bool is_last_fragmentainer_so_far);
@@ -382,8 +382,8 @@ class CORE_EXPORT OutOfFlowLayoutPart {
       wtf_size_t* start_index,
       LogicalOffset* offset) const;
 
-  void ReplaceFragment(const NGLayoutResult* new_result,
-                       const NGPhysicalBoxFragment& old_fragment,
+  void ReplaceFragment(const LayoutResult* new_result,
+                       const PhysicalBoxFragment& old_fragment,
                        wtf_size_t index);
 
   // This saves the static-position for an OOF-positioned object into its
@@ -394,17 +394,16 @@ class CORE_EXPORT OutOfFlowLayoutPart {
   LogicalStaticPosition ToStaticPositionForLegacy(
       LogicalStaticPosition position) const;
 
-  const NGFragmentBuilder::ChildrenVector& FragmentationContextChildren()
-      const {
+  const FragmentBuilder::ChildrenVector& FragmentationContextChildren() const {
     DCHECK(container_builder_->IsBlockFragmentationContextRoot());
     return column_balancing_info_ ? column_balancing_info_->columns
                                   : container_builder_->Children();
   }
 
-  NGBoxFragmentBuilder* container_builder_;
+  BoxFragmentBuilder* container_builder_;
   // The builder for the outer block fragmentation context when this is an inner
   // layout of nested block fragmentation.
-  NGBoxFragmentBuilder* outer_container_builder_ = nullptr;
+  BoxFragmentBuilder* outer_container_builder_ = nullptr;
   ContainingBlockInfo default_containing_block_info_for_absolute_;
   ContainingBlockInfo default_containing_block_info_for_fixed_;
   HeapHashMap<Member<const LayoutObject>, ContainingBlockInfo>

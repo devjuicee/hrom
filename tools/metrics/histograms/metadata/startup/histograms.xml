@@ -72,7 +72,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="Startup.Android.Cold.FirstNavigationCommitOccurredPreForeground"
-    enum="Boolean" expires_after="2024-03-24">
+    enum="Boolean" expires_after="2024-05-26">
   <owner>blundell@chromium.org</owner>
   <owner>yfriedman@chromium.org</owner>
   <summary>
@@ -499,6 +499,15 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Startup.Android.PrivacySandbox.ShouldShowAdsNoticeCCT"
+    enum="Boolean" expires_after="2024-09-30">
+  <owner>jacobstanley@google.com</owner>
+  <owner>koilos@google.com</owner>
+  <summary>
+    Whether or not the Privacy Sandbox ads notice is shown on Android CCTs.
+  </summary>
+</histogram>
+
 <histogram base="true" name="Startup.Android.SingleTabTitleAvailableTime"
     units="ms" expires_after="2024-05-07">
 <!-- Name completed by histogram_suffixes name="JavaStartMode" -->
@@ -921,69 +930,6 @@ chromium-metrics-reviews@google.com.
   <owner>thegreenfrog@chromium.org</owner>
   <owner>olivierrobin@chromium.org</owner>
   <summary>The calling application (if any).</summary>
-</histogram>
-
-<histogram name="Startup.OSX.AwakeFromNib" units="ms"
-    expires_after="2018-08-30">
-  <owner>erikchen@chromium.org</owner>
-  <summary>
-    The amount of time that elapsed between main entry and the invocation of
-    -[AppControllerMac awakeFromNib].
-  </summary>
-</histogram>
-
-<histogram name="Startup.OSX.DockIconWillFinishBouncing" units="ms"
-    expires_after="M77">
-  <owner>erikchen@chromium.org</owner>
-  <summary>
-    The amount of time that elapsed between main entry and the invocation of
-    -[AppControllerMac didFinishLaunching:]. At that point, the dock icon will
-    finish its current animation and stop bouncing.
-  </summary>
-</histogram>
-
-<histogram name="Startup.OSX.PostMainMessageLoopStart" units="ms"
-    expires_after="M85">
-  <owner>erikchen@chromium.org</owner>
-  <summary>
-    The amount of time that elapsed between main entry and the invocation of
-    ChromeBrowserMainPartsMac::PostMainMessageLoopStart.
-  </summary>
-</histogram>
-
-<histogram name="Startup.OSX.PostProfileInit" units="ms" expires_after="M77">
-  <owner>erikchen@chromium.org</owner>
-  <summary>
-    The amount of time that elapsed between main entry and the invocation of
-    ChromeBrowserMainPartsMac::PostProfileInit.
-  </summary>
-</histogram>
-
-<histogram name="Startup.OSX.PreMainMessageLoopStart" units="ms"
-    expires_after="2018-08-30">
-  <owner>erikchen@chromium.org</owner>
-  <summary>
-    The amount of time that elapsed between main entry and the invocation of
-    ChromeBrowserMainPartsMac::PreMainMessageLoopStart.
-  </summary>
-</histogram>
-
-<histogram name="Startup.OSX.PreProfileInit" units="ms"
-    expires_after="2018-08-30">
-  <owner>erikchen@chromium.org</owner>
-  <summary>
-    The amount of time that elapsed between main entry and the invocation of
-    ChromeBrowserMainPartsMac::PreProfileInit.
-  </summary>
-</histogram>
-
-<histogram name="Startup.OSX.WillFinishLaunching" units="ms"
-    expires_after="2018-08-30">
-  <owner>erikchen@chromium.org</owner>
-  <summary>
-    The amount of time that elapsed between main entry and the invocation of
-    -[AppControllerMac willFinishLaunching:].
-  </summary>
 </histogram>
 
 <histogram name="Startup.PreMainMessageLoopRunImplLongTime" units="ms"

@@ -5,6 +5,7 @@
 #include "components/optimization_guide/core/model_execution/model_execution_manager.h"
 
 #include "base/command_line.h"
+#include "base/functional/callback_helpers.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/notreached.h"
 #include "base/strings/strcat.h"
@@ -12,7 +13,6 @@
 #include "components/optimization_guide/core/model_execution/model_execution_fetcher.h"
 #include "components/optimization_guide/core/model_execution/on_device_model_execution_config_interpreter.h"
 #include "components/optimization_guide/core/model_execution/on_device_model_service_controller.h"
-#include "components/optimization_guide/core/model_execution/on_device_model_stream_receiver.h"
 #include "components/optimization_guide/core/model_execution/optimization_guide_model_execution_error.h"
 #include "components/optimization_guide/core/model_quality/feature_type_map.h"
 #include "components/optimization_guide/core/model_quality/model_quality_log_entry.h"
@@ -68,50 +68,6 @@ GURL GetModelExecutionServiceURL() {
   }
   return GURL(kOptimizationGuideServiceModelExecutionDefaultURL);
 }
-
-// Session which passes through all ExecuteModel() calls to the underlying
-// ModelExecutionManager and saves context passed to AddContext().
-class PassthroughSession : public OptimizationGuideModelExecutor::Session {
- public:
-  PassthroughSession(proto::ModelExecutionFeature feature,
-                     ModelExecutionManager& execution_manager)
-      : feature_(feature), execution_manager_(execution_manager) {}
-
-  // OptimizationGuideModelExecutor::Session:
-  void AddContext(
-      const google::protobuf::MessageLite& request_metadata) override {
-    context_.reset(request_metadata.New());
-    context_->CheckTypeAndMergeFrom(request_metadata);
-  }
-  void ExecuteModel(const google::protobuf::MessageLite& request_metadata,
-                    OptimizationGuideModelExecutionResultStreamingCallback
-                        callback) override {
-    auto request = MergeContext(request_metadata);
-    execution_manager_->ExecuteModel(
-        feature_, *request,
-        base::BindOnce(
-            [](OptimizationGuideModelExecutionResultStreamingCallback callback,
-               OptimizationGuideModelExecutionResult result,
-               std::unique_ptr<ModelQualityLogEntry> log_entry) {
-              if (result.has_value()) {
-                callback.Run(
-                    StreamingResponse{
-                        .response = *result,
-                        .is_complete = true,
-                    },
-                    std::move(log_entry));
-              } else {
-                callback.Run(base::unexpected(result.error()),
-                             std::move(log_entry));
-              }
-            },
-            callback));
-  }
-
- private:
-  proto::ModelExecutionFeature feature_;
-  raw_ref<ModelExecutionManager> execution_manager_;
-};
 
 // Sets request data corresponding the feature's LogAiDataRequest.
 template <typename FeatureType>
@@ -229,11 +185,35 @@ ModelExecutionManager::ModelExecutionManager(
           features::GetOptimizationGuideServiceAPIKey())),
       url_loader_factory_(url_loader_factory),
       identity_manager_(identity_manager),
-      oauth_scopes_(features::GetOAuthScopesForModelExecution()),
       on_device_model_service_controller_(
           std::move(on_device_model_service_controller)) {}
 
 ModelExecutionManager::~ModelExecutionManager() = default;
+
+void ModelExecutionManager::ExecuteModelWithStreaming(
+    proto::ModelExecutionFeature feature,
+    const google::protobuf::MessageLite& request_metadata,
+    OptimizationGuideModelExecutionResultStreamingCallback callback) {
+  ExecuteModel(
+      feature, request_metadata,
+      base::BindOnce(
+          [](OptimizationGuideModelExecutionResultStreamingCallback callback,
+             OptimizationGuideModelExecutionResult result,
+             std::unique_ptr<ModelQualityLogEntry> log_entry) {
+            if (result.has_value()) {
+              callback.Run(
+                  StreamingResponse{
+                      .response = *result,
+                      .is_complete = true,
+                  },
+                  std::move(log_entry));
+            } else {
+              callback.Run(base::unexpected(result.error()),
+                           std::move(log_entry));
+            }
+          },
+          callback));
+}
 
 void ModelExecutionManager::ExecuteModel(
     proto::ModelExecutionFeature feature,
@@ -292,7 +272,7 @@ void ModelExecutionManager::ExecuteModel(
       std::forward_as_tuple(url_loader_factory_, model_execution_service_url_,
                             optimization_guide_logger_));
   fetcher_it.first->second.ExecuteModel(
-      feature, identity_manager_, oauth_scopes_, request_metadata,
+      feature, identity_manager_, request_metadata,
       base::BindOnce(&ModelExecutionManager::OnModelExecuteResponse,
                      weak_ptr_factory_.GetWeakPtr(), feature,
                      std::move(log_ai_data_request), std::move(callback)));
@@ -300,8 +280,12 @@ void ModelExecutionManager::ExecuteModel(
 
 std::unique_ptr<OptimizationGuideModelExecutor::Session>
 ModelExecutionManager::StartSession(proto::ModelExecutionFeature feature) {
+  ExecuteRemoteFn execute_fn =
+      base::BindRepeating(&ModelExecutionManager::ExecuteModelWithStreaming,
+                          base::Unretained(this));
   if (on_device_model_service_controller_) {
-    auto session = on_device_model_service_controller_->StartSession(feature);
+    auto session = on_device_model_service_controller_->CreateSession(
+        feature, execute_fn, optimization_guide_logger_.get());
     if (session) {
       RecordSessionUsedRemoteExecutionHistogram(feature, /*is_remote=*/false);
       return session;
@@ -309,7 +293,9 @@ ModelExecutionManager::StartSession(proto::ModelExecutionFeature feature) {
   }
 
   RecordSessionUsedRemoteExecutionHistogram(feature, /*is_remote=*/true);
-  return std::make_unique<PassthroughSession>(feature, *this);
+  return std::make_unique<SessionImpl>(base::DoNothing(), feature, nullptr,
+                                       nullptr, std::move(execute_fn),
+                                       optimization_guide_logger_.get());
 }
 
 void ModelExecutionManager::OnModelExecuteResponse(

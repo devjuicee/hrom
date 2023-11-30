@@ -22,17 +22,9 @@ chromium-metrics-reviews@google.com.
 
 <histograms>
 
-<variants name="BlinkIncrementalDecodeImageTypes">
-  <variant name=".Jpeg"
-      summary="Byte size of JPEG images that fall into this category."/>
-  <variant name=".WebP"
-      summary="Byte size of WebP images that fall into this category."/>
-</variants>
-
 <variants name="BlinkRequestDestination">
 <!-- Should be kept in sync with variants RequestDestination in
-  tools/metrics/histograms/metadata/page/histograms.xml and NetworkRequestDestination
-  in tools/metrics/histograms/metadata/network/histograms.xml.
+  tools/metrics/histograms/metadata/page/histograms.xml.
 -->
 
   <variant name="audio"/>
@@ -1331,7 +1323,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Blink.FedCm.CloseVerifySheet.Android" enum="Boolean"
-    expires_after="2024-03-24">
+    expires_after="2024-05-26">
   <owner>yigu@chromium.org</owner>
   <owner>web-identity-eng@google.com</owner>
   <summary>
@@ -1341,7 +1333,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Blink.FedCm.CloseVerifySheet.Desktop" enum="Boolean"
-    expires_after="2024-03-24">
+    expires_after="2024-05-26">
   <owner>yigu@chromium.org</owner>
   <owner>web-identity-eng@google.com</owner>
   <summary>
@@ -1636,7 +1628,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Blink.FedCm.Status.RequestIdToken"
-    enum="FedCmRequestIdTokenStatus" expires_after="2024-03-24">
+    enum="FedCmRequestIdTokenStatus" expires_after="2024-05-26">
   <owner>yigu@chromium.org</owner>
   <owner>web-identity-eng@google.com</owner>
   <summary>
@@ -1735,7 +1727,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Blink.FedCm.Timing.ShowAccountsDialog" units="ms"
-    expires_after="2024-03-24">
+    expires_after="2024-05-26">
   <owner>yigu@chromium.org</owner>
   <owner>web-identity-eng@google.com</owner>
   <summary>
@@ -1990,7 +1982,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Blink.Fonts.VariableFontsRatio"
-    enum="WebFontInstantiationResult" expires_after="2024-03-24">
+    enum="WebFontInstantiationResult" expires_after="2024-05-26">
   <owner>drott@chromium.org</owner>
   <owner>layout-dev@chromium.org</owner>
   <summary>
@@ -2222,7 +2214,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Blink.HTMLParsing.ChunkCount4" units="chunks"
-    expires_after="2024-03-24">
+    expires_after="2024-05-26">
   <owner>masonf@chromium.org</owner>
   <owner>dom-dev@chromium.org</owner>
   <summary>
@@ -2236,7 +2228,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Blink.HTMLParsing.InputCharacterCount4" units="characters"
-    expires_after="2024-03-24">
+    expires_after="2024-05-26">
   <owner>masonf@chromium.org</owner>
   <owner>dom-dev@chromium.org</owner>
   <summary>
@@ -2786,7 +2778,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Blink.LCPP.PreloadedFontCount" units="count"
-    expires_after="2024-02-01">
+    expires_after="2024-05-26">
   <owner>yyanagisawa@chromium.org</owner>
   <owner>
     src/third_party/blink/renderer/core/lcp_critical_path_predictor/OWNERS
@@ -2831,7 +2823,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="Blink.LCPP.RecordedFontUrlPredictionMatchPercent" units="%"
-    expires_after="2024-02-01">
+    expires_after="2024-05-26">
   <owner>yyanagisawa@chromium.org</owner>
   <owner>
     src/third_party/blink/renderer/core/lcp_critical_path_predictor/OWNERS
@@ -3433,6 +3425,50 @@ chromium-metrics-reviews@google.com.
     the ForceDeferScriptIntervention. Recorded at the end of parsing when
     ForceDeferScriptIntervention is enabled.
   </summary>
+</histogram>
+
+<histogram
+    name="Blink.Script.PostTaskWithLowPriorityUntilTimeout.RaceTaskPriority"
+    enum="RaceTaskPriority" expires_after="2024-02-01">
+  <owner>chikamune@chromium.org</owner>
+  <owner>yyanagisawa@chromium.org</owner>
+  <owner>kouhei@chromium.org</owner>
+  <summary>
+    Record which task priority's task was run in
+    `PostTaskWithLowPriorityUntilTimeout()` that uses LowerPriority task queue
+    and NormalPriority task queue. This is recorded when the
+    LowPriorityAsyncScriptExecution behavior is applied to async scripts.
+  </summary>
+</histogram>
+
+<histogram name="Blink.Script.PostTaskWithLowPriorityUntilTimeout.Time"
+    units="ms" expires_after="2024-02-01">
+  <owner>chikamune@chromium.org</owner>
+  <owner>yyanagisawa@chromium.org</owner>
+  <owner>kouhei@chromium.org</owner>
+  <summary>
+    Record when the LowPriorityAsyncScriptExecution behavior is applied to async
+    scripts. Measures the duration between when a script is ready to run, to
+    when the script is about to run.
+  </summary>
+</histogram>
+
+<histogram
+    name="Blink.Script.PostTaskWithLowPriorityUntilTimeout.Time.{RaceTaskPriority}"
+    units="ms" expires_after="2024-02-01">
+  <owner>chikamune@chromium.org</owner>
+  <owner>yyanagisawa@chromium.org</owner>
+  <owner>kouhei@chromium.org</owner>
+  <summary>
+    Record when the LowPriorityAsyncScriptExecution behavior is applied to async
+    scripts, and {RaceTaskPriority} task was eventually run. Measures the
+    duration between when a script is ready to run, to when the script is about
+    to run.
+  </summary>
+  <token key="RaceTaskPriority">
+    <variant name="LowerPriority"/>
+    <variant name="NormalPriority"/>
+  </token>
 </histogram>
 
 <histogram name="Blink.Script.SchedulingType" enum="ScriptSchedulingType"

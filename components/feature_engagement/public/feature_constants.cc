@@ -102,9 +102,6 @@ BASE_FEATURE(kIPHPowerBookmarksSidePanelFeature,
 BASE_FEATURE(kIPHPriceInsightsPageActionIconLabelFeature,
              "IPH_PriceInsightsPageActionIconLabelFeature",
              base::FEATURE_ENABLED_BY_DEFAULT);
-BASE_FEATURE(kIPHPriceTrackingChipFeature,
-             "IPH_PriceTrackingChipFeature",
-             base::FEATURE_ENABLED_BY_DEFAULT);
 BASE_FEATURE(kIPHPriceTrackingEmailConsentFeature,
              "IPH_PriceTrackingEmailConsentFeature",
              base::FEATURE_ENABLED_BY_DEFAULT);
@@ -481,7 +478,7 @@ BASE_FEATURE(kIPHBadgedReadingListFeature,
              base::FEATURE_DISABLED_BY_DEFAULT);
 BASE_FEATURE(kIPHWhatsNewFeature,
              "IPH_WhatsNew",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 BASE_FEATURE(kIPHReadingListMessagesFeature,
              "IPH_ReadingListMessages",
              base::FEATURE_DISABLED_BY_DEFAULT);
@@ -530,6 +527,9 @@ BASE_FEATURE(kIPHiOSPromoDefaultBrowserFeature,
 BASE_FEATURE(kIPHiOSPromoDefaultBrowserReminderFeature,
              "IPH_iOSPromoDefaultBrowserReminder",
              base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE(kIPHiOSPromoOmniboxPositionFeature,
+             "IPH_iOSPromoOmniboxPosition",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 BASE_FEATURE(kIPHiOSNewTabToolbarItemFeature,
              "IPH_iOSNewTabToolbarItemFeature",
              base::FEATURE_DISABLED_BY_DEFAULT);
@@ -559,6 +559,9 @@ BASE_FEATURE(kIPHiOSParcelTrackingFeature,
              base::FEATURE_ENABLED_BY_DEFAULT);
 BASE_FEATURE(kIPHiOSPullToRefreshFeature,
              "IPH_iOSPullToRefreshFeature",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE(kIPHiOSReplaceSyncPromosWithSignInPromos,
+             "IPH_iOSReplaceSyncPromosWithSignInPromos",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 // Non-FET feature.

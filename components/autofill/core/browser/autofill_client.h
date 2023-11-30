@@ -77,7 +77,7 @@ class AddressNormalizer;
 class AutocompleteHistoryManager;
 class AutofillAblationStudy;
 class AutofillComposeDelegate;
-class AutofillDownloadManager;
+class AutofillCrowdsourcingManager;
 class AutofillDriver;
 struct AutofillErrorDialogContext;
 class AutofillMlPredictionModelHandler;
@@ -117,6 +117,7 @@ enum class WebauthnDialogState;
 
 namespace payments {
 class MandatoryReauthManager;
+class PaymentsAutofillClient;
 class PaymentsNetworkInterface;
 }
 
@@ -411,9 +412,9 @@ class AutofillClient : public RiskDataLoader {
   virtual scoped_refptr<network::SharedURLLoaderFactory>
   GetURLLoaderFactory() = 0;
 
-  // Returns the AutofillDownloadManager for communication with the Autofill
-  // crowdsourcing server.
-  virtual AutofillDownloadManager* GetDownloadManager();
+  // Returns the AutofillCrowdsourcingManager for communication with the
+  // Autofill server.
+  virtual AutofillCrowdsourcingManager* GetCrowdsourcingManager();
 
   // Gets the PersonalDataManager instance associated with the original Chrome
   // profile.
@@ -477,6 +478,9 @@ class AutofillClient : public RiskDataLoader {
 
   // Gets the FormDataImporter instance owned by the client.
   virtual FormDataImporter* GetFormDataImporter() = 0;
+
+  // Gets the payments::PaymentsAutofillClient instance owned by the client.
+  virtual payments::PaymentsAutofillClient* GetPaymentsAutofillClient();
 
   // Gets the payments::PaymentsNetworkInterface instance owned by the client.
   virtual payments::PaymentsNetworkInterface* GetPaymentsNetworkInterface() = 0;

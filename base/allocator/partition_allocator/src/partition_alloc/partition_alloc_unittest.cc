@@ -5,6 +5,7 @@
 #include "partition_alloc/partition_alloc_for_testing.h"
 
 #include <algorithm>
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -357,6 +358,7 @@ class PartitionAllocTest
   PartitionOptions GetCommonPartitionOptions() {
     PartitionOptions opts;
     opts.ref_count_size = GetParam().ref_count_size;
+    opts.zapping_by_free_flags = PartitionOptions::kEnabled;
     return opts;
   }
 
@@ -3623,12 +3625,12 @@ TEST_P(PartitionAllocTest, ZeroFill) {
 }
 
 TEST_P(PartitionAllocTest, SchedulerLoopQuarantine) {
-  SchedulerLoopQuarantine& list =
-      allocator.root()->GetSchedulerLoopQuarantineForTesting();
+  SchedulerLoopQuarantineBranch& branch =
+      allocator.root()->GetSchedulerLoopQuarantineBranchForTesting();
 
   constexpr size_t kCapacityInBytes = std::numeric_limits<size_t>::max();
-  size_t original_capacity_in_bytes = list.GetCapacityInBytes();
-  list.SetCapacityInBytesForTesting(kCapacityInBytes);
+  size_t original_capacity_in_bytes = branch.GetRoot().GetCapacityInBytes();
+  branch.GetRoot().SetCapacityInBytesForTesting(kCapacityInBytes);
 
   for (size_t size : kTestSizes) {
     SCOPED_TRACE(size);
@@ -3636,7 +3638,7 @@ TEST_P(PartitionAllocTest, SchedulerLoopQuarantine) {
     void* object = allocator.root()->Alloc(size);
     allocator.root()->Free<FreeFlags::kSchedulerLoopQuarantine>(object);
 
-    ASSERT_TRUE(list.IsQuarantinedForTesting(object));
+    ASSERT_TRUE(branch.IsQuarantinedForTesting(object));
   }
 
   for (int i = 0; i < 10; ++i) {
@@ -3645,8 +3647,8 @@ TEST_P(PartitionAllocTest, SchedulerLoopQuarantine) {
         allocator.root(), 250);
   }
 
-  list.Purge();
-  list.SetCapacityInBytesForTesting(original_capacity_in_bytes);
+  branch.Purge();
+  branch.GetRoot().SetCapacityInBytesForTesting(original_capacity_in_bytes);
 }
 
 TEST_P(PartitionAllocTest, ZapOnFree) {
@@ -5111,7 +5113,7 @@ TEST_P(PartitionAllocTest, ConfigurablePool) {
   const size_t min_pool_size = PartitionAddressSpace::ConfigurablePoolMinSize();
   for (size_t pool_size = max_pool_size; pool_size >= min_pool_size;
        pool_size /= 2) {
-    PA_DCHECK(partition_alloc::internal::base::bits::IsPowerOfTwo(pool_size));
+    PA_DCHECK(std::has_single_bit(pool_size));
     EXPECT_FALSE(IsConfigurablePoolAvailable());
     uintptr_t pool_base =
         AllocPages(pool_size, pool_size,

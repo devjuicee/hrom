@@ -57,6 +57,7 @@ BASE_DECLARE_FEATURE(kOptimizationGuidePredictionModelKillswitch);
 BASE_DECLARE_FEATURE(kOptimizationGuideModelExecution);
 BASE_DECLARE_FEATURE(kOptimizationGuideOnDeviceModel);
 BASE_DECLARE_FEATURE(kModelQualityLogging);
+BASE_DECLARE_FEATURE(kLogOnDeviceMetricsOnStartup);
 
 // Enables use of task runner with trait CONTINUE_ON_SHUTDOWN for page content
 // annotations on-device models.
@@ -368,9 +369,6 @@ bool IsModelQualityLoggingEnabledForFeature(
 std::map<proto::OptimizationTarget, std::set<int64_t>>
 GetPredictionModelVersionsInKillSwitch();
 
-// Returns the OAuth scopes to use for model execution.
-std::set<std::string> GetOAuthScopesForModelExecution();
-
 // Returns the idle timeout before the on device model service shuts down.
 base::TimeDelta GetOnDeviceModelIdleTimeout();
 
@@ -382,9 +380,25 @@ int GetOnDeviceModelMinTokensForContext();
 int GetOnDeviceModelMaxTokensForContext();
 int GetOnDeviceModelContextTokenChunkSize();
 
+// The maximum tokens for the input when executing the model.
+int GetOnDeviceModelMaxTokensForExecute();
+
+// The maximum tokens the model will output if the maximum input is given.
+int GetOnDeviceModelMaxTokensForOutput();
+
 // Returns the number of crashes without a successful response before the
 // on-device model won't be used.
 int GetOnDeviceModelCrashCountBeforeDisable();
+
+base::TimeDelta GetOnDeviceStartupMetricDelay();
+
+// Returns the amount of time before the initial response needs to be received
+// from the on-device model before falling back to the server.
+base::TimeDelta GetOnDeviceModelTimeForInitialResponse();
+
+// Returns true if during execution a disconnect is received (which generally
+// means a crash) the message should be sent to the server for processing.
+bool GetOnDeviceFallbackToServerOnDisconnect();
 
 }  // namespace features
 }  // namespace optimization_guide

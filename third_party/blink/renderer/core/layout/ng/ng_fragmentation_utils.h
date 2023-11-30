@@ -6,34 +6,34 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_LAYOUT_NG_NG_FRAGMENTATION_UTILS_H_
 
 #include "third_party/abseil-cpp/absl/types/optional.h"
+#include "third_party/blink/renderer/core/layout/block_node.h"
+#include "third_party/blink/renderer/core/layout/constraint_space.h"
 #include "third_party/blink/renderer/core/layout/geometry/box_strut.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_break_token.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_item.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_block_node.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_box_fragment_builder.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_column_spanner_path.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_fragment.h"
 #include "third_party/blink/renderer/core/style/computed_style_constants.h"
 #include "third_party/blink/renderer/platform/geometry/layout_unit.h"
 
 namespace blink {
 
-class NGEarlyBreak;
-class NGLayoutResult;
+class EarlyBreak;
+class LayoutResult;
 
 // Each column in a flex container is fragmented independently, so we need to
 // track early break and break-after info for each column separately.
-struct NGFlexColumnBreakInfo {
+struct FlexColumnBreakInfo {
   DISALLOW_NEW();
 
-  NGFlexColumnBreakInfo() = default;
+  FlexColumnBreakInfo() = default;
 
   void Trace(Visitor* visitor) const { visitor->Trace(early_break); }
 
   LayoutUnit column_intrinsic_block_size;
-  Member<NGEarlyBreak> early_break = nullptr;
+  Member<EarlyBreak> early_break = nullptr;
   EBreakBetween break_after = EBreakBetween::kAuto;
 };
 
@@ -61,7 +61,7 @@ bool IsAvoidBreakValue(const ConstraintSpace&, Property);
 
 // Return true if this is a break inside a node (i.e. it's not a break *before*
 // something, and also not for repeated content).
-inline bool IsBreakInside(const NGBlockBreakToken* token) {
+inline bool IsBreakInside(const BlockBreakToken* token) {
   return token && !token->IsBreakBefore() && !token->IsRepeated();
 }
 
@@ -71,14 +71,14 @@ inline bool IsBreakInside(const NGBlockBreakToken* token) {
 // overflow is clipped). In some cases it's not enough to just check if we're
 // currently performing block fragmentation; we also need to know if it has
 // already been fragmented (to resume layout correctly, but not break again).
-inline bool InvolvedInBlockFragmentation(const NGBoxFragmentBuilder& builder) {
+inline bool InvolvedInBlockFragmentation(const BoxFragmentBuilder& builder) {
   return builder.GetConstraintSpace().HasBlockFragmentation() ||
          IsBreakInside(builder.PreviousBreakToken());
 }
 
 // Return the fragment index (into the layout results vector in LayoutBox),
 // based on incoming break token.
-inline wtf_size_t FragmentIndex(const NGBlockBreakToken* incoming_break_token) {
+inline wtf_size_t FragmentIndex(const BlockBreakToken* incoming_break_token) {
   if (incoming_break_token && !incoming_break_token->IsBreakBefore())
     return incoming_break_token->SequenceNumber() + 1;
   return 0;
@@ -88,8 +88,8 @@ inline wtf_size_t FragmentIndex(const NGBlockBreakToken* incoming_break_token) {
 // is the combination of all break-before and break-after values that met at the
 // breakpoint.
 EBreakBetween CalculateBreakBetweenValue(LayoutInputNode child,
-                                         const NGLayoutResult&,
-                                         const NGBoxFragmentBuilder&);
+                                         const LayoutResult&,
+                                         const BoxFragmentBuilder&);
 
 // Return true if the container is being resumed after a fragmentainer break,
 // and the child is at the first fragment of a node, and we are allowed to break
@@ -103,22 +103,22 @@ EBreakBetween CalculateBreakBetweenValue(LayoutInputNode child,
 // That row may be taller, which might help us avoid breaking violations.
 bool IsBreakableAtStartOfResumedContainer(
     const ConstraintSpace& space,
-    const NGLayoutResult& child_layout_result,
-    const NGBoxFragmentBuilder& builder);
+    const LayoutResult& child_layout_result,
+    const BoxFragmentBuilder& builder);
 
 bool IsBreakableAtStartOfResumedContainer(const ConstraintSpace& space,
-                                          const NGBoxFragmentBuilder& builder,
+                                          const BoxFragmentBuilder& builder,
                                           bool is_first_for_node);
 
 // Calculate the appeal of breaking before this child.
-NGBreakAppeal CalculateBreakAppealBefore(const ConstraintSpace&,
-                                         LayoutInputNode child,
-                                         const NGLayoutResult&,
-                                         const NGBoxFragmentBuilder&,
-                                         bool has_container_separation);
-NGBreakAppeal CalculateBreakAppealBefore(
+BreakAppeal CalculateBreakAppealBefore(const ConstraintSpace&,
+                                       LayoutInputNode child,
+                                       const LayoutResult&,
+                                       const BoxFragmentBuilder&,
+                                       bool has_container_separation);
+BreakAppeal CalculateBreakAppealBefore(
     const ConstraintSpace&,
-    NGLayoutResult::EStatus layout_result_status,
+    LayoutResult::EStatus layout_result_status,
     EBreakBetween break_between,
     bool has_container_separation,
     bool breakable_at_start_of_container);
@@ -126,11 +126,11 @@ NGBreakAppeal CalculateBreakAppealBefore(
 // Calculate the appeal of breaking inside this child. The appeal is based on
 // the one stored in the layout result, unless hypothetical_appeal is specified.
 // hypothetical_appeal is used to assess the appeal at breakpoints where we
-// didn't break, but still need to consider (see NGEarlyBreak).
-NGBreakAppeal CalculateBreakAppealInside(
+// didn't break, but still need to consider (see EarlyBreak).
+BreakAppeal CalculateBreakAppealInside(
     const ConstraintSpace& space,
-    const NGLayoutResult&,
-    absl::optional<NGBreakAppeal> hypothetical_appeal = absl::nullopt);
+    const LayoutResult&,
+    absl::optional<BreakAppeal> hypothetical_appeal = absl::nullopt);
 
 // To ensure content progression, we need fragmentainers to hold something
 // larger than 0. The spec says that fragmentainers have to accept at least 1px
@@ -142,7 +142,7 @@ inline LayoutUnit ClampedToValidFragmentainerCapacity(LayoutUnit length) {
 // Return the logical size of the specified fragmentainer, with
 // clamping block_size.
 LogicalSize FragmentainerLogicalCapacity(
-    const NGPhysicalBoxFragment& fragmentainer);
+    const PhysicalBoxFragment& fragmentainer);
 
 // Return the fragmentainer block-size to use during layout. This is normally
 // the same as the block-size we'll give to the fragment itself, but in order to
@@ -195,7 +195,7 @@ inline LayoutUnit UnclampedFragmentainerSpaceLeft(
 // (note that this may not be the final fragment, if children overflow; see
 // below). For all other fragments, leading/trailing block margins must be
 // ignored.
-inline void AdjustMarginsForFragmentation(const NGBlockBreakToken* break_token,
+inline void AdjustMarginsForFragmentation(const BlockBreakToken* break_token,
                                           BoxStrut* box_strut) {
   if (!break_token)
     return;
@@ -215,7 +215,7 @@ inline void AdjustMarginsForFragmentation(const NGBlockBreakToken* break_token,
 }
 
 // Get the offset from one fragmentainer to the next.
-LogicalOffset GetFragmentainerProgression(const NGBoxFragmentBuilder&,
+LogicalOffset GetFragmentainerProgression(const BoxFragmentBuilder&,
                                           FragmentationType);
 
 // Set up a child's constraint space builder for block fragmentation. The child
@@ -225,7 +225,7 @@ LogicalOffset GetFragmentainerProgression(const NGBoxFragmentBuilder&,
 // formatting context starts in a previous fragmentainer; the offset from the
 // current fragmentainer block-start. |requires_content_before_breaking| is set
 // when inside node that we know will fit (and stay) in the current
-// fragmentainer. See MustStayInCurrentFragmentainer() in NGBoxFragmentBuilder.
+// fragmentainer. See MustStayInCurrentFragmentainer() in BoxFragmentBuilder.
 void SetupSpaceBuilderForFragmentation(const ConstraintSpace& parent_space,
                                        const LayoutInputNode& child,
                                        LayoutUnit fragmentainer_offset_delta,
@@ -238,16 +238,16 @@ void SetupSpaceBuilderForFragmentation(const ConstraintSpace& parent_space,
 void SetupFragmentBuilderForFragmentation(
     const ConstraintSpace&,
     const LayoutInputNode&,
-    const NGBlockBreakToken* previous_break_token,
-    NGBoxFragmentBuilder*);
+    const BlockBreakToken* previous_break_token,
+    BoxFragmentBuilder*);
 
 // Return whether any block-end border+padding should be included in the
 // fragment being generated. Only one of the fragments should include this.
-bool ShouldIncludeBlockEndBorderPadding(const NGBoxFragmentBuilder&);
+bool ShouldIncludeBlockEndBorderPadding(const BoxFragmentBuilder&);
 
 // Outcome of considering (and possibly attempting) breaking before or inside a
 // child.
-enum class NGBreakStatus {
+enum class BreakStatus {
   // Continue layout. No break was inserted in this operation.
   kContinue,
 
@@ -290,22 +290,22 @@ enum class NGBreakStatus {
 // fragmentation (kDisableFragmentation). kBrokeBefore is never returned here
 // (if we need a break before the node, that's something that will be determined
 // by the parent algorithm).
-NGBreakStatus FinishFragmentation(BlockNode node,
-                                  const ConstraintSpace&,
-                                  LayoutUnit trailing_border_padding,
-                                  LayoutUnit space_left,
-                                  NGBoxFragmentBuilder*);
+BreakStatus FinishFragmentation(BlockNode node,
+                                const ConstraintSpace&,
+                                LayoutUnit trailing_border_padding,
+                                LayoutUnit space_left,
+                                BoxFragmentBuilder*);
 
 // Special rules apply for finishing fragmentation when building fragmentainers.
-NGBreakStatus FinishFragmentationForFragmentainer(const ConstraintSpace&,
-                                                  NGBoxFragmentBuilder*);
+BreakStatus FinishFragmentationForFragmentainer(const ConstraintSpace&,
+                                                BoxFragmentBuilder*);
 
 // Return true if there's a valid class A/B breakpoint between the child
 // fragment that was just added to the builder, and the next sibling, if one is
 // added.
 bool HasBreakOpportunityBeforeNextChild(
-    const NGPhysicalFragment& child_fragment,
-    const NGBreakToken* incoming_child_break_token);
+    const PhysicalFragment& child_fragment,
+    const BreakToken* incoming_child_break_token);
 
 // Insert a fragmentainer break before the child if necessary. In that case, the
 // previous in-flow position will be updated, we'll return |kBrokeBefore|. If we
@@ -329,15 +329,15 @@ bool HasBreakOpportunityBeforeNextChild(
 // If |flex_column_break_info| is supplied, we are running layout for a column
 // flex container, in which case, we may be tracking certain break behavior at
 // the column level.
-NGBreakStatus BreakBeforeChildIfNeeded(
+BreakStatus BreakBeforeChildIfNeeded(
     const ConstraintSpace&,
     LayoutInputNode child,
-    const NGLayoutResult&,
+    const LayoutResult&,
     LayoutUnit fragmentainer_block_offset,
     bool has_container_separation,
-    NGBoxFragmentBuilder*,
+    BoxFragmentBuilder*,
     bool is_row_item = false,
-    NGFlexColumnBreakInfo* flex_column_break_info = nullptr);
+    FlexColumnBreakInfo* flex_column_break_info = nullptr);
 
 // Insert a break before the child, and propagate space shortage if needed.
 // |block_size_override| should only be supplied when you wish to propagate a
@@ -345,11 +345,11 @@ NGBreakStatus BreakBeforeChildIfNeeded(
 void BreakBeforeChild(
     const ConstraintSpace&,
     LayoutInputNode child,
-    const NGLayoutResult*,
+    const LayoutResult*,
     LayoutUnit fragmentainer_block_offset,
-    absl::optional<NGBreakAppeal> appeal,
+    absl::optional<BreakAppeal> appeal,
     bool is_forced_break,
-    NGBoxFragmentBuilder*,
+    BoxFragmentBuilder*,
     absl::optional<LayoutUnit> block_size_override = absl::nullopt);
 
 // Propagate the block-size of unbreakable content. This is used to inflate the
@@ -359,7 +359,7 @@ void BreakBeforeChild(
 // possible.
 inline void PropagateUnbreakableBlockSize(LayoutUnit block_size,
                                           LayoutUnit fragmentainer_block_offset,
-                                          NGBoxFragmentBuilder* builder) {
+                                          BoxFragmentBuilder* builder) {
   // Whatever is before the block-start of the fragmentainer isn't considered to
   // intersect with the fragmentainer, so subtract it (by adding the negative
   // offset).
@@ -376,9 +376,9 @@ inline void PropagateUnbreakableBlockSize(LayoutUnit block_size,
 // layout result.
 void PropagateSpaceShortage(
     const ConstraintSpace&,
-    const NGLayoutResult*,
+    const LayoutResult*,
     LayoutUnit fragmentainer_block_offset,
-    NGFragmentBuilder*,
+    FragmentBuilder*,
     absl::optional<LayoutUnit> block_size_override = absl::nullopt);
 // Calculate how much we would need to stretch the column block-size to fit the
 // current result (if applicable). |block_size_override| should only be supplied
@@ -386,7 +386,7 @@ void PropagateSpaceShortage(
 // layout result.
 LayoutUnit CalculateSpaceShortage(
     const ConstraintSpace&,
-    const NGLayoutResult*,
+    const LayoutResult*,
     LayoutUnit fragmentainer_block_offset,
     absl::optional<LayoutUnit> block_size_override = absl::nullopt);
 // Update |minimal_space_shortage| based on the current |space_shortage|.
@@ -398,25 +398,23 @@ void UpdateMinimalSpaceShortage(absl::optional<LayoutUnit> space_shortage,
 // to break before it). If false is returned, it means that we need to break
 // before the child (or even earlier). See BreakBeforeChildIfNeeded() for
 // details on |flex_column_break_info|.
-bool MovePastBreakpoint(
-    const ConstraintSpace& space,
-    LayoutInputNode child,
-    const NGLayoutResult& layout_result,
-    LayoutUnit fragmentainer_block_offset,
-    NGBreakAppeal appeal_before,
-    NGBoxFragmentBuilder* builder,
-    bool is_row_item = false,
-    NGFlexColumnBreakInfo* flex_column_break_info = nullptr);
+bool MovePastBreakpoint(const ConstraintSpace& space,
+                        LayoutInputNode child,
+                        const LayoutResult& layout_result,
+                        LayoutUnit fragmentainer_block_offset,
+                        BreakAppeal appeal_before,
+                        BoxFragmentBuilder* builder,
+                        bool is_row_item = false,
+                        FlexColumnBreakInfo* flex_column_break_info = nullptr);
 
 // Same as above, but without the parts that require an LayoutInputNode.
-bool MovePastBreakpoint(
-    const ConstraintSpace& space,
-    const NGLayoutResult& layout_result,
-    LayoutUnit fragmentainer_block_offset,
-    NGBreakAppeal appeal_before,
-    NGBoxFragmentBuilder* builder,
-    bool is_row_item = false,
-    NGFlexColumnBreakInfo* flex_column_break_info = nullptr);
+bool MovePastBreakpoint(const ConstraintSpace& space,
+                        const LayoutResult& layout_result,
+                        LayoutUnit fragmentainer_block_offset,
+                        BreakAppeal appeal_before,
+                        BoxFragmentBuilder* builder,
+                        bool is_row_item = false,
+                        FlexColumnBreakInfo* flex_column_break_info = nullptr);
 
 // If the appeal of breaking before or inside the child is the same or higher
 // than any previous breakpoint we've found, set a new breakpoint in the
@@ -425,10 +423,10 @@ bool MovePastBreakpoint(
 void UpdateEarlyBreakAtBlockChild(
     const ConstraintSpace&,
     BlockNode child,
-    const NGLayoutResult&,
-    NGBreakAppeal appeal_before,
-    NGBoxFragmentBuilder*,
-    NGFlexColumnBreakInfo* flex_column_break_info = nullptr);
+    const LayoutResult&,
+    BreakAppeal appeal_before,
+    BoxFragmentBuilder*,
+    FlexColumnBreakInfo* flex_column_break_info = nullptr);
 
 // Attempt to insert a soft break before the child, and return true if we did.
 // If false is returned, it means that the desired breakpoint is earlier in the
@@ -439,34 +437,34 @@ void UpdateEarlyBreakAtBlockChild(
 bool AttemptSoftBreak(
     const ConstraintSpace&,
     LayoutInputNode child,
-    const NGLayoutResult*,
+    const LayoutResult*,
     LayoutUnit fragmentainer_block_offset,
-    NGBreakAppeal appeal_before,
-    NGBoxFragmentBuilder*,
+    BreakAppeal appeal_before,
+    BoxFragmentBuilder*,
     absl::optional<LayoutUnit> block_size_override = absl::nullopt,
-    NGFlexColumnBreakInfo* flex_column_break_info = nullptr);
+    FlexColumnBreakInfo* flex_column_break_info = nullptr);
 
 // If we have an previously found break point, and we're entering an ancestor of
 // the node we're going to break before, return the early break inside. This can
 // then be passed to child layout, so that child layout eventually can tell
 // where to insert the break.
-const NGEarlyBreak* EnterEarlyBreakInChild(const BlockNode& child,
-                                           const NGEarlyBreak&);
+const EarlyBreak* EnterEarlyBreakInChild(const BlockNode& child,
+                                         const EarlyBreak&);
 
 // Return true if this is the child that we had previously determined to break
 // before.
-bool IsEarlyBreakTarget(const NGEarlyBreak&,
-                        const NGBoxFragmentBuilder&,
+bool IsEarlyBreakTarget(const EarlyBreak&,
+                        const BoxFragmentBuilder&,
                         const LayoutInputNode& child);
 
 // Find out if |child| is the next step on the column spanner path (if any), and
 // return the remaining path if that's the case, nullptr otherwise.
-inline const NGColumnSpannerPath* FollowColumnSpannerPath(
-    const NGColumnSpannerPath* path,
+inline const ColumnSpannerPath* FollowColumnSpannerPath(
+    const ColumnSpannerPath* path,
     const BlockNode& child) {
   if (!path)
     return nullptr;
-  const NGColumnSpannerPath* next_step = path->Child();
+  const ColumnSpannerPath* next_step = path->Child();
   if (next_step && next_step->GetBlockNode() == child) {
     return next_step;
   }
@@ -481,10 +479,10 @@ ConstraintSpace CreateConstraintSpaceForFragmentainer(
     LogicalSize fragmentainer_size,
     LogicalSize percentage_resolution_size,
     bool balance_columns,
-    NGBreakAppeal min_break_appeal);
+    BreakAppeal min_break_appeal);
 
 // Calculate the container builder and constraint space for a multicol.
-NGBoxFragmentBuilder CreateContainerBuilderForMulticol(
+BoxFragmentBuilder CreateContainerBuilderForMulticol(
     const BlockNode& multicol,
     const ConstraintSpace& space,
     const FragmentGeometry& fragment_geometry);
@@ -505,8 +503,8 @@ inline LayoutUnit AdjustedMarginAfterFinalChildFragment(
 // Note: This should only be used for a builder that represents a
 // fragmentation context root. Returns the the break token of the
 // previous fragmentainer to the child at |index|.
-const NGBlockBreakToken* PreviousFragmentainerBreakToken(
-    const NGBoxFragmentBuilder& container_builder,
+const BlockBreakToken* PreviousFragmentainerBreakToken(
+    const BoxFragmentBuilder& container_builder,
     wtf_size_t index);
 
 // Return the break token that led to the creation of the fragment specified, or
@@ -514,21 +512,21 @@ const NGBlockBreakToken* PreviousFragmentainerBreakToken(
 // (number of fragments generated from the node), and should be avoided when
 // possible. This function should no longer be necessary once everything has
 // been properly converted to LayoutNG.
-const NGBlockBreakToken* FindPreviousBreakToken(const NGPhysicalBoxFragment&);
+const BlockBreakToken* FindPreviousBreakToken(const PhysicalBoxFragment&);
 
 // Return the LayoutBox::PhysicalFragments() index for this fragment.
-wtf_size_t BoxFragmentIndex(const NGPhysicalBoxFragment&);
+wtf_size_t BoxFragmentIndex(const PhysicalBoxFragment&);
 
 // Return the index of the fragmentainer preceding the first fragmentainer
 // inside this fragment. Used by nested block fragmentation.
-wtf_size_t PreviousInnerFragmentainerIndex(const NGPhysicalBoxFragment&);
+wtf_size_t PreviousInnerFragmentainerIndex(const PhysicalBoxFragment&);
 
 // Return the fragment's offset relatively to the top/left corner of an
 // imaginary box where all fragments generated by the node have been stitched
 // together. If |out_stitched_fragments_size| is specified, it will be set to
 // the size of this imaginary box.
 PhysicalOffset OffsetInStitchedFragments(
-    const NGPhysicalBoxFragment&,
+    const PhysicalBoxFragment&,
     PhysicalSize* out_stitched_fragments_size = nullptr);
 
 // Return the block-size that this fragment will take up inside a fragmentation
@@ -536,7 +534,7 @@ PhysicalOffset OffsetInStitchedFragments(
 // supposed to affect block fragmentation), and also out-of-flow positioned
 // descendants (in the initial balancing pass), but not relative offsets.
 LayoutUnit BlockSizeForFragmentation(
-    const NGLayoutResult&,
+    const LayoutResult&,
     WritingDirectionMode container_writing_direction);
 
 // Return true if we support painting of multiple fragments for the given
@@ -547,11 +545,11 @@ LayoutUnit BlockSizeForFragmentation(
 // e.g. images, which may for instance be repeated in table headers /
 // footers. Return false for monolithic content that we don't want to repeat
 // (e.g. iframes).
-bool CanPaintMultipleFragments(const NGPhysicalBoxFragment&);
+bool CanPaintMultipleFragments(const PhysicalBoxFragment&);
 bool CanPaintMultipleFragments(const LayoutObject&);
 
 }  // namespace blink
 
-WTF_ALLOW_CLEAR_UNUSED_SLOTS_WITH_MEM_FUNCTIONS(blink::NGFlexColumnBreakInfo)
+WTF_ALLOW_CLEAR_UNUSED_SLOTS_WITH_MEM_FUNCTIONS(blink::FlexColumnBreakInfo)
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_LAYOUT_NG_NG_FRAGMENTATION_UTILS_H_

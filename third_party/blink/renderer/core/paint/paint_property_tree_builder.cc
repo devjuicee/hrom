@@ -37,7 +37,7 @@
 #include "third_party/blink/renderer/core/layout/layout_view.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_break_token.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_fragmentation_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_resource_clipper.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_root.h"
 #include "third_party/blink/renderer/core/layout/svg/layout_svg_viewport_container.h"
@@ -288,7 +288,7 @@ class FragmentPaintPropertyTreeBuilder {
            full_context_.force_subtree_update_reasons;
   }
 
-  const NGPhysicalBoxFragment& BoxFragment() const {
+  const PhysicalBoxFragment& BoxFragment() const {
     const auto& box = To<LayoutBox>(object_);
     if (pre_paint_info_) {
       if (pre_paint_info_->box_fragment) {
@@ -1205,7 +1205,7 @@ void FragmentPaintPropertyTreeBuilder::UpdateIndividualTransform(
         }
 
         // TODO(crbug.com/1185254): Make this work correctly for block
-        // fragmentation. It's the size of each individual NGPhysicalBoxFragment
+        // fragmentation. It's the size of each individual PhysicalBoxFragment
         // that's interesting, not the total LayoutBox size.
         state.flags.animation_is_axis_aligned =
             UpdateBoxSizeAndCheckActiveAnimationAxisAlignment(
@@ -2356,7 +2356,7 @@ void FragmentPaintPropertyTreeBuilder::UpdateOverflowClip() {
         // the first parameter?
         state.SetClipRect(clip_rect.Rect(), clip_rect);
       } else if (object_.IsBox()) {
-        const NGPhysicalBoxFragment& box_fragment = BoxFragment();
+        const PhysicalBoxFragment& box_fragment = BoxFragment();
         PhysicalRect clip_rect =
             box_fragment.OverflowClipRect(context_.current.paint_offset,
                                           FindPreviousBreakToken(box_fragment));
@@ -2588,14 +2588,19 @@ void FragmentPaintPropertyTreeBuilder::UpdateScrollAndScrollTranslation() {
             if (needs_effect_node) {
               EffectPaintPropertyNode::State effect_state;
               effect_state.local_transform_space = context_.current.transform;
-              if (properties_->OverflowClip()) {
-                // Scrollbars are not clipped by OverflowClip, so the output
-                // clip should be the parent of the overflow clip.
-                DCHECK_EQ(context_.current.clip, properties_->OverflowClip());
-                effect_state.output_clip = context_.current.clip->Parent();
+
+              // Scrollbars are not clipped by InnerBorderRadiusClip or
+              // OverflowClip, so the output clip should skip them.
+              auto* clip_to_skip = properties_->InnerBorderRadiusClip();
+              if (!clip_to_skip) {
+                clip_to_skip = properties_->OverflowClip();
+              }
+              if (clip_to_skip) {
+                effect_state.output_clip = clip_to_skip->Parent();
               } else {
                 effect_state.output_clip = context_.current.clip;
               }
+
               effect_state.compositor_element_id =
                   scrollable_area->GetScrollbarElementId(orientation);
 

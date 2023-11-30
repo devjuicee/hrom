@@ -4,9 +4,9 @@
 
 #include "third_party/blink/renderer/core/layout/inline/paragraph_line_breaker.h"
 
+#include "third_party/blink/renderer/core/layout/constraint_space_builder.h"
 #include "third_party/blink/renderer/core/layout/inline/inline_node.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_constraint_space_builder.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/core/testing/core_unit_test_helper.h"
 
 namespace blink {
@@ -14,7 +14,7 @@ namespace blink {
 class ParagraphLineBreakerTest : public RenderingTest {
  public:
   absl::optional<LayoutUnit> AttemptParagraphBalancing(const InlineNode& node) {
-    const NGPhysicalBoxFragment* fragment =
+    const PhysicalBoxFragment* fragment =
         node.GetLayoutBox()->GetPhysicalFragment(0);
     const LayoutUnit width = fragment->Size().width;
     ConstraintSpace space = ConstraintSpaceForAvailableSize(width);

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "ash/bubble/bubble_utils.h"
 #include "ash/resources/vector_icons/vector_icons.h"
@@ -197,7 +198,7 @@ CalendarUpNextView::CalendarUpNextView(
       ->SetLayoutManager(std::make_unique<views::BoxLayout>())
       ->set_main_axis_alignment(views::BoxLayout::MainAxisAlignment::kCenter);
   todays_events_button_container_->AddChildView(
-      CreateTodaysEventsButton(callback));
+      CreateTodaysEventsButton(std::move(callback)));
 
   // Header.
   auto* header_layout_manager =
@@ -234,7 +235,7 @@ CalendarUpNextView::CalendarUpNextView(
 
   // Scroll view.
   scroll_view_->SetAllowKeyboardScrolling(false);
-  scroll_view_->SetBackgroundColor(absl::nullopt);
+  scroll_view_->SetBackgroundColor(std::nullopt);
   scroll_view_->SetDrawOverflowIndicator(false);
   scroll_view_->SetViewportRoundedCornerRadius(
       gfx::RoundedCornersF(kScrollViewportCornerRadius));
@@ -430,7 +431,7 @@ void CalendarUpNextView::ToggleScrollButtonState() {
 }
 
 void CalendarUpNextView::ScrollViewByOffset(int offset) {
-  absl::optional<gfx::Rect> visible_content_rect =
+  std::optional<gfx::Rect> visible_content_rect =
       scroll_view_->GetVisibleRect();
   if (!visible_content_rect.has_value() || offset == 0) {
     return;

@@ -92,6 +92,18 @@ gn_args.config(
     },
 )
 
+# TODO(https://crbug.com/1020714): This is temporary. We'd like to run a
+# smoke test on android_binary_sizes to ensure coverage of proguard, at
+# which point we can merge this into android_fastbuild. Until then, only
+# disable proguard on a few bots to gather metrics on the effect on build
+# times.
+gn_args.config(
+    "android_no_proguard",
+    args = {
+        "is_java_debug": True,
+    },
+)
+
 gn_args.config(
     "angle_deqp_tests",
     args = {
@@ -138,6 +150,9 @@ gn_args.config(
     args = {
         "test_host_cpu": "arm64",
     },
+    configs = [
+        "arm64",
+    ],
 )
 
 gn_args.config(
@@ -154,6 +169,13 @@ gn_args.config(
     "asan",
     args = {
         "is_asan": True,
+    },
+)
+
+gn_args.config(
+    "blink_symbol",
+    args = {
+        "blink_symbol_level": 1,
     },
 )
 
@@ -397,6 +419,14 @@ gn_args.config(
 )
 
 gn_args.config(
+    "debug_try_builder",
+    configs = [
+        "debug_builder",
+        "use_dummy_lastchange",
+    ],
+)
+
+gn_args.config(
     "debug_static_builder",
     configs = [
         "debug",
@@ -433,6 +463,13 @@ gn_args.config(
     "disable_seed_corpus",
     args = {
         "archive_seed_corpus": False,
+    },
+)
+
+gn_args.config(
+    "enable_all_rust_features",
+    args = {
+        "enable_all_rust_features": True,
     },
 )
 
@@ -484,6 +521,13 @@ gn_args.config(
 )
 
 gn_args.config(
+    "fail_on_san_warnings",
+    args = {
+        "fail_on_san_warnings": True,
+    },
+)
+
+gn_args.config(
     "ffmpeg_branding_chrome",
     args = {
         "ffmpeg_branding": "Chrome",
@@ -502,6 +546,24 @@ gn_args.config(
     args = {
         "target_os": "fuchsia",
     },
+)
+
+gn_args.config(
+    "fuchsia_code_coverage",
+    args = {
+        "fuchsia_code_coverage": True,
+    },
+)
+
+gn_args.config(
+    "fuchsia_smart_display",
+    args = {
+        "enable_cast_receiver": True,
+        "cast_streaming_enable_remoting": True,
+    },
+    configs = [
+        "fuchsia",
+    ],
 )
 
 gn_args.config(
@@ -530,6 +592,13 @@ gn_args.config(
     configs = [
         "chrome_with_codecs",
     ],
+)
+
+gn_args.config(
+    "include_unwind_tables",
+    args = {
+        "exclude_unwind_tables": False,
+    },
 )
 
 gn_args.config(
@@ -743,6 +812,13 @@ gn_args.config(
 )
 
 gn_args.config(
+    "optimize_webui_off",
+    args = {
+        "optimize_webui": False,
+    },
+)
+
+gn_args.config(
     "ozone_headless",
     args = {
         "ozone_platform_headless": True,
@@ -881,8 +957,7 @@ gn_args.config(
 gn_args.config(
     "siso",
     args = {
-        # TODO: b/311110622 - Switch to use_siso=true.
-        "enable_precompiled_headers": False,
+        "use_siso": True,
     },
 )
 
@@ -921,6 +996,16 @@ gn_args.config(
     args = {
         "is_ubsan": True,
     },
+)
+
+gn_args.config(
+    "ubsan_no_recover",
+    args = {
+        "is_ubsan_no_recover": True,
+    },
+    configs = [
+        "ubsan",
+    ],
 )
 
 gn_args.config(
@@ -989,6 +1074,13 @@ gn_args.config(
     "use_java_coverage",
     args = {
         "use_jacoco_coverage": True,
+    },
+)
+
+gn_args.config(
+    "use_javascript_coverage",
+    args = {
+        "use_javascript_coverage": True,
     },
 )
 

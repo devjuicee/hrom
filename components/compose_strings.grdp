@@ -12,7 +12,7 @@
   Progress saved
   </message>
   <message name="IDS_COMPOSE_SUGGESTION_SAVED_LABEL" desc="The label beneath the main text in the Autofill suggestion that a user sees after interacting with a supported text element, indicating that user state was saved." translateable="false">
-  Select to Autofill
+  Re-open to continue
   </message>
 
   <!-- Consent dialog -->
@@ -36,8 +36,13 @@
   Yes I'm in
   </message>
 
+  <!-- Disclaimer dialog -->
+  <message name="IDS_COMPOSE_DISCLAIMER_BUTTON" desc="The button to acknowledge the disclaimer message." translateable="false">
+  Let's go
+  </message>
+
   <!-- Input dialog -->
-  <message name="IDS_COMPOSE_TITLE" desc="The title of the input dialog." translateable="false">
+  <message name="IDS_COMPOSE_DIALOG_TITLE" desc="Compose input dialog title." translateable="false">
   Lorem ipsum
   </message>
   <message name="IDS_COMPOSE_INPUT_PLACEHOLDER" desc="A placeholder text used in the input textfield." translateable="false">
@@ -48,6 +53,9 @@
   </message>
   <message name="IDS_COMPOSE_SUBMIT_BUTTON" desc="The button to submit the input." translateable="false">
   Submit
+  </message>
+  <message name="IDS_COMPOSE_EDIT_UPDATE_BUTTON" desc="The button that confirms the edited input." translateable="false">
+  Update
   </message>
 
   <!-- Result dialog -->
@@ -95,16 +103,13 @@
   <message name="IDS_COMPOSE_ERROR_GENERIC" desc="Error without further details." translateable="false">
   Something went wrong.
   </message>
-  <message name="IDS_COMPOSE_EDIT_UPDATE_BUTTON" desc="The button that confirms the edited input." translateable="false">
-    Update
-  </message>
 
   <!-- Cross-dialog -->
   <message name="IDS_COMPOSE_FOOTER_FISHFOOD" desc="The footer text used for Fishfood in the input and result dialogs." translateable="false">
     This feature is experimental.
-  </message>
-  <message name="IDS_COMPOSE_FILE_BUG" desc="The text used as a clickable link to open the Compose bug-reporting page. Used for Fishfood only." translateable="false">
-    File a bug
+    <ph name="BEGIN_BUG_LINK">&lt;a href="#" id="bugLink" role="button"&gt;</ph>File a bug<ph name="END_BUG_LINK">&lt;/a&gt;</ph>
+    or fill out our
+    <ph name="BEGIN_SURVEY_LINK">&lt;a href="#" id="surveyLink" role="button"&gt;</ph>survey<ph name="END_SURVEY_LINK">&lt;/a&gt;</ph>
   </message>
 
 </grit-part>

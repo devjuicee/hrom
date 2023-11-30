@@ -83,10 +83,10 @@ class MetricsRenderFrameObserver
 
   // RenderFrameObserver implementation
   void DidChangePerformanceTiming() override;
-  void DidObserveUserInteraction(
-      base::TimeTicks max_event_start,
-      base::TimeTicks max_event_end,
-      blink::UserInteractionType interaction_type) override;
+  void DidObserveUserInteraction(base::TimeTicks max_event_start,
+                                 base::TimeTicks max_event_end,
+                                 blink::UserInteractionType interaction_type,
+                                 uint64_t interaction_offset) override;
   void DidChangeCpuTiming(base::TimeDelta time) override;
   void DidObserveLoadingBehavior(blink::LoadingBehaviorFlag behavior) override;
   void DidObserveJavaScriptFrameworks(
@@ -127,7 +127,7 @@ class MetricsRenderFrameObserver
 
   // Invoked when a frame is going away. This is our last chance to send IPCs
   // before being destroyed.
-  void WillDetach() override;
+  void WillDetach(blink::DetachReason detach_reason) override;
 
   // Set the ad resource tracker that |this| observes.
   void SetAdResourceTracker(

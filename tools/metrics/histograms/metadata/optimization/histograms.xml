@@ -25,11 +25,6 @@ chromium-metrics-reviews@google.com.
 <variants name="AnnotationType">
   <variant name="ContentVisibility" summary="Content Visibility"/>
   <variant name="PageEntities" summary="Page Entities"/>
-  <variant name="PageTopics" summary="Page Topics">
-    <obsolete>
-      Removed in M115.
-    </obsolete>
-  </variant>
   <variant name="Unknown" summary="Unknown"/>
 </variants>
 
@@ -474,6 +469,68 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram
+    name="OptimizationGuide.ModelExecution.OnDeviceAddContextResult.{ModelExecutionFeature}"
+    enum="OptimizationGuideOnDeviceAddContextResult" expires_after="2024-05-29">
+  <owner>sky@chromium.org</owner>
+  <owner>sophiechang@chromium.org</owner>
+  <summary>
+    Captures the possible outcomes of Session::AddContext(). Recorded everytime
+    Session::AddContext() is called. context.
+  </summary>
+  <token key="ModelExecutionFeature" variants="ModelExecutionFeature"/>
+</histogram>
+
+<histogram
+    name="OptimizationGuide.ModelExecution.OnDeviceContextTokensProcessed.{ModelExecutionFeature}"
+    units="tokens" expires_after="2024-05-29">
+  <owner>cduvall@chromium.org</owner>
+  <owner>sophiechang@chromium.org</owner>
+  <summary>
+    Records the number of context tokens available when the on device model is
+    executed. Recorded for each execution of the on device model.
+  </summary>
+  <token key="ModelExecutionFeature" variants="ModelExecutionFeature"/>
+</histogram>
+
+<histogram
+    name="OptimizationGuide.ModelExecution.OnDeviceDestroyedWhileWaitingForResponseTime.{ModelExecutionFeature}"
+    units="ms" expires_after="2024-05-29">
+  <owner>sky@chromium.org</owner>
+  <owner>sophiechang@chromium.org</owner>
+  <summary>
+    Records time from execute call to the Session destroyed. Recorded when the
+    Session is destroyed, but only if the complete response was not received.
+  </summary>
+  <token key="ModelExecutionFeature" variants="ModelExecutionFeature"/>
+</histogram>
+
+<histogram
+    name="OptimizationGuide.ModelExecution.OnDeviceExecuteModelResult.{ModelExecutionFeature}"
+    enum="OptimizationGuideOnDeviceExecuteModelResult"
+    expires_after="2024-05-29">
+  <owner>sky@chromium.org</owner>
+  <owner>sophiechang@chromium.org</owner>
+  <summary>
+    Captures the possible outcomes of Session::ExecuteModel(). Recorded
+    everytime Session::ExecuteModel() is called. context.
+  </summary>
+  <token key="ModelExecutionFeature" variants="ModelExecutionFeature"/>
+</histogram>
+
+<histogram
+    name="OptimizationGuide.ModelExecution.OnDeviceFirstResponseTime.{ModelExecutionFeature}"
+    units="ms" expires_after="2024-05-29">
+  <owner>cduvall@chromium.org</owner>
+  <owner>sophiechang@chromium.org</owner>
+  <summary>
+    Records time to the first response after an execute call to the on device
+    model. Recorded for every execute call to the on device model that returns a
+    response.
+  </summary>
+  <token key="ModelExecutionFeature" variants="ModelExecutionFeature"/>
+</histogram>
+
+<histogram
     name="OptimizationGuide.ModelExecution.OnDeviceModelEligibilityReason.{ModelExecutionFeature}"
     enum="OptimizationGuideOnDeviceModelEligibilityReason"
     expires_after="2024-05-12">
@@ -482,6 +539,40 @@ chromium-metrics-reviews@google.com.
   <summary>
     Records whether the on-device model was eligible to be used and if not, why
     not. Recorded once at the start of each execution session.
+  </summary>
+  <token key="ModelExecutionFeature" variants="ModelExecutionFeature"/>
+</histogram>
+
+<histogram name="OptimizationGuide.ModelExecution.OnDeviceModelLoadResult"
+    enum="OnDeviceModelLoadResult" expires_after="2024-05-29">
+  <owner>cduvall@chromium.org</owner>
+  <owner>sophiechang@chromium.org</owner>
+  <summary>
+    Records the result of loading a model from OnDeviceModelService. This is
+    recorded for every model load.
+  </summary>
+</histogram>
+
+<histogram
+    name="OptimizationGuide.ModelExecution.OnDeviceModelPerformanceClass"
+    enum="OnDeviceModelPerformanceClass" expires_after="2024-05-29">
+  <owner>cduvall@chromium.org</owner>
+  <owner>sophiechang@chromium.org</owner>
+  <summary>
+    Records the estimated performance class of this device based on a
+    microbenchmark. This is recorded once on startup after a delay.
+  </summary>
+</histogram>
+
+<histogram
+    name="OptimizationGuide.ModelExecution.OnDeviceResponseCompleteTime.{ModelExecutionFeature}"
+    units="ms" expires_after="2024-05-29">
+  <owner>cduvall@chromium.org</owner>
+  <owner>sophiechang@chromium.org</owner>
+  <summary>
+    Records time until the response is completed after an execute call to the on
+    device model. Recorded for every execute call to the on device model that
+    completes.
   </summary>
   <token key="ModelExecutionFeature" variants="ModelExecutionFeature"/>
 </histogram>
@@ -742,6 +833,27 @@ chromium-metrics-reviews@google.com.
   <token key="OptimizationTarget" variants="OptimizationTarget"/>
 </histogram>
 
+<histogram
+    name="OptimizationGuide.ModelQualityLogsUploaderService.NetErrorCode"
+    enum="NetErrorCodes" expires_after="2024-05-10">
+  <owner>sreejakshetty@chromium.org</owner>
+  <owner>sophiechang@chromium.org</owner>
+  <summary>
+    Net error codes for each model quality logs upload, recorded on success and
+    failure.
+  </summary>
+</histogram>
+
+<histogram name="OptimizationGuide.ModelQualityLogsUploaderService.Status"
+    enum="HttpResponseCode" expires_after="2024-05-10">
+  <owner>sophiechang@chromium.org</owner>
+  <owner>sreejakshetty@chromium.org</owner>
+  <summary>
+    The HTTP response code for each model quality logs upload, recorded on
+    success and failure.
+  </summary>
+</histogram>
+
 <histogram name="OptimizationGuide.OptimizationFilterStatus.{OptimizationType}"
     enum="OptimizationGuideOptimizationFilterStatus" expires_after="2024-05-12">
   <owner>mcrouse@chromium.org</owner>
@@ -818,7 +930,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="OptimizationGuide.PageContentAnnotations.GoogleSearchMetadataExtracted"
-    enum="Boolean" expires_after="2024-03-24">
+    enum="Boolean" expires_after="2024-05-26">
   <owner>sophiechang@chromium.org</owner>
   <owner>chrome-intelligence-core@google.com</owner>
   <summary>
@@ -929,7 +1041,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="OptimizationGuide.PageContentAnnotationsService.RelatedSearchesCache.CacheHit"
-    enum="BooleanCacheHit" expires_after="2023-12-10">
+    enum="BooleanCacheHit" expires_after="2024-04-28">
   <owner>khalidpeer@chromium.org</owner>
   <owner>sophiechang@chromium.org</owner>
   <summary>
@@ -1216,7 +1328,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="OptimizationGuide.PredictionModelFetcher.GetModelsResponse.NetErrorCode"
-    enum="NetErrorCodes" expires_after="2024-03-24">
+    enum="NetErrorCodes" expires_after="2024-05-26">
   <owner>mcrouse@chromium.org</owner>
   <owner>sophiechang@chromium.org</owner>
   <summary>
@@ -1246,7 +1358,7 @@ chromium-metrics-reviews@google.com.
 
 <histogram
     name="OptimizationGuide.PredictionModelFetcher.GetModelsResponse.Status"
-    enum="HttpResponseCode" expires_after="2024-03-24">
+    enum="HttpResponseCode" expires_after="2024-05-26">
   <owner>mcrouse@chromium.org</owner>
   <owner>sophiechang@chromium.org</owner>
   <summary>

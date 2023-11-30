@@ -11,6 +11,7 @@
 #include "base/memory/ref_counted.h"
 #include "base/strings/strcat.h"
 #include "base/time/time.h"
+#include "components/safe_browsing/content/browser/url_checker_on_sb.h"
 #include "components/safe_browsing/core/browser/hashprefix_realtime/hash_realtime_utils.h"
 #include "components/safe_browsing/core/browser/safe_browsing_url_checker_impl.h"
 #include "content/public/browser/browser_thread.h"
@@ -28,9 +29,6 @@ class HttpRequestHeaders;
 
 namespace safe_browsing {
 
-class UrlCheckerOnSB;
-class UrlCheckerDelegate;
-
 class RealTimeUrlLookupServiceBase;
 class HashRealTimeService;
 class PingManager;
@@ -47,17 +45,31 @@ class AsyncCheckTracker;
 // the load if any URLs turn out to be bad.
 class BrowserURLLoaderThrottle : public blink::URLLoaderThrottle {
  public:
-  using GetDelegateCallback =
-      base::OnceCallback<scoped_refptr<UrlCheckerDelegate>()>;
+  // Helper class to perform whether the check can be skipped on the SB thread.
+  class SkipCheckCheckerOnSB
+      : public base::SupportsWeakPtr<
+            BrowserURLLoaderThrottle::SkipCheckCheckerOnSB> {
+   public:
+    using OnCompleteCheckCallback =
+        base::OnceCallback<void(bool /* should_skip */)>;
 
-  using NativeUrlCheckNotifier = base::OnceCallback<void(
-      bool /* proceed */,
-      bool /* showed_interstitial */,
-      SafeBrowsingUrlCheckerImpl::PerformedCheck /* performed_check */,
-      bool /* did_check_url_real_time_allowlist */)>;
+    SkipCheckCheckerOnSB(UrlCheckerOnSB::GetDelegateCallback delegate_getter,
+                         int frame_tree_node_id);
+    ~SkipCheckCheckerOnSB();
+
+    void CheckOriginalUrl(OnCompleteCheckCallback callback,
+                          const GURL& url,
+                          bool originated_from_service_worker);
+    void CheckRedirectUrl(OnCompleteCheckCallback callback);
+
+   private:
+    UrlCheckerOnSB::GetDelegateCallback delegate_getter_;
+    int frame_tree_node_id_;
+    bool should_skip_checks_ = false;
+  };
 
   static std::unique_ptr<BrowserURLLoaderThrottle> Create(
-      GetDelegateCallback delegate_getter,
+      UrlCheckerOnSB::GetDelegateCallback delegate_getter,
       const base::RepeatingCallback<content::WebContents*()>&
           web_contents_getter,
       int frame_tree_node_id,
@@ -87,14 +99,13 @@ class BrowserURLLoaderThrottle : public blink::URLLoaderThrottle {
                            bool* defer) override;
   const char* NameForLoggingWillProcessResponse() override;
 
-  UrlCheckerOnSB* GetSBCheckerForTesting();
+  UrlCheckerOnSB* GetSyncSBCheckerForTesting();
 
  private:
-  friend class UrlCheckerOnSB;
   // |web_contents_getter| is used for displaying SafeBrowsing UI when
   // necessary.
   BrowserURLLoaderThrottle(
-      GetDelegateCallback delegate_getter,
+      UrlCheckerOnSB::GetDelegateCallback delegate_getter,
       const base::RepeatingCallback<content::WebContents*()>&
           web_contents_getter,
       int frame_tree_node_id,
@@ -104,35 +115,52 @@ class BrowserURLLoaderThrottle : public blink::URLLoaderThrottle {
       hash_realtime_utils::HashRealTimeSelection hash_realtime_selection,
       base::WeakPtr<AsyncCheckTracker> async_check_tracker);
 
+  void OnSkipCheckCompleteOnOriginalUrl(
+      const net::HttpRequestHeaders& headers,
+      int load_flags,
+      network::mojom::RequestDestination request_destination,
+      bool has_user_gesture,
+      const GURL& url,
+      const std::string& method,
+      bool should_skip);
+  void OnSkipCheckCompleteOnRedirectUrl(const GURL& url,
+                                        const std::string& method,
+                                        bool should_skip);
+
   // |slow_check| indicates whether it reports the result of a slow check.
-  // (Please see comments of CheckerOnSB::OnCheckUrlResult() for what slow check
-  // means).
-  void OnCompleteCheck(
+  // (Please see comments of UrlCheckerOnSB::OnCheckUrlResult() for what slow
+  // check means).
+  void OnCompleteSyncCheck(
       bool slow_check,
       bool proceed,
       bool showed_interstitial,
       SafeBrowsingUrlCheckerImpl::PerformedCheck performed_check,
       bool did_check_url_real_time_allowlist);
 
-  // Returns the suffixed to be used for the TotalDelay2 metrics that specifies
-  // which type of check was performed.
-  std::string GetUrlCheckTypeForLogging(
-      SafeBrowsingUrlCheckerImpl::PerformedCheck performed_check);
-
   // Called to skip future safe browsing checks and resume the request if
   // necessary.
   void SkipChecks();
 
   // Called when a slow safe browsing check is ongoing.
-  void NotifySlowCheck();
+  void NotifySyncSlowCheck();
 
-  // Destroys |sb_checker_| on the IO thread, or UI thread if
+  // Returns the suffixed to be used for the TotalDelay2 metrics that specifies
+  // which type of check was performed.
+  std::string GetUrlCheckTypeForLogging(
+      SafeBrowsingUrlCheckerImpl::PerformedCheck performed_check);
+
+  // Destroys all checkers on the IO thread, or UI thread if
   // kSafeBrowsingOnUIThread is enabled.
-  void DeleteCheckerOnSB();
+  void DeleteUrlCheckerOnSB();
 
-  size_t pending_checks_ = 0;
+  size_t pending_sync_checks_ = 0;
+
   // How many slow checks that haven't received results.
-  size_t pending_slow_checks_ = 0;
+  size_t pending_sync_slow_checks_ = 0;
+
+  // Whether future safe browsing checks should be skipped.
+  bool skip_checks_ = false;
+
   bool blocked_ = false;
 
   // The time when |WillStartRequest| is called.
@@ -148,10 +176,10 @@ class BrowserURLLoaderThrottle : public blink::URLLoaderThrottle {
   // The total delay caused by SafeBrowsing deferring the resource load.
   base::TimeDelta total_delay_;
 
-  // Whether future safe browsing checks should be skipped.
-  bool skip_checks_ = false;
+  std::unique_ptr<UrlCheckerOnSB> sync_sb_checker_;
 
-  std::unique_ptr<UrlCheckerOnSB> sb_checker_;
+  // Used to decide whether the check can be skipped on the SB thread.
+  std::unique_ptr<SkipCheckCheckerOnSB> skip_check_checker_;
 
   // Metric suffix for the URL lookup service.
   std::string url_lookup_service_metric_suffix_;

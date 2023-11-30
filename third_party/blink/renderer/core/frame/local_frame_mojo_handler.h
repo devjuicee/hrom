@@ -201,6 +201,10 @@ class LocalFrameMojoHandler
       const WTF::Vector<WTF::String>&) final;
   void TraverseCancelled(const String& navigation_api_key,
                          mojom::blink::TraverseCancelledReason reason) final;
+  void DispatchNavigateEventForCrossDocumentTraversal(
+      const KURL&,
+      const std::string& page_state,
+      bool is_browser_initiated) final;
   void SnapshotDocumentForViewTransition(
       SnapshotDocumentForViewTransitionCallback callback) final;
 
@@ -214,7 +218,7 @@ class LocalFrameMojoHandler
       uint32_t response_code,
       const WTF::String& mime_type,
       network::mojom::blink::LoadTimingInfoPtr load_timing_info,
-      net::HttpResponseInfo::ConnectionInfo connection_info,
+      net::HttpConnectionInfo connection_info,
       const WTF::String& alpn_negotiated_protocol,
       bool is_secure_transport,
       bool is_validated,

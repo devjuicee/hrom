@@ -49,9 +49,9 @@
 #include "third_party/blink/renderer/core/layout/layout_object_child_list.h"
 #include "third_party/blink/renderer/core/layout/map_coordinates_flags.h"
 #include "third_party/blink/renderer/core/layout/min_max_sizes.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_outline_type.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_style_variant.h"
 #include "third_party/blink/renderer/core/layout/outline_rect_collector.h"
+#include "third_party/blink/renderer/core/layout/outline_type.h"
 #include "third_party/blink/renderer/core/layout/selection_state.h"
 #include "third_party/blink/renderer/core/loader/resource/image_resource_observer.h"
 #include "third_party/blink/renderer/core/paint/fragment_data.h"
@@ -1126,10 +1126,10 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
     bitfields_.SetHasCounterNodeMap(has_counter_node_map);
   }
 
-  // |NGPhysicalAnchorQuery| is built and propagated up in the fragment tree
+  // |PhysicalAnchorQuery| is built and propagated up in the fragment tree
   // during the layout. This function indicates whether |this| may have an
   // anchor query or not before the layout. When it returns false, |this| does
-  // not have an |NGPhysicalAnchorQuery|.
+  // not have an |PhysicalAnchorQuery|.
   bool MayHaveAnchorQuery() const {
     NOT_DESTROYED();
     return bitfields_.MayHaveAnchorQuery();
@@ -1462,15 +1462,6 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
   // For non-boxes, for better performance, the caller can prepare
   // |block_for_flipping| (= ContainingBlock()) if it will loop through many
   // rects/points to flip to avoid the cost of repeated ContainingBlock() calls.
-  [[nodiscard]] DeprecatedLayoutRect FlipForWritingMode(
-      const PhysicalRect& r,
-      const LayoutBox* box_for_flipping = nullptr) const {
-    NOT_DESTROYED();
-    if (LIKELY(!HasFlippedBlocksWritingMode()))
-      return r.ToLayoutRect();
-    return {FlipForWritingModeInternal(r.X(), r.Width(), box_for_flipping),
-            r.Y(), r.Width(), r.Height()};
-  }
   [[nodiscard]] PhysicalRect FlipForWritingMode(
       const DeprecatedLayoutRect& r,
       const LayoutBox* box_for_flipping = nullptr) const {
@@ -1488,15 +1479,6 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
       return p.ToLayoutPoint();
     return {FlipForWritingModeInternal(p.left, LayoutUnit(), box_for_flipping),
             p.top};
-  }
-  [[nodiscard]] PhysicalOffset FlipForWritingMode(
-      const LayoutPoint& p,
-      const LayoutBox* box_for_flipping = nullptr) const {
-    NOT_DESTROYED();
-    if (LIKELY(!HasFlippedBlocksWritingMode()))
-      return PhysicalOffset(p);
-    return {FlipForWritingModeInternal(p.X(), LayoutUnit(), box_for_flipping),
-            p.Y()};
   }
 
   bool HasLayer() const {
@@ -2651,6 +2633,11 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
       PhysicalRect&,
       VisualRectFlags = kDefaultVisualRectFlags) const;
 
+  bool MapToVisualRectInAncestorSpace(
+      const LayoutBoxModelObject* ancestor,
+      gfx::RectF&,
+      VisualRectFlags = kDefaultVisualRectFlags) const;
+
   // Do not call this method directly. Call mapToVisualRectInAncestorSpace
   // instead.
   virtual bool MapToVisualRectInAncestorSpaceInternal(
@@ -2850,7 +2837,7 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
   // |iterator|. This method will also advance |iterator| to the next
   // FragmentData (and therefore also next fragmentainer), if any.
   Vector<PhysicalRect> CollectOutlineRectsAndAdvance(
-      NGOutlineType,
+      OutlineType,
       AccompaniedFragmentIterator& iterator) const;
 
   struct OutlineInfo {
@@ -2885,7 +2872,7 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
   // in the same space as the physical rects returned.
   Vector<PhysicalRect> OutlineRects(OutlineInfo*,
                                     const PhysicalOffset& additional_offset,
-                                    NGOutlineType) const;
+                                    OutlineType) const;
 
   // Collects rectangles that the outline of this object would be drawing along
   // the outside of, even if the object isn't styled with a outline for now.
@@ -2894,16 +2881,17 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
   virtual void AddOutlineRects(OutlineRectCollector&,
                                OutlineInfo*,
                                const PhysicalOffset& additional_offset,
-                               NGOutlineType) const {
+                               OutlineType) const {
     NOT_DESTROYED();
   }
 
   // Get the 'image-orientation' value for a (potentially null) LayoutObject.
   //
   // Returns the initial value ('from-image') if passed a nullptr, else the
-  // value of the 'image-orientation' property.
-  static RespectImageOrientationEnum ShouldRespectImageOrientation(
-      const LayoutObject*);
+  // value of the 'image-orientation' property. (If it is known at the callsite
+  // that the LayoutObject* is non-null then just access its ComputedStyle
+  // directly.)
+  static RespectImageOrientationEnum GetImageOrientation(const LayoutObject*);
 
   bool IsRelayoutBoundary() const;
 
@@ -3596,7 +3584,7 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
   // The return value of this method is whether the fast path could be used.
   bool MapToVisualRectInAncestorSpaceInternalFastPath(
       const LayoutBoxModelObject* ancestor,
-      PhysicalRect&,
+      gfx::RectF&,
       VisualRectFlags,
       bool& intersects) const;
 

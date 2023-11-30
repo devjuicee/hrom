@@ -275,25 +275,6 @@ absl::optional<FeatureConfig> GetClientSideFeatureConfig(
     return config;
   }
 
-  if (kIPHPriceTrackingChipFeature.name == feature->name) {
-    absl::optional<FeatureConfig> config = FeatureConfig();
-    config->valid = true;
-    config->availability = Comparator(ANY, 0);
-    config->session_rate = Comparator(ANY, 0);
-    // Show the promo only once.
-    config->trigger =
-        EventConfig("price_tracking_chip_iph_trigger", Comparator(EQUAL, 0),
-                    feature_engagement::kMaxStoragePeriod,
-                    feature_engagement::kMaxStoragePeriod);
-    // Set a dummy config for the used event to be consistent with the other
-    // IPH configurations. The used event is never recorded by the feature code
-    // because the trigger event is already reported the first time the chip is
-    // being used, which corresponds to a used event.
-    config->used =
-        EventConfig("price_tracking_chip_shown", Comparator(ANY, 0), 0, 360);
-    return config;
-  }
-
   if (kIPHPriceTrackingEmailConsentFeature.name == feature->name) {
     absl::optional<FeatureConfig> config = FeatureConfig();
     config->valid = true;
@@ -1920,6 +1901,25 @@ absl::optional<FeatureConfig> GetClientSideFeatureConfig(
         EventConfig("iph_pull_to_refresh_trigger", Comparator(LESS_THAN, 2),
                     kMaxStorageDaysForIOSPullToRefresh,
                     kMaxStorageDaysForIOSPullToRefresh));
+    return config;
+  }
+  if (kIPHiOSReplaceSyncPromosWithSignInPromos.name == feature->name) {
+    // A config to show a user education bubble from the account row in the
+    // settings page. Will be shown only the first time user signs-in from
+    // settings. Subsequent sign-ins will not trigger it.
+    absl::optional<FeatureConfig> config = FeatureConfig();
+    config->valid = true;
+    config->availability = Comparator(ANY, 0);
+    config->session_rate = Comparator(ANY, 0);
+    config->trigger =
+        EventConfig("signin_from_settings_trigger", Comparator(LESS_THAN, 1),
+                    feature_engagement::kMaxStoragePeriod,
+                    feature_engagement::kMaxStoragePeriod);
+    config->used =
+        EventConfig("signin_from_settings_used", Comparator(EQUAL, 0),
+                    feature_engagement::kMaxStoragePeriod,
+                    feature_engagement::kMaxStoragePeriod);
+    config->blocked_by.type = BlockedBy::Type::NONE;
     return config;
   }
 

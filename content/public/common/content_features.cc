@@ -382,7 +382,7 @@ BASE_FEATURE(kFedCmError, "FedCmError", base::FEATURE_ENABLED_BY_DEFAULT);
 // the RP site.
 BASE_FEATURE(kFedCmExemptIdpWithThirdPartyCookies,
              "FedCmExemptIdpWithThirdPartyCookies",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Enables usage of the FedCM IdP Registration API.
 BASE_FEATURE(kFedCmIdPRegistration,
@@ -1301,12 +1301,6 @@ BASE_FEATURE(kRequestDesktopSiteZoom,
 // Send background signal to GPU stack for synchronous compositor.
 BASE_FEATURE(kSynchronousCompositorBackgroundSignal,
              "SynchronousCompositorBackgroundSignal",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-
-// Text autosizing uses heuristics to inflate text sizes on devices with
-// small screens. This feature is for disabling these heuristics.
-BASE_FEATURE(kForceOffTextAutosizing,
-             "ForceOffTextAutosizing",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 // Screen Capture API support for Android

@@ -12,13 +12,8 @@ external/wpt/webdriver/tests/classic/element_send_keys/interactability.py [ Fail
 external/wpt/webdriver/tests/classic/perform_actions/wheel.py [ Failure ]  # Flaky output
 external/wpt/webdriver/tests/bidi/input/perform_actions/invalid.py [ Failure Timeout ]  # Flaky output
 external/wpt/webdriver/tests/classic/find_element_from_shadow_root/find.py [ Failure Timeout ]  # Flaky output
-external/wpt/webdriver/tests/bidi/browsing_context/capture_screenshot/frame.py [ Failure ]  # Flaky output
 external/wpt/webdriver/tests/classic/element_click/navigate.py [ Failure ]  # Flaky output
 external/wpt/webdriver/tests/bidi/input/perform_actions/wheel.py [ Failure ]  # Flaky output
-external/wpt/webdriver/tests/bidi/browsing_context/handle_user_prompt/handle_user_prompt.py [ Timeout ]
-external/wpt/webdriver/tests/bidi/browsing_context/navigation_started/navigation_started.py [ Timeout ]
-external/wpt/webdriver/tests/bidi/browsing_context/print/invalid.py [ Timeout ]
-external/wpt/webdriver/tests/bidi/browsing_context/user_prompt_opened/user_prompt_opened.py [ Timeout ]
 external/wpt/webdriver/tests/bidi/network/add_intercept/invalid.py [ Timeout ]
 external/wpt/webdriver/tests/bidi/network/add_intercept/phases.py [ Timeout ]
 external/wpt/webdriver/tests/bidi/network/remove_intercept/remove_intercept.py [ Timeout ]
@@ -28,6 +23,36 @@ crbug.com/1502331 external/wpt/webdriver/tests/classic/perform_actions/pointer_p
 crbug.com/626703 external/wpt/webdriver/tests/bidi/network/add_intercept/phase_auth_required.py [ Timeout ]
 crbug.com/626703 external/wpt/webdriver/tests/bidi/network/auth_required/auth_required.py [ Timeout ]
 external/wpt/webdriver/tests/bidi/network/add_intercept/url_patterns.py [ Timeout ]
+external/wpt/webdriver/tests/bidi/browsing_context/capture_screenshot/frame.py [ Failure ]  # Flaky output
+external/wpt/webdriver/tests/bidi/browsing_context/handle_user_prompt/handle_user_prompt.py [ Timeout ]
+external/wpt/webdriver/tests/bidi/browsing_context/navigation_started/navigation_started.py [ Timeout ]
+external/wpt/webdriver/tests/bidi/browsing_context/print/invalid.py [ Timeout ]
+external/wpt/webdriver/tests/bidi/browsing_context/user_prompt_opened/user_prompt_opened.py [ Timeout ]
+external/wpt/webdriver/tests/bidi/browsing_context/capture_screenshot/format.py [ Failure ]
+external/wpt/webdriver/tests/bidi/browsing_context/capture_screenshot/invalid.py [ Failure ]
+external/wpt/webdriver/tests/bidi/browsing_context/capture_screenshot/origin.py [ Failure ]
+external/wpt/webdriver/tests/bidi/browsing_context/traverse_history/context.py [ Failure ]
+external/wpt/webdriver/tests/bidi/browsing_context/traverse_history/delta.py [ Failure ]
+external/wpt/webdriver/tests/bidi/browsing_context/traverse_history/invalid.py [ Failure ]
+external/wpt/webdriver/tests/bidi/browsing_context/set_viewport/viewport.py [ Failure ]
+
+# Those tests (flaky) fail when DCHECK enabled
+crbug.com/1499775 external/wpt/html/browsers/the-window-object/window-open-windowfeatures-values.html [ Pass Timeout ]
+crbug.com/1499775 external/wpt/media-capabilities/encodingInfo.any.worker.html [ Crash ]
+crbug.com/1499775 external/wpt/navigation-api/navigate-event/navigate-history-back-bfcache.html [ Failure ]
+crbug.com/1499775 external/wpt/storage-access-api/requestStorageAccess-cross-origin-iframe-navigation.sub.https.window.html [ Failure Timeout ]
+crbug.com/1499775 external/wpt/url/failure.html [ Pass Timeout ]
+crbug.com/1499775 external/wpt/credential-management/fedcm-error-basic.https.html [ Crash Timeout ]
+crbug.com/1499775 external/wpt/credential-management/fedcm-token-returned-with-http-error.https.html [ Crash Timeout ]
+crbug.com/1499775 external/wpt/credential-management/fedcm-endpoint-redirects.https.html [ Crash Timeout ]
+crbug.com/1499775 external/wpt/credential-management/fedcm-no-login-url.https.html [ Crash Timeout ]
+crbug.com/1499775 wpt_internal/credential-management/fedcm-reauth-with-signin-status.https.html [ Crash Timeout ]
+crbug.com/1499775 external/wpt/css/css-properties-values-api/animation/custom-property-animation-used-in-shorthand.html [ Failure Pass ]
+crbug.com/1499775 external/wpt/html/browsers/the-window-object/open-close/open-features-is-popup-condition.html?single-2 [ Pass Timeout ]
+crbug.com/1499775 external/wpt/html/semantics/embedded-content/media-elements/track/track-element/track-cues-enter-seeking.html [ Failure Pass ]
+crbug.com/1499775 external/wpt/pointerevents/pointerevent_touch-action-modified_touch.html [ Failure ]
+crbug.com/1499775 external/wpt/screen-capture/getdisplaymedia.https.html [ Crash Failure Pass ]
+crbug.com/1499775 external/wpt/webxr/xrSession_requestAnimationFrame_getViewerPose.https.html [ Failure Pass ]
 
 # Chrome specific failures
 crbug.com/1499775 external/wpt/css/css-text/text-transform/text-transform-capitalize-014.html [ Failure Pass ]
@@ -57,6 +82,8 @@ crbug.com/1499775 external/wpt/css/css-overflow/scrollable-overflow-input-001.ht
 crbug.com/1499775 external/wpt/css/css-overflow/scrollable-overflow-input-002.html [ Failure ]
 crbug.com/1499775 external/wpt/css/css-paint-api/geometry-background-image-tiled-002.https.html [ Failure Pass ]
 crbug.com/1499775 external/wpt/css/css-paint-api/paint-function-this-value.https.html [ Failure Pass ]
+crbug.com/1499775 external/wpt/css/css-paint-api/paint2d-canvasFilter.tentative.https.html [ Failure Pass ]
+crbug.com/1499775 external/wpt/css/css-paint-api/paint2d-filter.https.html [ Failure Pass ]
 crbug.com/1499775 external/wpt/css/css-pseudo/highlight-currentcolor-painting-properties-001.html [ Failure ]
 crbug.com/1499775 external/wpt/css/css-pseudo/highlight-currentcolor-painting-properties-002.html [ Failure ]
 crbug.com/1499775 external/wpt/css/css-pseudo/highlight-painting-003.html [ Failure ]
@@ -65,8 +92,10 @@ crbug.com/1499775 external/wpt/css/css-ruby/ruby-text-combine-upright-002a.html 
 crbug.com/1499775 external/wpt/css/css-shapes/shape-outside/values/shape-outside-ellipse-004.html [ Failure ]
 crbug.com/1499775 external/wpt/css/css-ui/compute-kind-widget-no-fallback-props-001.html [ Failure ]  # Reftest image failure
 crbug.com/1499775 external/wpt/css/css-ui/compute-kind-widget-generated/kind-of-widget-fallback-button-border-left-color-001.html [ Failure ]
+crbug.com/1499775 external/wpt/css/css-ui/compute-kind-widget-generated/kind-of-widget-fallback-color-input-border-top-width-001.html [ Failure Pass ]
 crbug.com/1499775 external/wpt/css/css-ui/compute-kind-widget-generated/kind-of-widget-fallback-input-search-border-left-color-001.html [ Failure Pass ]
 crbug.com/1499775 external/wpt/css/css-ui/compute-kind-widget-generated/kind-of-widget-fallback-input-search-text-border-inline-start-color-001.html [ Failure ]
+crbug.com/1499775 external/wpt/css/css-ui/compute-kind-widget-generated/kind-of-widget-fallback-input-submit-border-block-end-color-001.html [ Failure Pass ]
 crbug.com/1499775 external/wpt/css/printing/input-file-print.html [ Failure ]
 crbug.com/1499775 external/wpt/mathml/presentation-markup/operators/operator-dictionary-arabic-002.html [ Failure ]
 crbug.com/1499775 external/wpt/svg/linking/reftests/view-viewbox-override.html [ Failure ]
@@ -87,12 +116,9 @@ crbug.com/1499775 external/wpt/credential-management/fedcm-basic.https.html [ Ti
 crbug.com/1499775 external/wpt/credential-management/fedcm-client-metadata-not-cached.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-cross-origin-policy.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-domainhint.https.html [ Timeout ]
-crbug.com/1499775 external/wpt/credential-management/fedcm-endpoint-redirects.https.html [ Timeout ]
-crbug.com/1499775 external/wpt/credential-management/fedcm-error-basic.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-iframe.https.html [ Skip Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-loginhint.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-manifest-not-in-list.https.html [ Timeout ]
-crbug.com/1499775 external/wpt/credential-management/fedcm-no-login-url.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-nonce-is-optional.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-not-observed-by-service-worker.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-pending-call-rejected.https.html [ Timeout ]
@@ -100,7 +126,6 @@ crbug.com/1499775 external/wpt/credential-management/fedcm-returning-account-aut
 crbug.com/1499775 external/wpt/credential-management/fedcm-disconnect.sub.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-disconnect-iframe.sub.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/credential-management/fedcm-store.https.html [ Timeout ]
-crbug.com/1499775 external/wpt/credential-management/fedcm-token-returned-with-http-error.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/css/CSS2/floats/float-nowrap-2.html [ Failure ]  # Reftest image failure
 crbug.com/1499775 external/wpt/css/CSS2/linebox/inline-formatting-context-003.xht [ Failure ]  # Reftest image failure
 crbug.com/1499775 external/wpt/css/CSS2/linebox/inline-formatting-context-004.xht [ Failure ]  # Reftest image failure
@@ -294,6 +319,10 @@ crbug.com/1499775 external/wpt/fullscreen/rendering/fullscreen-pseudo-class.html
 crbug.com/1499775 external/wpt/fullscreen/rendering/fullscreen-root-block-scroll.html [ Timeout ] # pass on wpt.fyi
 crbug.com/1499775 external/wpt/fullscreen/rendering/fullscreen-root-block-size.html [ Timeout ]
 crbug.com/1499775 external/wpt/fullscreen/rendering/ua-style-iframe.html [ Timeout ] # pass on wpt.fyi
+crbug.com/1499775 external/wpt/html/anonymous-iframe/embedding.tentative.https.window.html?7-7 [ Failure Pass ]
+crbug.com/1499775 external/wpt/html/anonymous-iframe/embedding.tentative.https.window.html?8-8 [ Failure Pass ]
+crbug.com/1499775 external/wpt/html/anonymous-iframe/embedding.tentative.https.window.html?10-10 [ Failure Pass ]
+crbug.com/1499775 external/wpt/html/anonymous-iframe/embedding.tentative.https.window.html?11-11 [ Failure Pass ]
 crbug.com/1499775 external/wpt/html/browsers/history/the-location-interface/assign_before_load.html [ Failure ]  # Flaky output
 crbug.com/1499775 external/wpt/html/browsers/history/the-location-interface/assign_after_load.html [ Failure ]  # Flaky output
 crbug.com/1499775 external/wpt/html/browsers/browsing-the-web/navigating-across-documents/cross-origin-top-navigation-with-user-activation-in-parent.window.html [ Timeout ]
@@ -390,7 +419,6 @@ crbug.com/1499775 external/wpt/webxr/dom-overlay/ar_dom_overlay.https.html [ Tim
 crbug.com/1499775 external/wpt/webxr/dom-overlay/ar_dom_overlay_hit_test.https.html [ Timeout ]
 crbug.com/1499775 external/wpt/webxr/dom-overlay/nested_fullscreen.https.html [ Timeout ]
 crbug.com/1499775 wpt_internal/credential-management/fedcm-mismatch-dialog.tentative.https.html [ Timeout ]
-crbug.com/1499775 wpt_internal/credential-management/fedcm-reauth-with-signin-status.https.html [ Timeout ]
 crbug.com/1499775 wpt_internal/css/css-borders/subpixel-border-width-when-zoom-changes.html [ Failure ]  # Reftest image failure
 crbug.com/1499775 wpt_internal/css/css-fonts/default-monospace-family-mac.html [ Failure ]  # Reftest image failure
 crbug.com/1499775 wpt_internal/css/css-fonts/font-glyph-synthesis-mac.html [ Failure ]  # Reftest image failure
@@ -505,7 +533,17 @@ crbug.com/1499775 wpt_internal/css/css-fonts/variable-opsz-zoom.html [ Timeout ]
 crbug.com/1499775 wpt_internal/prerender/activate-from-iframe.html [ Skip Timeout ]
 crbug.com/1499775 wpt_internal/prerender/navigator-subapp.https.html [ Skip Timeout ]
 crbug.com/1499775 wpt_internal/prerender/restriction-pointer-lock.html [ Skip Timeout ]
+crbug.com/1499775 external/wpt/css/css-paint-api/dynamic-import.https.html [ Failure Pass ]
+crbug.com/1499775 external/wpt/html/anonymous-iframe/anonymous-iframe-popup.tentative.https.window.html [ Failure Pass ]
+crbug.com/1499775 external/wpt/html/browsers/windows/auxiliary-browsing-contexts/opener-setter.html [ Pass Timeout ]
+crbug.com/1499775 external/wpt/html/semantics/embedded-content/the-img-element/image-loading-lazy-base-url.html [ Failure Pass ]
+crbug.com/1499775 external/wpt/preload/preload-strict-dynamic.sub.html [ Failure Pass ]
+crbug.com/1499775 external/wpt/webusb/usbDevice-iframe.https.html [ Pass Timeout ]
 
 # ====== New tests from wpt-importer added here ======
+crbug.com/626703 external/wpt/css/css-color-adjust/rendering/dark-color-scheme/color-scheme-iframe-background-about-blank.tentative.html [ Failure ]
+crbug.com/626703 external/wpt/css/css-transforms/transform-box/svgbox-stroke-box-003.html [ Failure ]
+crbug.com/626703 external/wpt/css/css-transforms/transform-box/svgbox-stroke-box-004.html [ Failure ]
+crbug.com/626703 external/wpt/credential-management/fedcm-disconnect-errors.https.html [ Timeout ]
 crbug.com/626703 external/wpt/css/selectors/selectors-4/lang-023.html [ Failure ]
 crbug.com/626703 external/wpt/css/selectors/selectors-4/lang-024.html [ Failure ]

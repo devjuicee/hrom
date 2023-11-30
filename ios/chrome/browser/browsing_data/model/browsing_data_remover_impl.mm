@@ -44,8 +44,8 @@
 #import "ios/chrome/browser/crash_report/model/crash_helper.h"
 #import "ios/chrome/browser/external_files/model/external_file_remover.h"
 #import "ios/chrome/browser/external_files/model/external_file_remover_factory.h"
-#import "ios/chrome/browser/history/history_service_factory.h"
-#import "ios/chrome/browser/history/web_history_service_factory.h"
+#import "ios/chrome/browser/history/model/history_service_factory.h"
+#import "ios/chrome/browser/history/model/web_history_service_factory.h"
 #import "ios/chrome/browser/https_upgrades/model/https_upgrade_service_factory.h"
 #import "ios/chrome/browser/language/model/url_language_histogram_factory.h"
 #import "ios/chrome/browser/optimization_guide/model/optimization_guide_service.h"
@@ -373,8 +373,8 @@ void BrowsingDataRemoverImpl::RemoveImpl(base::Time delete_begin,
     sessions::TabRestoreService* tab_service =
         IOSChromeTabRestoreServiceFactory::GetForBrowserState(browser_state_);
     if (tab_service) {
-      tab_service->ClearEntries();
       tab_service->DeleteLastSession();
+      tab_service->ClearEntries();
     }
 
     // The saved Autofill profiles and credit cards can include the origin from

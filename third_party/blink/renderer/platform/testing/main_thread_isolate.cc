@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/platform/testing/main_thread_isolate.h"
 
+#include "base/run_loop.h"
 #include "third_party/blink/public/web/blink.h"
 #include "third_party/blink/renderer/platform/bindings/v8_per_isolate_data.h"
 #include "third_party/blink/renderer/platform/heap/thread_state.h"
@@ -17,11 +18,14 @@ MainThreadIsolate::MainThreadIsolate() {
 
 MainThreadIsolate::~MainThreadIsolate() {
   CHECK_NE(nullptr, isolate_);
+  isolate()->ClearCachesForTesting();
   ThreadState::Current()->CollectAllGarbageForTesting();
+
   ThreadScheduler::Current()->SetV8Isolate(nullptr);
   V8PerIsolateData::WillBeDestroyed(isolate());
-  V8PerIsolateData::Destroy(isolate());
+  v8::Isolate* isolate = isolate_.get();
   isolate_ = nullptr;
+  V8PerIsolateData::Destroy(isolate);
 }
 
 }  // namespace blink::test

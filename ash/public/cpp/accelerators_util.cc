@@ -10,6 +10,7 @@
 #include "ash/public/cpp/accelerator_keycode_lookup_cache.h"
 #include "base/logging.h"
 #include "base/no_destructor.h"
+#include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "ui/base/ime/ash/input_method_manager.h"
 #include "ui/base/ui_base_features.h"
@@ -161,7 +162,7 @@ std::u16string KeycodeToKeyString(ui::KeyboardCode key_code,
     }
   }
 
-  const absl::optional<std::u16string> cached_key_string =
+  const std::optional<std::u16string> cached_key_string =
       AcceleratorKeycodeLookupCache::Get()->Find(key_code);
   // Cache hit, return immediately.
   if (cached_key_string.has_value()) {
@@ -224,6 +225,9 @@ std::u16string GetKeyDisplay(ui::KeyboardCode key_code) {
               ui::KeycodeConverter::DomKeyToKeyString(domkey_it.dom_key));
         }
       }
+      // Else, return "Unidentified {digit}" for Unidentified key.
+      return base::UTF8ToUTF16(base::StringPrintf(
+          "Unidentified %u", static_cast<unsigned int>(key_code)));
     }
     // Otherwise, get the key_display from a util function.
     return KeycodeToKeyString(key_code);

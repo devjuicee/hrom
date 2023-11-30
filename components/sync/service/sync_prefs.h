@@ -90,9 +90,7 @@ class SyncPrefs {
   // This is only used for syncing users and takes HasKeepEverythingSynced()
   // into account (i.e. returns "all types").
   // If some types are force-disabled by policy, they will not be included.
-  // TODO(crbug.com/1485015): Remove `account_state` parameter and rename to
-  // GetSelectedTypesForSyncingUser().
-  UserSelectableTypeSet GetSelectedTypes(SyncAccountState account_state) const;
+  UserSelectableTypeSet GetSelectedTypesForSyncingUser() const;
   // Returns the set of types for the given gaia_id_hash for sign-in users.
   // If some types are force-disabled by policy, they will not be included.
   // Note: this is used for signed-in not syncing users.
@@ -121,10 +119,9 @@ class SyncPrefs {
   // Changes are still made to the individual selectable type prefs even if
   // |keep_everything_synced| is true, but won't be visible until it's set to
   // false.
-  // TODO(crbug.com/1485015): Rename to SetSelectedTypesForSyncingUser().
-  void SetSelectedTypes(bool keep_everything_synced,
-                        UserSelectableTypeSet registered_types,
-                        UserSelectableTypeSet selected_types);
+  void SetSelectedTypesForSyncingUser(bool keep_everything_synced,
+                                      UserSelectableTypeSet registered_types,
+                                      UserSelectableTypeSet selected_types);
   // Used to set user's selected types prefs in Sync-the-transport mode.
   // Note: this is used for signed-in not syncing users.
   void SetSelectedTypeForAccount(UserSelectableType type,
@@ -137,11 +134,10 @@ class SyncPrefs {
 
 #if BUILDFLAG(IS_IOS)
   // Sets the opt-in for bookmarks & reading list in transport mode.
-  // Note that this only has an effect if `kEnableBookmarksAccountStorage`
-  // and/or `kReadingListEnableDualReadingListModel` are enabled, but
-  // `kReplaceSyncPromosWithSignInPromos` is NOT enabled. (It should still be
-  // called if `kReplaceSyncPromosWithSignInPromos` is enabled though, to better
-  // support rollbacks.)
+  // Note that this only has an effect if `kReplaceSyncPromosWithSignInPromos`
+  // is NOT enabled. (It should still be called if
+  // `kReplaceSyncPromosWithSignInPromos` is enabled though, to better support
+  // rollbacks.)
   void SetBookmarksAndReadingListAccountStorageOptIn(bool value);
 
   // Gets the opt-in state for bookmarks & reading list in transport mode, for
@@ -256,6 +252,14 @@ class SyncPrefs {
   void MarkPartialSyncToSigninMigrationFullyDone();
 
   static void MigrateAutofillWalletImportEnabledPref(PrefService* pref_service);
+
+  // Copies the global versions of the selected-types prefs (used for syncing
+  // users) to the per-account prefs for the given `gaia_id_hash` (used for
+  // signed-in non-syncing users). To be used when an existing syncing user is
+  // migrated to signed-in.
+  static void MigrateGlobalDataTypePrefsToAccount(
+      PrefService* pref_service,
+      const signin::GaiaIdHash& gaia_id_hash);
 
  private:
   static void RegisterTypeSelectedPref(PrefRegistrySimple* prefs,

@@ -5,7 +5,7 @@
 #include "third_party/blink/renderer/core/layout/ng/ng_base_layout_algorithm_test.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_block_layout_algorithm.h"
 #include "third_party/blink/renderer/core/layout/ng/ng_length_utils.h"
-#include "third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.h"
+#include "third_party/blink/renderer/core/layout/physical_box_fragment.h"
 #include "third_party/blink/renderer/platform/testing/runtime_enabled_features_test_helpers.h"
 
 namespace blink {
@@ -13,7 +13,7 @@ namespace {
 
 class FragmentationTest : public BaseLayoutAlgorithmTest {
  protected:
-  const NGPhysicalBoxFragment* RunBlockLayoutAlgorithm(Element* element) {
+  const PhysicalBoxFragment* RunBlockLayoutAlgorithm(Element* element) {
     BlockNode container(element->GetLayoutBox());
     ConstraintSpace space = ConstructBlockLayoutTestConstraintSpace(
         {WritingMode::kHorizontalTb, TextDirection::kLtr},
@@ -202,8 +202,8 @@ TEST_F(FragmentationTest, HasSeenAllChildrenIfc) {
 
   const LayoutBox* ifc = GetLayoutBoxByElementId("ifc");
   ASSERT_EQ(ifc->PhysicalFragmentCount(), 6u);
-  const NGPhysicalBoxFragment* fragment = ifc->GetPhysicalFragment(0);
-  const NGBlockBreakToken* break_token = fragment->GetBreakToken();
+  const PhysicalBoxFragment* fragment = ifc->GetPhysicalFragment(0);
+  const BlockBreakToken* break_token = fragment->GetBreakToken();
   ASSERT_TRUE(break_token);
   EXPECT_FALSE(break_token->HasSeenAllChildren());
 
@@ -299,9 +299,9 @@ TEST_F(FragmentationTest, OffsetFromOwnerLayoutBoxFloat) {
   )HTML");
   const auto* target = GetLayoutBoxByElementId("float");
   EXPECT_EQ(target->PhysicalFragmentCount(), 2u);
-  const NGPhysicalBoxFragment* fragment0 = target->GetPhysicalFragment(0);
+  const PhysicalBoxFragment* fragment0 = target->GetPhysicalFragment(0);
   EXPECT_EQ(fragment0->OffsetFromOwnerLayoutBox(), PhysicalOffset());
-  const NGPhysicalBoxFragment* fragment1 = target->GetPhysicalFragment(1);
+  const PhysicalBoxFragment* fragment1 = target->GetPhysicalFragment(1);
   EXPECT_EQ(fragment1->OffsetFromOwnerLayoutBox(), PhysicalOffset(110, -300));
 }
 
@@ -338,11 +338,11 @@ TEST_F(FragmentationTest, OffsetFromOwnerLayoutBoxNested) {
   )HTML");
   const auto* target = GetLayoutBoxByElementId("target");
   EXPECT_EQ(target->PhysicalFragmentCount(), 3u);
-  const NGPhysicalBoxFragment* fragment0 = target->GetPhysicalFragment(0);
+  const PhysicalBoxFragment* fragment0 = target->GetPhysicalFragment(0);
   EXPECT_EQ(fragment0->OffsetFromOwnerLayoutBox(), PhysicalOffset());
-  const NGPhysicalBoxFragment* fragment1 = target->GetPhysicalFragment(1);
+  const PhysicalBoxFragment* fragment1 = target->GetPhysicalFragment(1);
   EXPECT_EQ(fragment1->OffsetFromOwnerLayoutBox(), PhysicalOffset(55, -300));
-  const NGPhysicalBoxFragment* fragment2 = target->GetPhysicalFragment(2);
+  const PhysicalBoxFragment* fragment2 = target->GetPhysicalFragment(2);
   EXPECT_EQ(fragment2->OffsetFromOwnerLayoutBox(), PhysicalOffset(110, -300));
 }
 

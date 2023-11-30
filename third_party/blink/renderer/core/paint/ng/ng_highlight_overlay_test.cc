@@ -15,7 +15,7 @@
 #include "third_party/blink/renderer/core/highlight/highlight_registry.h"
 #include "third_party/blink/renderer/core/html/html_element.h"
 #include "third_party/blink/renderer/core/testing/page_test_base.h"
-#include "third_party/blink/renderer/platform/fonts/ng_text_fragment_paint_info.h"
+#include "third_party/blink/renderer/platform/fonts/text_fragment_paint_info.h"
 #include "third_party/blink/renderer/platform/testing/runtime_enabled_features_test_helpers.h"
 
 namespace blink {
@@ -221,7 +221,7 @@ TEST_F(NGHighlightOverlayTest, ComputeParts) {
   HighlightLayer spel{HighlightLayerType::kSpelling};
   HighlightLayer targ{HighlightLayerType::kTargetText};
   HighlightLayer sele{HighlightLayerType::kSelection};
-  NGTextFragmentPaintInfo originating{"", 0, 25};
+  TextFragmentPaintInfo originating{"", 0, 25};
   TextOffsetRange originating_dom_offsets{0, 25};
   custom->push_back(
       MakeGarbageCollected<CustomHighlightMarker>(0, 14, "foo", nullptr));
@@ -327,7 +327,7 @@ TEST_F(NGHighlightOverlayTest, ComputeParts) {
   //                [      ]          ::target-text, as above
   //              [    ]              ::selection, as above
 
-  NGTextFragmentPaintInfo originating2{"", 8, 18};
+  TextFragmentPaintInfo originating2{"", 8, 18};
   TextOffsetRange originating2_dom_offsets{8, 18};
   Vector<HighlightEdge> edges4 = NGHighlightOverlay::ComputeEdges(
       node, registry, false, originating2_dom_offsets, &selection, *custom,
@@ -379,7 +379,7 @@ TEST_F(NGHighlightOverlayTest, ComputeParts) {
   //                                  ::target-text, as above
   //                                  ::selection, as above
 
-  NGTextFragmentPaintInfo originating3{"", 1, 4};
+  TextFragmentPaintInfo originating3{"", 1, 4};
   TextOffsetRange originating3_dom_offsets{1, 4};
   Vector<HighlightEdge> edges6 = NGHighlightOverlay::ComputeEdges(
       node, registry, false, originating3_dom_offsets, &selection, *custom,
@@ -402,7 +402,7 @@ TEST_F(NGHighlightOverlayTest, ComputeParts) {
   //                                  ::target-text, as above
   //                                  ::selection, as above
 
-  NGTextFragmentPaintInfo originating4{"", 25, 28};
+  TextFragmentPaintInfo originating4{"", 25, 28};
   TextOffsetRange originating4_dom_offsets{25, 28};
   Vector<HighlightEdge> edges7 = NGHighlightOverlay::ComputeEdges(
       node, registry, false, originating4_dom_offsets, &selection, *custom,
